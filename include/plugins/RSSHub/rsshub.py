@@ -40,9 +40,8 @@ def getRSS(url:str,name:str,img_proxy)->list:# 链接，订阅名
                 msg = msg+'内容：'+checkimg(item['summary'],img_proxy)+'\n'
                 msg = msg+'原链接：'+item['link']+'\n'
                 try:
-                    loc_time=time.mktime(item['published_parsed'])
-                    #print(time.localtime(loc_time))
-                    msg = msg + '日期：' + time.strftime("%m月%d日 %H:%M:%S", time.localtime(loc_time))
+                    loc_time = time.mktime(item['published_parsed'])
+                    msg = msg + '日期：' + time.strftime("%m月%d日 %H:%M:%S", time.localtime(loc_time + 28800.0))
                 except BaseException:
                     msg = msg + '日期：' + time.strftime("%m月%d日 %H:%M:%S", time.localtime())
                 #print(msg+'\n\n\n')
