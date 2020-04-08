@@ -128,6 +128,24 @@ DELCACHE=3     #缓存删除间隔 天
 
 **修改完后记得保存**
 
+### 配置 CQHTTP 插件
+单纯运行 NoneBot 实例并不会产生任何效果，因为此刻 酷Q 这边还不知道 NoneBot 的存在，也就无法把消息发送给它，因此现在需要对 CQHTTP 插件做一个简单的配置来让它把消息等事件上报给 NoneBot。
+
+如果你在之前已经按照 安装 的建议使用默认配置运行了一次 CQHTTP 插件，此时 酷Q 的 `data/app/io.github.richardchien.coolqhttpapi/config/` 目录中应该已经有了一个名为 `<user-id>.json` 的文件（`<user-id>` 为你登录的 QQ 账号）。修改这个文件，修改如下配置项（如果不存在相应字段则添加）：
+```bash
+{
+    "ws_reverse_url": "ws://127.0.0.1:8080/ws/",
+    "use_ws_reverse": true,
+    "enable_heartbeat": true
+}
+```
+**提示**
+这里的 `127.0.0.1:8080` 对应 `nonebot.run()` 中传入的 host 和 port，如果在 `nonebot.run()` 中传入的 host 是 0.0.0.0，则插件的配置中需使用任意一个能够访问到 NoneBot 所在环境的 IP，不要直接填 0.0.0.0。特别地，如果你的 酷Q 运行在 Docker 容器中，NoneBot 运行在宿主机中，则默认情况下这里需使用 `172.17.0.1`（即宿主机在 Docker 默认网桥上的 IP，不同机器有可能不同，如果是 macOS 系统或者 Windows 系统，可以考虑使用 host.docker.internal，具体解释详见 Docker 文档的 [Use cases and workarounds](https://docs.docker.com/docker-for-mac/networking/#use-cases-and-workarounds "Use cases and workarounds") 的「I WANT TO CONNECT FROM A CONTAINER TO A SERVICE ON THE HOST」小标题）。
+
+如果你的 CQHTTP 插件版本低于 v4.14.0，还需要删除配置文件中已有的 ws_reverse_api_url 和 ws_reverse_event_url 两项。
+
+**修改之后，在 酷Q 的应用菜单中重启 CQHTTP 插件，或直接重载应用，以使新的配置文件生效。**
+
 ### 运行插件
 shift+右键打开powershell或命令行输入
 ```bash
@@ -157,4 +175,3 @@ python bot.py
 [RSShub 搭建教程](https://myelf.club/index.php/archives/192/ "RSShub 搭建教程")
 [酷Q机器人搜图插件CQ-picfinder-robot 的部署](https://myelf.club/index.php/archives/186/ "酷Q机器人搜图插件CQ-picfinder-robot 的部署")
 [酷Q RSS订阅转发插件rsshub2qq 安装教程](https://myelf.club/index.php/archives/175/ "酷Q RSS订阅转发插件rsshub2qq 安装教程")
-
