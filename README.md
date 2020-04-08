@@ -1,6 +1,6 @@
 # ELF_RSS
 
-** 原文地址 [ELF_RSS 订阅插件使用、安装教程](https://myelf.club/index.php/archives/221/ "ELF_RSS 订阅插件使用、安装教程")**
+**原文地址 [ELF_RSS 订阅插件使用、安装教程](https://myelf.club/index.php/archives/221/ "ELF_RSS 订阅插件使用、安装教程")**
 ## 前言
 rss订阅插件始终没找到个合适自己的，就自己写了一个。
 可以实现推特（twitter）转发、YouTube转发、B站直播提醒、Pixiv每日排行榜推送等等功能
