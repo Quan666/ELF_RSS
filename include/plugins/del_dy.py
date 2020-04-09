@@ -34,7 +34,7 @@ async def deldy(session: CommandSession):
                 await session.send('订阅 ' + rss_name + ' 删除失败！')
             else:
                 RWlist.writeRss(list_rss)
-                await session.send('删除 ' + flag + ' 条订阅！')
+                await session.send('删除 ' + str(flag) + ' 条订阅！')
         except:
             await session.send('你还没有任何订阅！')
     else:

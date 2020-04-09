@@ -15,7 +15,7 @@ from nonebot import on_command, scheduler
 @on_command('change')
 async def change(session: CommandSession):
     change_info = session.get('change',
-                           prompt='输入要修改的订阅的 \n订阅名，修改项=,属性 \n如:\n 订阅 dyqq=,xx dsf=0\n对应参数： 订阅地址-url，订阅QQ-dyqq，订阅群-dyqun，更新频率-uptime，代理-proxy，第三方-dsf\n\n注：\n代理、第三方属性值为1/0\nqq、群号前加英文逗号表示追加')
+                           prompt='输入要修改的订阅的 \n订阅名 修改项=,属性 \n如:\n 订阅 dyqq=,xx dsf=0\n对应参数： 订阅地址-url，订阅QQ-dyqq，订阅群-dyqun，更新频率-uptime，代理-proxy，第三方-dsf\n\n注：\n代理、第三方属性值为1/0\nqq、群号前加英文逗号表示追加')
     # 权限判断
     user_id = session.ctx['user_id']
     # print(type(user_id),type(config.ROOTUSER))
@@ -34,7 +34,7 @@ async def change(session: CommandSession):
                     rss_a=rss_
                     flag = flag + 1
             if flag <= 0:
-                await session.send('订阅 ' + rss_name + ' 不存在！')
+                await session.send('订阅 ' + name + ' 不存在！')
             else:
                 try:
                     rss_tmp = rss_a
@@ -81,7 +81,7 @@ async def change(session: CommandSession):
                     logger.info('添加' + name + '成功')
                     await session.send('修改 ' + name + ' 订阅成功！')
                 except Exception as e:
-                    await session.send('修改失败！')
+                    await session.send('命令出错，修改失败！')
                     print(e)
         except:
             await session.send('你还没有任何订阅！')

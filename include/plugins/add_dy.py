@@ -23,49 +23,52 @@ async def add(session: CommandSession):
         dy = rss_dy_link.split(' ')
         # await session.send('')#反馈
         # print('\n\n\n'+str(len(dy)),dy[0]+'\n\n\n')
-        name = dy[0]
-        url = dy[1]
-        user_id = dy[2]
-        group_id = dy[3]
-        if len(dy) > 4:
-            times = int(dy[4])
-        else:
-            times = 5
-        if len(dy) > 5:
-            proxy = bool(int(dy[5]))
-        else:
-            proxy = False
-        if len(dy) > 6:
-            notrsshub = bool(int(dy[6]))
-        else:
-            notrsshub = False
-        rss = RSS_class.rss(name, url, user_id, group_id, times, proxy, notrsshub)
-        # 写入订阅配置文件 # 先读看是否重复再写
-        flag = 0
-        bot = nonebot.get_bot()
         try:
-            list_rss = RWlist.readRss()
-            for old in list_rss:
-                if old.name == rss.name or old.url == rss.url:
-                    flag = 1
-            if flag == 0:
+            name = dy[0]
+            url = dy[1]
+            user_id = dy[2]
+            group_id = dy[3]
+            if len(dy) > 4:
+                times = int(dy[4])
+            else:
+                times = 5
+            if len(dy) > 5:
+                proxy = bool(int(dy[5]))
+            else:
+                proxy = False
+            if len(dy) > 6:
+                notrsshub = bool(int(dy[6]))
+            else:
+                notrsshub = False
+            rss = RSS_class.rss(name, url, user_id, group_id, times, proxy, notrsshub)
+            # 写入订阅配置文件 # 先读看是否重复再写
+            flag = 0
+            bot = nonebot.get_bot()
+            try:
+                list_rss = RWlist.readRss()
+                for old in list_rss:
+                    if old.name == rss.name or old.url == rss.url:
+                        flag = 1
+                if flag == 0:
+                    list_rss.append(rss)
+                    RWlist.writeRss(list_rss)
+                else:
+                    # 向用户发送失败信息
+                    logger.info('添加' + rss.name + '失败，已存在')
+                    await session.send('订阅名或订阅链接已经存在！')
+            except:
+                list_rss = []
                 list_rss.append(rss)
                 RWlist.writeRss(list_rss)
-            else:
-                # 向用户发送失败信息
-                logger.info('添加' + rss.name + '失败，已存在')
-                await session.send('订阅名或订阅链接已经存在！')
-
+            if flag == 0:
+                # 加入订阅任务队列
+                TR.rss_trigger(times, rss)
+                logger.info('添加' + rss.name + '成功')
+                # 向用户发送成功信息
+                await session.send(rss.name + '订阅成功！')
         except:
-            list_rss = []
-            list_rss.append(rss)
-            RWlist.writeRss(list_rss)
-        if flag == 0:
-            # 加入订阅任务队列
-            TR.rss_trigger(times, rss)
-            logger.info('添加' + rss.name + '成功')
-            # 向用户发送成功信息
-            await session.send(rss.name + '订阅成功！')
+            await session.send('参数不对哟！')
+
     else:
         await session.send('你没有权限进行此操作！\n关于插件：http://ii1.fun/7byIVb')
 
