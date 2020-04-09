@@ -35,6 +35,8 @@ async def show_all(session: CommandSession):
                 await session.send(msg + '共' + str(flag) + '条订阅')
         except:
             await session.send('你还没有任何订阅！')
+    else:
+        await session.send('你没有权限进行此操作！\n关于插件：http://ii1.fun/7byIVb')
 
 
 # add.args_parser 装饰器将函数声明为 add 命令的参数解析器
