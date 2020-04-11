@@ -10,6 +10,9 @@ import config
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger # 间隔触发器
 from nonebot import on_command, scheduler
+import os, sys
+# 存储目录
+file_path = './data/'
 
 # on_command 装饰器将函数声明为一个命令处理器
 # 这里 uri 为命令的名字，同时允许使用别名
@@ -28,6 +31,7 @@ async def deldy(session: CommandSession):
                 if rss_.name == rss_name or rss_.url == rss_name:
                     list_rss.remove(rss_)
                     scheduler.remove_job(rss_.name)
+                    os.remove(file_path+rss_.name+".json")
                     await session.send('订阅 ' + rss_name + ' 删除成功！')
                     flag = flag + 1
             if flag <= 0:

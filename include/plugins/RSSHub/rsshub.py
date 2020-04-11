@@ -121,7 +121,14 @@ def checkimg(img_str:str,img_proxy:bool)->str:
                 img_str = re.sub(re.escape(img), '\n图片走丢啦！\n', img_str)
 
     #img_str = re.sub('<br><br>', '\n\n', img_str)
+    #去掉标签
     img_str=re.sub('<br>','\n',img_str)
+
+    #去掉 GitHub rss pre标签
+    img_str = re.sub('<pre.+?\'>', '', img_str)
+    img_str = re.sub('</pre>', '', img_str)
+
+    #去掉twitter p、a标签
     img_str = re.sub('<p>', '', img_str)
     img_str = re.sub('</p>', '', img_str)
     pattern = re.compile(r'<a.+?>.+?</a>')  # 查找链接

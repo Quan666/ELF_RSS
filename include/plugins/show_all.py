@@ -13,7 +13,7 @@ import nonebot
 
 # on_command 装饰器将函数声明为一个命令处理器
 # 这里 uri 为命令的名字，同时允许使用别名
-@on_command('show_all')
+@on_command('show_all', aliases=('showall','seeall'))
 async def show_all(session: CommandSession):
     #rss_name = session.get('show_all', prompt='查看所有订阅')
     # 权限判断

@@ -78,7 +78,7 @@ async def change(session: CommandSession):
                         print(e)
                     # 加入订阅任务队列
                     TR.rss_trigger(rss_tmp.time, rss_tmp)
-                    logger.info('添加' + name + '成功')
+                    logger.info('修改' + name + '成功')
                     await session.send('修改 ' + name + ' 订阅成功！')
                 except Exception as e:
                     await session.send('命令出错，修改失败！')
