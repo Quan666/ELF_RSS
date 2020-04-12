@@ -31,15 +31,19 @@ async def deldy(session: CommandSession):
                 if rss_.name == rss_name or rss_.url == rss_name:
                     list_rss.remove(rss_)
                     scheduler.remove_job(rss_.name)
-                    os.remove(file_path+rss_.name+".json")
+                    try:
+                        os.remove(file_path+rss_.name+".json")
+                    except BaseException as e:
+                        logger.info(e)
                     await session.send('订阅 ' + rss_name + ' 删除成功！')
                     flag = flag + 1
             if flag <= 0:
-                await session.send('订阅 ' + rss_name + ' 删除失败！')
+                await session.send('订阅 ' + rss_name + ' 删除失败！该订阅不存在！')
             else:
                 RWlist.writeRss(list_rss)
                 await session.send('删除 ' + str(flag) + ' 条订阅！')
-        except:
+        except BaseException as e:
+            #logger.info(e)
             await session.send('你还没有任何订阅！')
     else:
         await session.send('你没有权限进行此操作！\n关于插件：http://ii1.fun/7byIVb')

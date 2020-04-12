@@ -8,7 +8,7 @@ import logging
 from nonebot.log import logger
 import config
 import nonebot
-
+import re
 
 # on_command 装饰器将函数声明为一个命令处理器
 # 这里 uri 为命令的名字，同时允许使用别名
@@ -25,6 +25,9 @@ async def add(session: CommandSession):
         # print('\n\n\n'+str(len(dy)),dy[0]+'\n\n\n')
         try:
             name = dy[0]
+            name=re.sub(r'\?|\*|\:|\"|\<|\>|\\|/|\|', '_', name)
+            if name=='rss':
+                name = 'rss_'
             url = dy[1]
             user_id = dy[2]
             group_id = dy[3]
