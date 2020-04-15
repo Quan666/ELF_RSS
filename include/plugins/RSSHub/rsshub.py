@@ -10,7 +10,8 @@ import time
 from datetime import datetime,timezone,timedelta
 import config
 import difflib
-
+import logging
+from nonebot.log import logger
 # 存储目录
 file_path = './data/'
 #代理
@@ -48,11 +49,15 @@ def getRSS(url:str,name:str,img_proxy)->list:# 链接，订阅名
                 msg_list.append(msg)
             return msg_list
         else:
-            return ''
+            return []
     else:
         d = feedparser.parse(url)  # 获取xml
-        writeRss(d, name)  # 写入文件
-        return ''
+        try:
+            d.feed.title
+            writeRss(d, name)  # 写入文件
+        except:
+            logger.info('获取 '+name+' 订阅xml失败！！！请检查订阅地址是否可用！')
+        return []
 
 # 下载图片
 def dowimg(url:str,img_proxy:bool)->str:

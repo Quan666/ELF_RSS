@@ -12,10 +12,10 @@ import config
 import time
 # 检测某个rss更新 #任务体
 async def check_update(rss:RSS_class.rss):
+    logger.info('检查' + rss.name + '更新')
     list = rsshub.getRSS(rss.geturl(), rss.name,rss.img_proxy)
     bot = nonebot.get_bot()
     #await bot.send_msg(message_type=private,user_id=config.ROOTUSER, message='检查更新')
-    logger.info('检查'+rss.name+'更新')
     try:
         if rss.user_id:
             for id in rss.user_id:
