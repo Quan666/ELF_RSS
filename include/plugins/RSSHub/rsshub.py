@@ -88,7 +88,12 @@ def dowimg(url:str,img_proxy:bool)->str:
             filename = name + '.jpg'
         with codecs.open(img_path + filename, "wb") as dump_f:
             dump_f.write(pic.content)
-        return img_path + filename
+        imgs_name=img_path + filename
+        if len(imgs_name) > 0:
+            imgs_name = os.getcwd() + re.sub('\./', r'\\', imgs_name)
+            imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
+            imgs_name = re.sub(r'/', r'\\\\', imgs_name)
+        return imgs_name
     except requests.exceptions.ConnectionError:
         print('图片下载失败')
         return ''
@@ -102,6 +107,7 @@ def checkstr(rss_str:str,img_proxy:bool)->str:
     rss_str = re.sub('\n', '', rss_str)
 
     doc_rss = pq(rss_str)
+    rss_str = str(doc_rss)
     doc_a = doc_rss('a')
     a_str = ''
     for a in doc_a.items():
@@ -109,12 +115,7 @@ def checkstr(rss_str:str,img_proxy:bool)->str:
             rss_str = re.sub(re.escape(str(a)), str(a.text()) + ':' + (a.attr("href"))+'\n', rss_str)
         else:
             rss_str = re.sub(re.escape(str(a)), (a.attr("href"))+'\n', rss_str)
-    # 将<br>转化为换行
-    rss_str = re.sub('<br>', '\n', rss_str)
-    #rss_str = re.sub('<br><br>', '\n', rss_str)
-    rss_str = re.sub('<pre.+?\'>', '', rss_str)
-    rss_str = re.sub('<p>|</p>|<b>|</b>', '', rss_str)
-    '''
+
     # 处理图片
     doc_img = doc_rss('img')
     for img in doc_img.items():
@@ -122,50 +123,25 @@ def checkstr(rss_str:str,img_proxy:bool)->str:
         if len(img_path) > 0:
             rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
         else:
-            rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str)
+            rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
     # 处理视频
     doc_video = doc_rss('video')
     for video in doc_video.items():
         img_path = dowimg(video.attr("poster"), img_proxy)
         if len(img_path) > 0:
-            rss_str = re.sub(re.escape(str(video)),
-                         str(len(doc_video.items())) + '个视频，点击原链查看[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
+            rss_str = re.sub(re.escape(str(video)), '视频封面：[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
         else:
-            rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str)
-    '''
-    img_str=rss_str
-    # 图片处理
-    pattern = re.compile(r'<img.+?>')  # 查找链接
-    imgs = pattern.findall(img_str)# 带标签的图片list
-    if len(imgs)>0:
-        for img in imgs:
-            imgg = re.search(r'\"[a-zA-z]+://[^\s]*\"', img)
-            imgs_name=dowimg(imgg.group().strip('\"'),img_proxy)
-            if len(imgs_name)>0:
-                imgs_name=os.getcwd()+re.sub('\./', r'\\', imgs_name)
-                imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
-                imgs_name = re.sub(r'/', r'\\\\', imgs_name)
-                #print(img)
-                img_str = re.sub(re.escape(img), r'[CQ:image,file=file:///'+str(imgs_name)+']', img_str)
-            else:
-                img_str = re.sub(re.escape(img), '\n图片走丢啦！\n', img_str)
-    #下视频封面
-    pattern = re.compile(r'<video.+?><\/video>')  # 查找链接
-    imgs = pattern.findall(img_str)  # 带标签的图片list
-    if len(imgs)>0:
-        for img in imgs:
-            imgg = re.search(r'poster=\"[a-zA-z]+://[^\s]*\"', img)
-            imgs_name=dowimg(imgg.group().strip('poster=').strip('\"'),img_proxy)
-            if len(imgs_name)>0:
-                imgs_name = os.getcwd() + re.sub('\./', r'\\', imgs_name)
-                imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
-                imgs_name = re.sub(r'/', r'\\\\', imgs_name)
-                #print(imgs_name)
-                img_str = re.sub(re.escape(img), str(len(imgs))+'个视频，点击原链查看[CQ:image,file=file:///'+imgs_name+']', img_str)
-            else:
-                img_str = re.sub(re.escape(img), '\n图片走丢啦！\n', img_str)
+            rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
 
-    return img_str
+    # 处理一些标签
+    rss_str = re.sub('<br>|<br/>', '\n', rss_str)
+    rss_str = re.sub('<span>|</span>', '', rss_str)
+    rss_str = re.sub('<pre.+?\'>', '', rss_str)
+    rss_str = re.sub('</pre>', '', rss_str)
+    rss_str = re.sub('<p>|</p>|<b>|</b>', '', rss_str)
+
+    
+    return rss_str
 
 
 # 检查更新
