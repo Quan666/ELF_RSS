@@ -16,10 +16,10 @@ async def del_img(int):
     bot = nonebot.get_bot()
     try:
         shutil.rmtree(file_path)
-        await bot.send_msg(message_type='private', user_id=config.ROOTUSER, message='图片缓存已经删除！')
+        await bot.send_msg(message_type='private', user_id=config.ROOTUSER[0], message='图片缓存已经删除！')
     except Exception as e:
         print(e)
-        await bot.send_msg(message_type='private', user_id=config.ROOTUSER, message='图片缓存删除失败！')
+        await bot.send_msg(message_type='private', user_id=config.ROOTUSER[0], message='图片缓存删除失败！')
 
 def delcache_trigger():
     # 制作一个“time分钟/次”触发器

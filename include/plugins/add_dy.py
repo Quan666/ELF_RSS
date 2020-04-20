@@ -18,7 +18,7 @@ async def add(session: CommandSession):
     rss_dy_link = session.get('add', prompt='要订阅的信息不能为空呢，请重新输入\n输入样例：\ntest /twitter/user/xx 11,11 -1 5 1 0 \n订阅名 订阅地址 qq(,分隔，为空-1) 群号(,分隔，为空-1) 更新时间(分钟，可选) 1/0(代理，可选) 1/0(第三方订阅链接，可选) ')
     # 权限判断
     user_id = session.ctx['user_id']
-    if user_id == config.ROOTUSER:
+    if user_id in config.ROOTUSER:
         # 获取、处理信息
         dy = rss_dy_link.split(' ')
         # await session.send('')#反馈

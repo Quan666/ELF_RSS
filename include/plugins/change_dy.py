@@ -19,7 +19,7 @@ async def change(session: CommandSession):
     # 权限判断
     user_id = session.ctx['user_id']
     # print(type(user_id),type(config.ROOTUSER))
-    if user_id == config.ROOTUSER:
+    if int(user_id) in config.ROOTUSER:
 
         flag = 0
 

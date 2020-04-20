@@ -22,7 +22,7 @@ async def deldy(session: CommandSession):
     # 权限判断
     user_id = session.ctx['user_id']
     # print(type(user_id),type(config.ROOTUSER))
-    if user_id == config.ROOTUSER:
+    if int(user_id) in config.ROOTUSER:
         # 获取、处理信息
         flag = 0
         try:
