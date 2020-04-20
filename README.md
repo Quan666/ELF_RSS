@@ -119,7 +119,7 @@ SUPERUSERS = {123456789} # 管理员（你）的QQ号
 
 API_ROOT = 'http://127.0.0.1:5700'     #
 RSS_PROXY = '127.0.0.1:7890'    # 代理地址
-ROOTUSER=123456789    # 主人qq
+ROOTUSER=[123456]    # 管理员qq,支持多管理员，逗号分隔 如 [1,2,3] 注意，启动消息只发送给第一个管理员
 DEBUG = False
 RSSHUB='https://rsshub.app'     # rsshub订阅地址
 DELCACHE=3     #缓存删除间隔 天
