@@ -9,8 +9,10 @@ class rss:
     img_proxy=False
     sum=20 # 加载条数
     time=5 #更新频率 分钟/次
+    translation=False # 翻译
+    only_title=False #仅标题
     # 定义构造方法
-    def __init__(self,name:str, url:str, user_id:str, group_id:str,time=5,img_proxy=False,notrsshub=False):
+    def __init__(self,name:str, url:str, user_id:str, group_id:str,time=5,img_proxy=False,notrsshub=False,translation=False,only_title=False):
         self.name = name
         self.url = url
         if user_id!='-1' :
@@ -20,6 +22,8 @@ class rss:
         self.notrsshub=notrsshub
         self.time=time
         self.img_proxy=img_proxy
+        self.translation=translation
+        self.only_title=only_title
 
     def geturl(self)->str:
         if self.notrsshub :

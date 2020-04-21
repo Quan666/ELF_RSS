@@ -13,7 +13,7 @@ import time
 # 检测某个rss更新 #任务体
 async def check_update(rss:RSS_class.rss):
     logger.info('检查' + rss.name + '更新')
-    list = rsshub.getRSS(rss.geturl(), rss.name,rss.img_proxy)
+    list = rsshub.getRSS(rss)
     bot = nonebot.get_bot()
     try:
         if rss.user_id:

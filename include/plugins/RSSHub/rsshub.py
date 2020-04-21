@@ -13,6 +13,8 @@ import config
 import difflib
 import logging
 from nonebot.log import logger
+from . import RSS_class
+from googletrans import Translator
 # 存储目录
 file_path = './data/'
 #代理
@@ -21,26 +23,32 @@ proxies = {
     'http': 'http://' + proxy,
     'https': 'https://' + proxy,
 }
-def getRSS(url:str,name:str,img_proxy)->list:# 链接，订阅名
+def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
     # 检查是否存在rss记录
-    if os.path.isfile(file_path+name+'.json'):
-        d=feedparser.parse(url)#获取xml
+    if os.path.isfile(file_path+rss.name+'.json'):
+        d=feedparser.parse(rss.geturl())#获取xml
         #print(d.feed.title)       # 通过属性访问
-        change = checkUpdate(d,readRss(name))# 检查更新
+        change = checkUpdate(d,readRss(rss.name))# 检查更新
         if len(change)>0 :
-            writeRss(d,name)# 写入文件
+            writeRss(d,rss.name)# 写入文件
             msg_list=[]
             for item in change:
                 msg='【'+d.feed.title+'】更新了!\n----------------------\n'
-                #处理item['summary']只有图片的情况
-                text = re.sub('<video.+?><\/video>|<img.+?>', '', item['summary'])
-                text = re.sub('<br>','',text)
-                Similarity=difflib.SequenceMatcher(None, text, item['title'])
-                #print(Similarity.quick_ratio())
-                if Similarity.quick_ratio()<=0.1:# 标题正文相似度
-                    msg = msg+'标题：'+item['title']+'\n'
-                msg = msg+'内容：'+checkstr(item['summary'],img_proxy)+'\n'
+
+                if not rss.only_title :
+                    # 处理item['summary']只有图片的情况
+                    text = re.sub('<video.+?><\/video>|<img.+?>', '', item['summary'])
+                    text = re.sub('<br>', '', text)
+                    Similarity = difflib.SequenceMatcher(None, text, item['title'])
+                    # print(Similarity.quick_ratio())
+                    if Similarity.quick_ratio() <= 0.1:  # 标题正文相似度
+                        msg = msg + '标题：' + item['title'] + '\n'
+                    msg = msg + '内容：' + checkstr(item['summary'], rss.img_proxy,rss.translation) + '\n'
+                else:
+                    msg = msg + '标题：' + item['title'] + '\n'
+
                 msg = msg+'原链接：'+item['link']+'\n'
+
                 try:
                     loc_time = time.mktime(item['published_parsed'])
                     msg = msg + '日期：' + time.strftime("%m月%d日 %H:%M:%S", time.localtime(loc_time + 28800.0))
@@ -52,12 +60,12 @@ def getRSS(url:str,name:str,img_proxy)->list:# 链接，订阅名
         else:
             return []
     else:
-        d = feedparser.parse(url)  # 获取xml
+        d = feedparser.parse(rss.geturl())  # 获取xml
         try:
             d.feed.title
-            writeRss(d, name)  # 写入文件
+            writeRss(d, rss.name)  # 写入文件
         except:
-            logger.info('获取 '+name+' 订阅xml失败！！！请检查订阅地址是否可用！')
+            logger.info('获取 '+rss.name+' 订阅xml失败！！！请检查订阅地址是否可用！')
         return []
 
 # 下载图片
@@ -100,21 +108,30 @@ def dowimg(url:str,img_proxy:bool)->str:
 
 
 #处理正文
-def checkstr(rss_str:str,img_proxy:bool)->str:
+def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
 
-    # <a> 标签处理
     # 去掉换行
     rss_str = re.sub('\n', '', rss_str)
 
     doc_rss = pq(rss_str)
     rss_str = str(doc_rss)
+
+    # 处理一些标签
+    rss_str = re.sub('<br/><br/>|<br><br>|<br>|<br/>', '\n', rss_str)
+    rss_str = re.sub('<span>|</span>', '', rss_str)
+    rss_str = re.sub('<pre.+?\">|</pre>', '', rss_str)
+    rss_str = re.sub('<p>|</p>|<b>|</b>', '', rss_str)
+
+    rss_str_tl = rss_str # 翻译用副本
+    # <a> 标签处理
     doc_a = doc_rss('a')
     a_str = ''
     for a in doc_a.items():
-        if str(a.text())!=a.attr("href"):
-            rss_str = re.sub(re.escape(str(a)), str(a.text()) + ':' + (a.attr("href"))+'\n', rss_str)
+        if str(a.text()) != a.attr("href"):
+            rss_str = re.sub(re.escape(str(a)), str(a.text()) + ':' + (a.attr("href")) + '\n', rss_str)
         else:
-            rss_str = re.sub(re.escape(str(a)), (a.attr("href"))+'\n', rss_str)
+            rss_str = re.sub(re.escape(str(a)), (a.attr("href")) + '\n', rss_str)
+        rss_str_tl = re.sub(re.escape(str(a)), '', rss_str_tl)
 
     # 处理图片
     doc_img = doc_rss('img')
@@ -124,7 +141,8 @@ def checkstr(rss_str:str,img_proxy:bool)->str:
             rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
         else:
             rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
-    # 处理视频
+        rss_str_tl = re.sub(re.escape(str(img)), '', rss_str_tl)
+        # 处理视频
     doc_video = doc_rss('video')
     for video in doc_video.items():
         img_path = dowimg(video.attr("poster"), img_proxy)
@@ -132,16 +150,18 @@ def checkstr(rss_str:str,img_proxy:bool)->str:
             rss_str = re.sub(re.escape(str(video)), '视频封面：[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
         else:
             rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
-
-    # 处理一些标签
-    rss_str = re.sub('<br>|<br/>', '\n', rss_str)
-    rss_str = re.sub('<span>|</span>', '', rss_str)
-    rss_str = re.sub('<pre.+?\'>', '', rss_str)
-    rss_str = re.sub('</pre>', '', rss_str)
-    rss_str = re.sub('<p>|</p>|<b>|</b>', '', rss_str)
-
-    
-    return rss_str
+        rss_str_tl = re.sub(re.escape(str(video)), '', rss_str_tl)
+        # 翻译
+        text = ''
+        if translation:
+            translator = Translator()
+            # rss_str_tl = re.sub(r'\n', ' ', rss_str_tl)
+            try:
+                text = '\n翻译：\n' + translator.translate(re.escape(rss_str_tl), dest='zh-CN').text
+                text = re.sub(r'\\', '', text)
+            except:
+                text = '\n翻译失败！请联系管理员！\n'
+    return rss_str+text
 
 
 # 检查更新

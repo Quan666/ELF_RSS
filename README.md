@@ -18,7 +18,7 @@ rss订阅插件始终没找到个合适自己的，就自己写了一个。
 ### 添加订阅
 向机器人发送 
 ```python
-add mytwitter /twitter/user/Huagequan 123456,23445 -1 5 1 0
+add mytwitter /twitter/user/Huagequan 123456,23445 -1 5 1 0 0 0
 
 # 以下为注释
 
@@ -39,6 +39,12 @@ add mytwitter /twitter/user/Huagequan 123456,23445 -1 5 1 0
 # 1 是否开启代理，有两种参数0/1 1开启，0关闭，设置此项为一必须设置好代理，此项可选，默认为0不开启
 
 # 0 是否第三方订阅，即非rsshub订阅源时必须设为1  可选，默认为0关闭
+
+# 0 翻译，Google翻译，效果一般  可选，默认为0关闭
+
+# 0 仅输出标题，在正文较长的情况下建议启用  可选，默认为0关闭
+
+# 可选参数建议添加订阅成功后通过change修改
 ```
 机器人回复成功则添加成功。
 
@@ -68,10 +74,10 @@ test为订阅名或者订阅链接
 订阅名 修改项=,属性 
 如:
 test dyqq=,xx dsf=0
-对应参数： 订阅地址-url，订阅QQ-dyqq，订阅群-dyqun，更新频率-uptime，代理-proxy，第三方-dsf
+对应参数： 订阅地址-url，订阅QQ-dyqq，订阅群-dyqun，更新频率-uptime，代理-proxy，第三方-dsf，翻译-tl，仅title-ot
 
 注：
-代理、第三方属性值为1/0
+代理、第三方、翻译、仅title属性值为1/0
 qq、群号前加英文逗号表示追加
 ```
 test为订阅名
@@ -94,6 +100,7 @@ pip install nonebot
 pip install feedparser
 pip install "nonebot[scheduler]"
 pip install PyQuery
+pip install googletrans
 
 # 若有遗漏自己使用pip install xx 的格式安装
 # 如果pip安装不了，将pip换成pip3再全部重新安装

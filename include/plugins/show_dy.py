@@ -29,7 +29,8 @@ async def show(session: CommandSession):
                 if rss_.name == rss_name or rss_.url == rss_name:
                     await session.send(
                         '名称：' + rss_.name + '\n订阅地址：' + rss_.url + '\n订阅QQ：' + str(rss_.user_id) + '\n订阅群：' + str(
-                            rss_.group_id) + '\n更新频率：' + str(rss_.time) + '分钟/次\n代理：' + str(rss_.img_proxy) + '\n第三方：' + str(rss_.notrsshub))
+                            rss_.group_id) + '\n更新频率：' + str(rss_.time) + '分钟/次\n代理：' + str(rss_.img_proxy) + '\n第三方：' + str(rss_.notrsshub)
+                                + '\n翻译：' + str(rss_.translation) + '\n仅标题：' + str(rss_.only_title))
                     flag = flag + 1
             if flag <= 0:
                 await session.send('没有找到 ' + rss_name + ' 的订阅哟！')

@@ -15,7 +15,7 @@ from nonebot import on_command, scheduler
 @on_command('change')
 async def change(session: CommandSession):
     change_info = session.get('change',
-                           prompt='输入要修改的订阅的 \n订阅名 修改项=,属性 \n如:\n 订阅 dyqq=,xx dsf=0\n对应参数： 订阅地址-url，订阅QQ-dyqq，订阅群-dyqun，更新频率-uptime，代理-proxy，第三方-dsf\n\n注：\n代理、第三方属性值为1/0\nqq、群号前加英文逗号表示追加')
+                           prompt='输入要修改的订阅的 \n订阅名 修改项=,属性 \n如:\n 订阅 dyqq=,xx dsf=0\n对应参数： 订阅地址-url，订阅QQ-dyqq，订阅群-dyqun，更新频率-uptime，代理-proxy，第三方-dsf，翻译-tl，仅title-ot\n\n注：\n代理、第三方、翻译、仅title属性值为1/0\nqq、群号前加英文逗号表示追加')
     # 权限判断
     user_id = session.ctx['user_id']
     # print(type(user_id),type(config.ROOTUSER))
@@ -66,9 +66,13 @@ async def change(session: CommandSession):
                             rss_tmp.time = int(info_this[1])
                         if info_this[0] == 'proxy':
                             rss_tmp.img_proxy = bool(int(info_this[1]))
-                            print(bool(info_this[1]))
+                            #print(bool(info_this[1]))
                         if info_this[0] == 'dsf':
                             rss_tmp.notrsshub = bool(int(info_this[1]))
+                        if info_this[0] == 'tl':
+                            rss_tmp.translation = bool(int(info_this[1]))
+                        if info_this[0] == 'ot':
+                            rss_tmp.only_title = bool(int(info_this[1]))
                     list_rss.remove(rss_a)
                     list_rss.append(rss_tmp)
                     RWlist.writeRss(list_rss)
