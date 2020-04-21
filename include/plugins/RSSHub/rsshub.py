@@ -151,16 +151,16 @@ def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
         else:
             rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
         rss_str_tl = re.sub(re.escape(str(video)), '', rss_str_tl)
-        # 翻译
-        text = ''
-        if translation:
-            translator = Translator()
-            # rss_str_tl = re.sub(r'\n', ' ', rss_str_tl)
-            try:
-                text = '\n翻译：\n' + translator.translate(re.escape(rss_str_tl), dest='zh-CN').text
-                text = re.sub(r'\\', '', text)
-            except:
-                text = '\n翻译失败！请联系管理员！\n'
+    # 翻译
+    text = ''
+    if translation:
+        translator = Translator()
+        # rss_str_tl = re.sub(r'\n', ' ', rss_str_tl)
+        try:
+            text = '\n翻译：\n' + translator.translate(re.escape(rss_str_tl), dest='zh-CN').text
+            text = re.sub(r'\\', '', text)
+        except:
+            text = '\n翻译失败！请联系管理员！\n'
     return rss_str+text
 
 
