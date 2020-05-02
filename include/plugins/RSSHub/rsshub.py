@@ -121,6 +121,7 @@ def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
     rss_str = re.sub('<span>|</span>', '', rss_str)
     rss_str = re.sub('<pre.+?\">|</pre>', '', rss_str)
     rss_str = re.sub('<p>|</p>|<b>|</b>', '', rss_str)
+    rss_str = re.sub('<div>|</div>|<strong>|</strong>', '', rss_str)
 
     rss_str_tl = rss_str # 翻译用副本
     # <a> 标签处理
@@ -165,28 +166,62 @@ def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
 
 
 # 检查更新
-def checkUpdate(new,old)->list:
-    a=new.entries
-    b=old['entries']
-    c=[];
+def checkUpdate(new, old) -> list:
+    a = new.entries
+    b = old['entries']
+    c = [];
+    # 防止 rss 过多
+    limt = 0
+    for i in a:
+        if limt >= config.LIMT:
+            a.remove(i)
+        limt=limt+1
 
     for i in a:
         count = 0;
+        # print(i['link'])
         for j in b:
-            if i['link'] == j['link']:
-                count=1
-        if count==0 :
-            c.append(i)
+            if i['id'] == j['id']:
+                count = 1
+        if count == 0:
+            c.insert(0, i)
+    for i in c:
+        count = 0;
+        # print(i['link'])
+        for j in b:
+            if i['id'] == j['id']:
+                count = 1
+        if count == 1:
+            c.remove(i)
     return c
+
+
 # 读取记录
 def readRss(name):
-    with codecs.open(file_path+name+".json", 'r','utf-8') as load_f:
+    with codecs.open(file_path + name + ".json", 'r', 'utf-8') as load_f:
         load_dict = json.load(load_f)
     return load_dict
+
+
 # 写入记录
-def writeRss(d,name):
+def writeRss(new, name):
+    try:
+        old = readRss(name)
+        print(len(old['entries']))
+        change = checkUpdate(new, old)
+
+        for tmp in change:
+            old['entries'].insert(0, tmp)
+        count = 0;
+        print(len(old['entries']))
+        for i in old['entries']:
+            count = count + 1
+            if count > config.LIMT:
+                old['entries'].remove(i)
+    except:
+        old = new
+
     if not os.path.isdir(file_path):
         os.makedirs(file_path)
-    with codecs.open(file_path+name+".json", "w",'utf-8') as dump_f:
-        dump_f.write(json.dumps(d, sort_keys=True, indent=4, ensure_ascii=False))
-
+    with codecs.open(file_path + name + ".json", "w", 'utf-8') as dump_f:
+        dump_f.write(json.dumps(old, sort_keys=True, indent=4, ensure_ascii=False))

@@ -15,8 +15,9 @@ ROOTUSER=[123456]    # 管理员qq,支持多管理员，逗号分隔 如 [1,2,3]
 DEBUG = False
 RSSHUB='https://rsshub.app'     # rsshub订阅地址
 DELCACHE=3     #缓存删除间隔 天
+LIMT=50 # 缓存rss条数
 
 # MYELF博客地址 https://myelf.club
 # 出现问题请在 GitHub 上提 issues
 # 项目地址 https://github.com/Quan666/ELF_RSS
-# v1.2.1
+# v1.2.2
