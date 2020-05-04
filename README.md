@@ -96,7 +96,7 @@ test为订阅名
 
 ```python
 
-pip3 install -r requirement.txt
+pip3 install -r requirements.txt
 
 #如果安装失败请用以下命令安装
 #pip3 install requests

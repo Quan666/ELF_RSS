@@ -20,4 +20,4 @@ LIMT=50 # 缓存rss条数
 # MYELF博客地址 https://myelf.club
 # 出现问题请在 GitHub 上提 issues
 # 项目地址 https://github.com/Quan666/ELF_RSS
-# v1.2.2
+# v1.2.3

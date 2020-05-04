@@ -15,6 +15,7 @@ import logging
 from nonebot.log import logger
 from . import RSS_class
 from googletrans import Translator
+import emoji
 # 存储目录
 file_path = './data/'
 #代理
@@ -158,10 +159,12 @@ def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
         translator = Translator()
         # rss_str_tl = re.sub(r'\n', ' ', rss_str_tl)
         try:
-            text = '\n翻译：\n' + translator.translate(re.escape(rss_str_tl), dest='zh-CN').text
+            text=emoji.demojize(rss_str_tl)
+            text = re.sub(r':[A-Za-z_]*:', ' ', text)
+            text = '\n翻译：\n' + translator.translate(re.escape(text), dest='zh-CN').text
             text = re.sub(r'\\', '', text)
-        except:
-            text = '\n翻译失败！请联系管理员！\n'
+        except Exception as e:
+            text = '\n翻译失败！'+str(e)+'\n'
     return rss_str+text
 
 
@@ -170,12 +173,11 @@ def checkUpdate(new, old) -> list:
     a = new.entries
     b = old['entries']
     c = [];
-    # 防止 rss 过多
-    limt = 0
-    for i in a:
-        if limt >= config.LIMT:
-            a.remove(i)
-        limt=limt+1
+    # 防止 rss 超过设置的缓存条数
+    if len(a)>= config.LIMT:
+        LIMT=len(a) + config.LIMT
+    else:
+        LIMT=config.LIMT
 
     for i in a:
         count = 0;
@@ -205,6 +207,11 @@ def readRss(name):
 
 # 写入记录
 def writeRss(new, name):
+    # 防止 rss 超过设置的缓存条数
+    if len(new.entries) >= config.LIMT:
+        LIMT = len(new.entries) + config.LIMT
+    else:
+        LIMT = config.LIMT
     try:
         old = readRss(name)
         print(len(old['entries']))
@@ -216,7 +223,7 @@ def writeRss(new, name):
         print(len(old['entries']))
         for i in old['entries']:
             count = count + 1
-            if count > config.LIMT:
+            if count > LIMT:
                 old['entries'].remove(i)
     except:
         old = new
