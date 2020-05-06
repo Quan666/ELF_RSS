@@ -98,15 +98,6 @@ test为订阅名
 
 pip3 install -r requirements.txt
 
-#如果安装失败请用以下命令安装
-#pip3 install requests
-#pip3 install nonebot
-#pip3 install feedparser
-#pip3 install "nonebot[scheduler]"
-#pip3 install PyQuery
-#pip3 install googletrans
-
-# 若有遗漏自己使用pip3 install xx 的格式安装
 # 如果pip3安装不了，将pip换成pip再全部重新安装
 # 建议使用pip3
 ```

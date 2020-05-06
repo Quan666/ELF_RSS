@@ -79,10 +79,31 @@ def dowimg(url:str,img_proxy:bool)->str:
     file_suffix = os.path.splitext(url)  # 返回列表[路径/文件名，文件后缀]
     name = str(uuid.uuid4())
     try:
-        if img_proxy :
-            pic = requests.get(url, timeout=5000, proxies=proxies)
+        if config.CLOSE_PIXIV_CAT and url.find('pixiv.cat') >= 0:
+            img_proxy = False
+            headers = {'referer': config.PIXIV_REFERER}
+            img_id = re.sub('https://pixiv.cat/', '', url)
+            img_id = img_id[:-4]
+            info_list = img_id.split('-')
+            req_json = requests.get('https://api.imjad.cn/pixiv/v1/?type=illust&id=' + info_list[0]).json()
+            if len(info_list) >= 2:
+                url = req_json['response'][0]['metadata']['pages'][int(info_list[1]) - 1]['image_urls']['large']
+            else:
+                url = req_json['response'][0]['image_urls']['large']
+
+            # 使用第三方反代服务器
+            url = re.sub('i.pximg.net', config.PIXIV_PROXY, url)
+
+            if img_proxy:
+                pic = requests.get(url, timeout=5000, proxies=proxies, headers=headers)
+            else:
+                pic = requests.get(url, timeout=5000, headers=headers)
         else:
-            pic = requests.get(url, timeout=5000)
+            if img_proxy:
+                pic = requests.get(url, timeout=5000, proxies=proxies)
+            else:
+                pic = requests.get(url, timeout=5000)
+
 
         #大小控制，图片压缩
         #print(len(pic.content)/1024)
