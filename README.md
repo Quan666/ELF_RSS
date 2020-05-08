@@ -14,9 +14,9 @@ rss订阅插件始终没找到个合适自己的，就自己写了一个。
 完美兼容酷Q Pro，理论上兼容酷Q Air，但会无法发送图片。
 
 ### 效果预览
-![](https://pic-1255544886.cos.ap-chongqing.myqcloud.com/blog/elfrss_1.png)
-![](https://pic-1255544886.cos.ap-chongqing.myqcloud.com/blog/elfrss_2.png)
-![](https://pic-1255544886.cos.ap-chongqing.myqcloud.com/blog/elfrss_3.png)
+![](https://cdn.jsdelivr.net/gh/Quan666/CDN@master/pic/elfrss_1.png)
+![](https://cdn.jsdelivr.net/gh/Quan666/CDN@master/pic/elfrss_2.png)
+![](https://cdn.jsdelivr.net/gh/Quan666/CDN@master/pic/elfrss_3.png)
 
 ## 使用介绍
 非私聊情况下需要在命令前加上机器人昵称，如ELF
