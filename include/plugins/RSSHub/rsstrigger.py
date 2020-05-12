@@ -12,7 +12,7 @@ import config
 import time
 # 检测某个rss更新 #任务体
 async def check_update(rss:RSS_class.rss):
-    logger.info('检查' + rss.name + '更新')
+    logger.info('检查 ' + rss.name + ' 更新')
     list = rsshub.getRSS(rss)
     bot = nonebot.get_bot()
     try:
@@ -22,8 +22,8 @@ async def check_update(rss:RSS_class.rss):
                     for msg in list:
                         try:
                             await bot.send_msg(message_type='private', user_id=id, message=str(msg))
-                        except:
-                            logger.info('QQ号不合法或者不是好友')
+                        except Exception as e:
+                            logger.error('QQ号不合法或者不是好友 E:'+str(e))
 
         if rss.group_id:
             for id in rss.group_id:
@@ -31,10 +31,10 @@ async def check_update(rss:RSS_class.rss):
                     for msg in list:
                         try:
                             await bot.send_msg(message_type='group', group_id=id, message=str(msg))
-                        except:
-                            logger.info('群号不合法或者未加群')
-    except:
-        logger.info('发生错误 rsstrigger')
+                        except Exception as e:
+                            logger.info('群号不合法或者未加群 E:'+str(e))
+    except Exception as e:
+        logger.info('发生错误 rsstrigger E:'+str(e))
 
 
 

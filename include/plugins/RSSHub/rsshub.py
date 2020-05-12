@@ -24,56 +24,72 @@ proxies = {
     'http': 'http://' + proxy,
     'https': 'https://' + proxy,
 }
+status_code=[200,301,302]
 def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
-    # 检查是否存在rss记录
-    if os.path.isfile(file_path+rss.name+'.json'):
-        d=feedparser.parse(rss.geturl())#获取xml
-        #print(d.feed.title)       # 通过属性访问
-        change = checkUpdate(d,readRss(rss.name))# 检查更新
-        if len(change)>0 :
-            writeRss(d,rss.name)# 写入文件
-            msg_list=[]
-            for item in change:
-                msg='【'+d.feed.title+'】更新了!\n----------------------\n'
+    try:
+        # 检查是否存在rss记录
+        if os.path.isfile(file_path + rss.name + '.json'):
+            d = feedparser.parse(rss.geturl())  # 获取xml
+            if d.status not in status_code and not rss.notrsshub and config.RSSHUB_backup:
+                logger.error('RSSHub :' + config.RSSHUB + ' 访问失败 ！使用备用RSSHub 地址！')
+                for rsshub_url in config.RSSHUB_backup:
+                    d = feedparser.parse(rsshub_url + rss.url)  # 获取xml
+                    if d.status in status_code:
+                        logger.info(rsshub_url + ' 抓取成功！')
+                        break;
+            if d.status not in status_code :
+                logger.error(rss.name + ' 抓取失败，请检查订阅地址是否正常！')
+            change = checkUpdate(d, readRss(rss.name))  # 检查更新
+            if len(change) > 0:
+                writeRss(d, rss.name)  # 写入文件
+                msg_list = []
+                for item in change:
+                    msg = '【' + d.feed.title + '】更新了!\n----------------------\n'
 
-                if not rss.only_title :
-                    # 处理item['summary']只有图片的情况
-                    text = re.sub('<video.+?><\/video>|<img.+?>', '', item['summary'])
-                    text = re.sub('<br>', '', text)
-                    Similarity = difflib.SequenceMatcher(None, text, item['title'])
-                    # print(Similarity.quick_ratio())
-                    if Similarity.quick_ratio() <= 0.1:  # 标题正文相似度
+                    if not rss.only_title:
+                        # 处理item['summary']只有图片的情况
+                        text = re.sub('<video.+?><\/video>|<img.+?>', '', item['summary'])
+                        text = re.sub('<br>', '', text)
+                        Similarity = difflib.SequenceMatcher(None, text, item['title'])
+                        # print(Similarity.quick_ratio())
+                        if Similarity.quick_ratio() <= 0.1:  # 标题正文相似度
+                            msg = msg + '标题：' + item['title'] + '\n'
+                        msg = msg + '内容：' + checkstr(item['summary'], rss.img_proxy, rss.translation) + '\n'
+                    else:
                         msg = msg + '标题：' + item['title'] + '\n'
-                    msg = msg + '内容：' + checkstr(item['summary'], rss.img_proxy,rss.translation) + '\n'
-                else:
-                    msg = msg + '标题：' + item['title'] + '\n'
 
-                msg = msg+'原链接：'+item['link']+'\n'
+                    msg = msg + '原链接：' + item['link'] + '\n'
 
-                try:
-                    loc_time = time.mktime(item['published_parsed'])
-                    msg = msg + '日期：' + time.strftime("%m月%d日 %H:%M:%S", time.localtime(loc_time + 28800.0))
-                except BaseException:
-                    msg = msg + '日期：' + time.strftime("%m月%d日 %H:%M:%S", time.localtime())
-                #print(msg+'\n\n\n')
-                msg_list.append(msg)
-            return msg_list
+                    try:
+                        loc_time = time.mktime(item['published_parsed'])
+                        msg = msg + '日期：' + time.strftime("%m{}%d{} %H:%M:%S",
+                                                          time.localtime(loc_time + 28800.0)).format('月', '日')
+                    except BaseException:
+                        msg = msg + '日期：' + time.strftime("%m{}%d{} %H:%M:%S", time.localtime()).format('月', '日')
+                    # print(msg+'\n\n\n')
+                    msg_list.append(msg)
+                return msg_list
+            else:
+                return []
         else:
+            d = feedparser.parse(rss.geturl())  # 获取xml
+            try:
+                if d.status in status_code:
+                    writeRss(d, rss.name)  # 写入文件
+                else:
+                    logger.error('获取 ' + rss.name + ' 订阅xml失败！！！请检查订阅地址是否可用！')
+            except  Exception as e:
+                logger.error('出现异常，获取 ' + rss.name + ' 订阅xml失败！！！请检查订阅地址是否可用！  E:'+str(e))
             return []
-    else:
-        d = feedparser.parse(rss.geturl())  # 获取xml
-        try:
-            d.feed.title
-            writeRss(d, rss.name)  # 写入文件
-        except:
-            logger.info('获取 '+rss.name+' 订阅xml失败！！！请检查订阅地址是否可用！')
+    except Exception as e:
+        logger.error(rss.name + ' 抓取失败，请检查订阅地址是否正确！ E:'+str(e))
         return []
 
 # 下载图片
 def dowimg(url:str,img_proxy:bool)->str:
     img_path = file_path+'imgs'+ os.sep
     if not os.path.isdir(img_path):
-        print(img_path+'文件夹不存在，已重新创建')
+        logger.info(img_path+'文件夹不存在，已重新创建')
         os.makedirs(img_path)  # 创建目录
 
     file_suffix = os.path.splitext(url)  # 返回列表[路径/文件名，文件后缀]
@@ -118,14 +134,17 @@ def dowimg(url:str,img_proxy:bool)->str:
             filename = name + '.jpg'
         with codecs.open(img_path + filename, "wb") as dump_f:
             dump_f.write(pic.content)
-        imgs_name=img_path + filename
-        if len(imgs_name) > 0:
-            imgs_name = os.getcwd() + re.sub('\./', r'\\', imgs_name)
-            imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
-            imgs_name = re.sub(r'/', r'\\\\', imgs_name)
-        return imgs_name
-    except requests.exceptions.ConnectionError:
-        print('图片下载失败')
+        if config.IsLinux:
+            return filename
+        else:
+            imgs_name = img_path + filename
+            if len(imgs_name) > 0:
+                imgs_name = os.getcwd() + re.sub('\./', r'\\', imgs_name)
+                imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
+                imgs_name = re.sub(r'/', r'\\\\', imgs_name)
+            return imgs_name
+    except requests.exceptions.ConnectionError as e:
+        logger.error('图片下载失败 E:'+str(e))
         return ''
 
 
@@ -156,24 +175,48 @@ def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
             rss_str = re.sub(re.escape(str(a)), (a.attr("href")) + '\n', rss_str)
         rss_str_tl = re.sub(re.escape(str(a)), '', rss_str_tl)
 
+
     # 处理图片
     doc_img = doc_rss('img')
     for img in doc_img.items():
-        img_path = dowimg(img.attr("src"), img_proxy)
-        if len(img_path) > 0:
-            rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
-        else:
-            rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
         rss_str_tl = re.sub(re.escape(str(img)), '', rss_str_tl)
-        # 处理视频
+        img_path = dowimg(img.attr("src"), img_proxy)
+        if not config.IsAir:
+            if len(img_path) > 0:
+                if config.IsLinux:
+                    rss_str = re.sub(re.escape(str(img)),
+                                     r'[CQ:image,file=file:///' + re.escape(config.Linux_Path)+re.escape('data\\imgs\\') + str(
+                                         img_path) + ']',
+                                     rss_str)
+                else:
+                    rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
+            else:
+                rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
+        else:
+            rss_str = re.sub(re.escape(str(img)), r'图片链接：' + img.attr("src") + '\n', rss_str, re.S)
+
+    # 处理视频
     doc_video = doc_rss('video')
     for video in doc_video.items():
-        img_path = dowimg(video.attr("poster"), img_proxy)
-        if len(img_path) > 0:
-            rss_str = re.sub(re.escape(str(video)), '视频封面：[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
-        else:
-            rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
         rss_str_tl = re.sub(re.escape(str(video)), '', rss_str_tl)
+        if not config.IsAir:
+            img_path = dowimg(video.attr("poster"), img_proxy)
+            if len(img_path) > 0:
+                if config.IsLinux:
+                    rss_str = re.sub(re.escape(str(video)),
+                                     r'视频封面：[CQ:image,file=file:///' + re.escape(config.Linux_Path) + re.escape('data\\imgs\\') + str(
+                                         img_path) + ']',
+                                     rss_str)
+                else:
+                    rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
+                                     rss_str)
+            else:
+                rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
+        else:
+            rss_str = re.sub(re.escape(str(video)), r'视频封面：' + video.attr("poster") + '\n', rss_str)
+
+
+
     # 翻译
     text = ''
     if translation:
