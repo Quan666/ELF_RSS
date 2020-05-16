@@ -2,6 +2,8 @@
 import feedparser
 import json
 import codecs
+
+import nonebot
 from pyquery import PyQuery as pq
 import re
 import os.path
@@ -25,7 +27,7 @@ proxies = {
     'https': 'https://' + proxy,
 }
 status_code=[200,301,302]
-def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
+async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
     try:
         # 检查是否存在rss记录
         if os.path.isfile(file_path + rss.name + '.json'):
@@ -43,6 +45,7 @@ def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
             if len(change) > 0:
                 writeRss(d, rss.name)  # 写入文件
                 msg_list = []
+                bot = nonebot.get_bot()
                 for item in change:
                     msg = '【' + d.feed.title + '】更新了!\n----------------------\n'
 
@@ -57,8 +60,9 @@ def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
                         msg = msg + '内容：' + checkstr(item['summary'], rss.img_proxy, rss.translation) + '\n'
                     else:
                         msg = msg + '标题：' + item['title'] + '\n'
-
-                    msg = msg + '原链接：' + item['link'] + '\n'
+                    str_link = re.sub('member_illust.php\?mode=medium&illust_id=', 'i/', item['link'])
+                    msg = msg + '原链接：' + str_link + '\n'
+                    #msg = msg + '原链接：' + item['link'] + '\n'
 
                     try:
                         loc_time = time.mktime(item['published_parsed'])
@@ -67,7 +71,8 @@ def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
                     except BaseException:
                         msg = msg + '日期：' + time.strftime("%m{}%d{} %H:%M:%S", time.localtime()).format('月', '日')
                     # print(msg+'\n\n\n')
-                    msg_list.append(msg)
+                    await sendMsg(rss,msg,bot)
+                    #msg_list.append(msg)
                 return msg_list
             else:
                 return []
@@ -84,6 +89,27 @@ def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
     except Exception as e:
         logger.error(rss.name + ' 抓取失败，请检查订阅地址是否正确！ E:'+str(e))
         return []
+
+async def sendMsg(rss,msg,bot):
+    try:
+        if len(msg) <= 0:
+            return
+        if rss.user_id:
+            for id in rss.user_id:
+                try:
+                    await bot.send_msg(message_type='private', user_id=id, message=str(msg))
+                except Exception as e:
+                    logger.error('QQ号不合法或者不是好友 E:' + str(e))
+
+        if rss.group_id:
+            for id in rss.group_id:
+                try:
+                    await bot.send_msg(message_type='group', group_id=id, message=str(msg))
+                except Exception as e:
+                    logger.info('群号不合法或者未加群 E:' + str(e))
+
+    except Exception as e:
+        logger.info('发生错误 消息发送失败 E:'+str(e))
 
 # 下载图片
 def dowimg(url:str,img_proxy:bool)->str:

@@ -13,30 +13,7 @@ import time
 # 检测某个rss更新 #任务体
 async def check_update(rss:RSS_class.rss):
     logger.info('检查 ' + rss.name + ' 更新')
-    list = rsshub.getRSS(rss)
-    bot = nonebot.get_bot()
-    try:
-        if rss.user_id:
-            for id in rss.user_id:
-                if len(list) > 0:
-                    for msg in list:
-                        try:
-                            await bot.send_msg(message_type='private', user_id=id, message=str(msg))
-                        except Exception as e:
-                            logger.error('QQ号不合法或者不是好友 E:'+str(e))
-
-        if rss.group_id:
-            for id in rss.group_id:
-                if len(list) > 0:
-                    for msg in list:
-                        try:
-                            await bot.send_msg(message_type='group', group_id=id, message=str(msg))
-                        except Exception as e:
-                            logger.info('群号不合法或者未加群 E:'+str(e))
-    except Exception as e:
-        logger.info('发生错误 rsstrigger E:'+str(e))
-
-
+    await rsshub.getRSS(rss)
 
 def rss_trigger(times:int,rss:RSS_class.rss):
     # 制作一个“time分钟/次”触发器
@@ -44,6 +21,7 @@ def rss_trigger(times:int,rss:RSS_class.rss):
         minutes=times,
         jitter=10
     )
+    job_defaults = {'max_instances': 10}
     # 添加任务
     scheduler.add_job(
         func=check_update,  # 要添加任务的函数，不要带参数
@@ -53,4 +31,5 @@ def rss_trigger(times:int,rss:RSS_class.rss):
         # kwargs=None,
         misfire_grace_time=60,  # 允许的误差时间，建议不要省略
         # jobstore='default',  # 任务储存库，在下一小节中说明
+        job_defaults=job_defaults,
     )
