@@ -1,7 +1,0 @@
-googletrans==2.4.0
-nonebot==1.5.0
-requests==2.21.0
-emoji==0.5.4
-feedparser==5.2.1
-apscheduler==3.6.3
-pyquery==1.4.1
