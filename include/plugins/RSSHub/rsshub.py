@@ -291,8 +291,13 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
 
 # 检查更新
 def checkUpdate(new, old) -> list:
-    a = new.entries
+    try:
+        a = new.entries
+    except Exception as e:
+        logger.error('拉取RSS失败，可能是网络开了小差 E:' + str(e))
+        return []
     b = old['entries']
+
     c = [];
     # 防止 rss 超过设置的缓存条数
     if len(a)>= config.LIMT:
