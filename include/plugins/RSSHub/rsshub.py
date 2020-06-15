@@ -220,6 +220,7 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
     rss_str = re.sub('<div>|</div>|<strong>|</strong>', '', rss_str)
     rss_str = re.sub('<blockquote>|</blockquote>', '', rss_str)
     rss_str = re.sub('<iframe.+?\"/>', '', rss_str)
+    rss_str = re.sub('<i.+?\">|<i/>', '', rss_str)
 
     rss_str_tl = rss_str # 翻译用副本
     # <a> 标签处理
