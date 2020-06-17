@@ -48,9 +48,13 @@ async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
             async with httpx.AsyncClient(proxies=Proxy) as client:
                 d=""
                 try:
-                    r = await client.get(rss.geturl())
+                    r = await client.get(rss.geturl(),timeout=30)
+                    #print(rss.name+":"+str(r.status_code)+' 长度：'+str(len(r.content)))
                     d = feedparser.parse(r.content)
-                except Exception as e:
+                    #if(len(r.content)<3000):
+                    #    print(r.content)
+                except BaseException as e:
+                    logger.error(e)
                     if not rss.notrsshub and config.RSSHUB_backup:
                         logger.error('RSSHub :' + config.RSSHUB + ' 访问失败 ！使用备用RSSHub 地址！')
                         for rsshub_url in config.RSSHUB_backup:
@@ -113,7 +117,7 @@ async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
                 except  Exception as e:
                     logger.error('出现异常，获取 ' + rss.name + ' 订阅xml失败！！！请检查订阅地址是否可用！  E:' + str(e))
                 return []
-    except Exception as e:
+    except BaseException as e:
         logger.error(rss.name + ' 抓取失败，请检查订阅地址是否正确！ E:'+str(e))
         return []
 
@@ -126,14 +130,14 @@ async def sendMsg(rss,msg,bot):
                 try:
                     await bot.send_msg(message_type='private', user_id=id, message=str(msg))
                 except Exception as e:
-                    logger.error('QQ号不合法或者不是好友 E:' + str(e))
+                    logger.error('QQ号'+id+'不合法或者不是好友 E:' + str(e))
 
         if rss.group_id:
             for id in rss.group_id:
                 try:
                     await bot.send_msg(message_type='group', group_id=id, message=str(msg))
                 except Exception as e:
-                    logger.info('群号不合法或者未加群 E:' + str(e))
+                    logger.info('群号'+id+'不合法或者未加群 E:' + str(e))
 
     except Exception as e:
         logger.info('发生错误 消息发送失败 E:'+str(e))
@@ -170,7 +174,7 @@ async def dowimg(url:str,img_proxy:bool)->str:
 
                     # 使用第三方反代服务器
                     url = re.sub('i.pximg.net', config.PIXIV_PROXY, url)
-                    pic = await client.get(url, headers=headers)
+                    pic = await client.get(url, headers=headers ,timeout=100.0)
                 else:
                     pic = await client.get(url)
                 # 大小控制，图片压缩
@@ -195,10 +199,10 @@ async def dowimg(url:str,img_proxy:bool)->str:
                         imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
                         imgs_name = re.sub(r'/', r'\\\\', imgs_name)
                     return imgs_name
-            except Exception as e:
+            except IOError as e:
                 logger.error('图片下载失败 2 E:' + str(e))
                 return ''
-    except Exception as e:
+    except BaseException as e:
         logger.error('图片下载失败 1 E:' + str(e))
         return ''
 
@@ -296,6 +300,7 @@ def checkUpdate(new, old) -> list:
         a = new.entries
     except Exception as e:
         logger.error('拉取RSS失败，可能是网络开了小差 E:' + str(e))
+        print(new)
         return []
     b = old['entries']
 

@@ -35,4 +35,4 @@ Linux_Path='' # 部署环境为Linux时 wine下插件存放目录 如 Z:\\home\\
 # MYELF博客地址 https://myelf.club
 # 出现问题请在 GitHub 上提 issues
 # 项目地址 https://github.com/Quan666/ELF_RSS
-# v1.3.1
+# v1.3.2
