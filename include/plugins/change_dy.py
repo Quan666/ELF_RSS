@@ -39,7 +39,7 @@ async def change(session: CommandSession):
                 try:
                     rss_tmp = rss_a
                     for info in list_info:
-                        info_this = info.split('=')
+                        info_this = info.split('=',1)
                         if info_this[0] == 'url':
                             rss_tmp.url = info_this[1]
                         if info_this[0] == 'dyqq':
