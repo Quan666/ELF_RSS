@@ -1,5 +1,3 @@
-import json
-
 from nonebot import on_command, CommandSession
 import requests
 
@@ -40,8 +38,6 @@ async def _(session: CommandSession):
 
 
 async def get_uri_of_url(url: str) -> str:
-    www = 'https://ii1.fun/url/insert'
-    data = {"url": url}
-    headers = {'Content-Type': 'application/json'}
-    data_json = requests.get(www, headers=headers, data=json.dumps(data)).json()
-    return ''+data_json['data']['shortUrl']
+    www = 'https://t.myelf.club/a/?url=' + url
+    data_json = requests.get(www).json()
+    return ''+data_json['URI']
