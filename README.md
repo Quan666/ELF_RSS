@@ -10,7 +10,8 @@ rss订阅插件始终没找到个合适自己的，就自己写了一个。
 
 * 支持多种订阅源，主要兼容RSSHub生成的订阅源
 
-* 完美兼容酷Q Pro，理论上兼容酷Q Air，但会无法发送图片。
+* 由于酷Q 已经不能再使用，本插件将会在 8 月前尽量适配 mirai，当前版本也可以直接在 mirai 下使用，但会有些许 bug。
+* [迁移到 Mirai](https://github.com/Quan666/ELF_RSS/wiki/%E8%BF%81%E7%A7%BB%E5%88%B0-mirai)
 
 ### 更多信息 请移步 [Wiki](https://github.com/Quan666/ELF_RSS/wiki)
 * [Home](https://github.com/Quan666/ELF_RSS/wiki)
@@ -19,6 +20,7 @@ rss订阅插件始终没找到个合适自己的，就自己写了一个。
 * [使用教程](https://github.com/Quan666/ELF_RSS/wiki/%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
 * [部署教程](https://github.com/Quan666/ELF_RSS/wiki/%E9%83%A8%E7%BD%B2%E6%95%99%E7%A8%8B)
 * [常见问题](https://github.com/Quan666/ELF_RSS/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
+* [迁移到 Mirai](https://github.com/Quan666/ELF_RSS/wiki/%E8%BF%81%E7%A7%BB%E5%88%B0-mirai)
 
 如果 Wiki 没更新，请移步 **[ELF_RSS 订阅插件使用、安装教程](https://myelf.club/index.php/archives/221/ "ELF_RSS 订阅插件使用、安装教程")**
 
