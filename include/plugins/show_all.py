@@ -27,6 +27,10 @@ async def show_all(session: CommandSession):
             for rss_ in list_rss:
                 msg = msg + '名称：' + rss_.name + '\n订阅地址：' + rss_.url + '\n\n'
                 flag = flag + 1
+                #每条信息展示 5 条订阅
+                if(flag%5==0):
+                    await session.send(msg)
+                    msg = ''
             if flag <= 0:
                 await session.send('没有找到订阅哟！')
             else:

@@ -1,9 +1,11 @@
 # -*- coding: UTF-8 -*-
+from io import BytesIO
+
 import feedparser
 import json
 import codecs
 import asyncio
-
+from PIL import Image
 import httpx
 import nonebot
 from pyquery import PyQuery as pq
@@ -23,6 +25,8 @@ import emoji
 import socket
 # 存储目录
 file_path = './data/'
+# 图片大小控制 MB
+IMGMAX = 3;
 #代理
 proxy = config.RSS_PROXY
 proxies = {
@@ -177,19 +181,24 @@ async def dowimg(url:str,img_proxy:bool)->str:
                     pic = await client.get(url, headers=headers ,timeout=100.0)
                 else:
                     pic = await client.get(url)
-                # 大小控制，图片压缩
-                # print(len(pic.content)/1024)
 
-                if len(file_suffix[1]) > 0:
-                    filename = name + file_suffix[1]
-                elif pic.headers['Content-Type'] == 'image/jpeg':
-                    filename = name + '.jpg'
-                elif pic.headers['Content-Type'] == 'image/png':
-                    filename = name + '.png'
+
+                # 大小控制，图片压缩
+                #print(len(pic.content)/(1024*1024))
+                if (len(pic.content)/(1024*1024) > IMGMAX):
+                    filename = await zipPic(pic.content,name)
                 else:
-                    filename = name + '.jpg'
-                with codecs.open(img_path + filename, "wb") as dump_f:
-                    dump_f.write(pic.content)
+                    if len(file_suffix[1]) > 0:
+                        filename = name + file_suffix[1]
+                    elif pic.headers['Content-Type'] == 'image/jpeg':
+                        filename = name + '.jpg'
+                    elif pic.headers['Content-Type'] == 'image/png':
+                        filename = name + '.png'
+                    else:
+                        filename = name + '.jpg'
+                    with codecs.open(img_path + filename, "wb") as dump_f:
+                        dump_f.write(pic.content)
+
                 if config.IsLinux:
                     return filename
                 else:
@@ -206,6 +215,19 @@ async def dowimg(url:str,img_proxy:bool)->str:
         logger.error('图片下载失败 1 E:' + str(e))
         return ''
 
+async def zipPic(content,name):
+    img_path = file_path + 'imgs' + os.sep
+    # 打开一个jpg/png图像文件，注意是当前路径:
+    im = Image.open(BytesIO(content))
+    # 获得图像尺寸:
+    w, h = im.size
+    print('Original image size: %sx%s' % (w, h))
+    # 缩放到50%:
+    im.thumbnail((w // 2, h // 2))
+    print('Resize image to: %sx%s' % (w // 2, h // 2))
+    # 把缩放后的图像用jpeg格式保存:
+    im.save(img_path + name + '.jpg', 'jpeg')
+    return name + '.jpg'
 
 #处理正文
 async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
@@ -224,7 +246,7 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
     rss_str = re.sub('<div>|</div>|<strong>|</strong>', '', rss_str)
     rss_str = re.sub('<blockquote>|</blockquote>', '', rss_str)
     rss_str = re.sub('<iframe.+?\"/>', '', rss_str)
-    rss_str = re.sub('<i.+?\">|<i/>', '', rss_str)
+    rss_str = re.sub('<i.+?\">|</i>', '', rss_str)
 
     rss_str_tl = rss_str # 翻译用副本
     # <a> 标签处理
@@ -291,6 +313,9 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
             text = re.sub(r'\\', '', text)
         except Exception as e:
             text = '\n翻译失败！'+str(e)+'\n'
+    print()
+    print(rss_str+text)
+    print()
     return rss_str+text
 
 
