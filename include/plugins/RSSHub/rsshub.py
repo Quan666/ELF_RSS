@@ -25,8 +25,6 @@ import emoji
 import socket
 # 存储目录
 file_path = './data/'
-# 图片大小控制 MB
-IMGMAX = 3;
 #代理
 proxy = config.RSS_PROXY
 proxies = {
@@ -184,8 +182,7 @@ async def dowimg(url:str,img_proxy:bool)->str:
 
 
                 # 大小控制，图片压缩
-                #print(len(pic.content)/(1024*1024))
-                if (len(pic.content)/(1024*1024) > IMGMAX):
+                if (len(pic.content)/1024 > config.ZIP_SIZE):
                     filename = await zipPic(pic.content,name)
                 else:
                     if len(file_suffix[1]) > 0:
@@ -200,7 +197,10 @@ async def dowimg(url:str,img_proxy:bool)->str:
                         dump_f.write(pic.content)
 
                 if config.IsLinux:
-                    return filename
+                    imgs_name = img_path + filename
+                    if len(imgs_name) > 0:
+                        imgs_name = os.getcwd() + re.sub(r'\./|\\', r'/', imgs_name)
+                    return imgs_name
                 else:
                     imgs_name = img_path + filename
                     if len(imgs_name) > 0:
@@ -222,12 +222,19 @@ async def zipPic(content,name):
     # 获得图像尺寸:
     w, h = im.size
     print('Original image size: %sx%s' % (w, h))
-    # 缩放到50%:
-    im.thumbnail((w // 2, h // 2))
-    print('Resize image to: %sx%s' % (w // 2, h // 2))
+    # 算出缩小比
+    Proportion = int(len(content)/(config.ZIP_SIZE * 1024))
+    print('算出的缩小比:'+str(Proportion))
+    # 缩放
+    im.thumbnail((w // Proportion, h // Proportion))
+    print('Resize image to: %sx%s' % (w // Proportion, h // Proportion))
     # 把缩放后的图像用jpeg格式保存:
-    im.save(img_path + name + '.jpg', 'jpeg')
-    return name + '.jpg'
+    try:
+        im.save(img_path + name + '.jpg', 'jpeg')
+        return name + '.jpg'
+    except Exception:
+        im.save(img_path + name + '.png', 'png')
+        return name + '.png'
 
 #处理正文
 async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
@@ -240,18 +247,23 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
 
     # 处理一些标签
     rss_str = re.sub('<br/><br/>|<br><br>|<br>|<br/>', '\n', rss_str)
-    rss_str = re.sub('<span>|</span>', '', rss_str)
+    rss_str = re.sub('<span>|<span.+?\">|</span>', '', rss_str)
     rss_str = re.sub('<pre.+?\">|</pre>', '', rss_str)
-    rss_str = re.sub('<p>|</p>|<b>|</b>', '', rss_str)
-    rss_str = re.sub('<div>|</div>|<strong>|</strong>', '', rss_str)
+    rss_str = re.sub('<p>|<p.+?\">|</p>|<b>|<b.+?\">|</b>', '', rss_str)
+    rss_str = re.sub('<div>|<div.+?\">|</div>', '', rss_str)
+    rss_str = re.sub('<div>|<div.+?\">|</div>', '', rss_str)
     rss_str = re.sub('<blockquote>|</blockquote>', '', rss_str)
     rss_str = re.sub('<iframe.+?\"/>', '', rss_str)
-    rss_str = re.sub('<i.+?\">|</i>', '', rss_str)
+    rss_str = re.sub('<i.+?\">|<i>|</i>', '', rss_str)
+    rss_str = re.sub('<code>|</code>|<ul>|</ul>', '', rss_str)
+    #解决 issue #3
+    rss_str = re.sub('<dd.+?\">|<dd>|</dd>', '', rss_str)
+    rss_str = re.sub('<dl.+?\">|<dl>|</dl>', '', rss_str)
+    rss_str = re.sub('<dt.+?\">|<dt>|</dt>', '', rss_str)
 
     rss_str_tl = rss_str # 翻译用副本
     # <a> 标签处理
     doc_a = doc_rss('a')
-    a_str = ''
     for a in doc_a.items():
         if str(a.text()) != a.attr("href"):
             rss_str = re.sub(re.escape(str(a)), str(a.text()) + ':' + (a.attr("href")) + '\n', rss_str)
@@ -259,45 +271,43 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
             rss_str = re.sub(re.escape(str(a)), (a.attr("href")) + '\n', rss_str)
         rss_str_tl = re.sub(re.escape(str(a)), '', rss_str_tl)
 
+    # 删除未解析成功的 a 标签
+    rss_str = re.sub('<a.+?\">|<a>|</a>', '', rss_str)
+    rss_str_tl = re.sub('<a.+?\">|<a>|</a>', '', rss_str_tl)
 
     # 处理图片
     doc_img = doc_rss('img')
     for img in doc_img.items():
         rss_str_tl = re.sub(re.escape(str(img)), '', rss_str_tl)
         img_path = await dowimg(img.attr("src"), img_proxy)
-        if not config.IsAir:
-            if len(img_path) > 0:
-                if config.IsLinux:
-                    rss_str = re.sub(re.escape(str(img)),
-                                     r'[CQ:image,file=file:///' + re.escape(config.Linux_Path)+re.escape('data\\imgs\\') + str(
-                                         img_path) + ']',
-                                     rss_str)
-                else:
-                    rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
+        if len(img_path) > 0:
+            if config.IsLinux:
+                rss_str = re.sub(re.escape(str(img)),
+                                 r'[CQ:image,file=' + str(img_path) + ']',
+                                 rss_str)
             else:
-                rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
+                rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
         else:
-            rss_str = re.sub(re.escape(str(img)), r'图片链接：' + img.attr("src") + '\n', rss_str, re.S)
+            rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
+
+
 
     # 处理视频
     doc_video = doc_rss('video')
     for video in doc_video.items():
         rss_str_tl = re.sub(re.escape(str(video)), '', rss_str_tl)
-        if not config.IsAir:
-            img_path = await dowimg(video.attr("poster"), img_proxy)
-            if len(img_path) > 0:
-                if config.IsLinux:
-                    rss_str = re.sub(re.escape(str(video)),
-                                     r'视频封面：[CQ:image,file=file:///' + re.escape(config.Linux_Path) + re.escape('data\\imgs\\') + str(
-                                         img_path) + ']',
-                                     rss_str)
-                else:
-                    rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
-                                     rss_str)
+        img_path = await dowimg(video.attr("poster"), img_proxy)
+        if len(img_path) > 0:
+            if config.IsLinux:
+                rss_str = re.sub(re.escape(str(img)),
+                                 r'[CQ:image,file=' + str(img_path) + ']',
+                                 rss_str)
             else:
-                rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
+                rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
+                                 rss_str)
         else:
-            rss_str = re.sub(re.escape(str(video)), r'视频封面：' + video.attr("poster") + '\n', rss_str)
+            rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
+
 
 
 
