@@ -319,7 +319,11 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
         try:
             text=emoji.demojize(rss_str_tl)
             text = re.sub(r':[A-Za-z_]*:', ' ', text)
-            text = '\n翻译：\n' + translator.translate(re.escape(text), dest='zh-CN').text
+            if config.UseBaidu:
+                from . import rss_baidutrans
+                text = '\n翻译(BaiduAPI)：\n' + rss_baidutrans.baidu_translate(re.escape(text))
+            else:
+                text = '\n翻译：\n' + translator.translate(re.escape(text), dest='zh-CN').text
             text = re.sub(r'\\', '', text)
         except Exception as e:
             text = '\n翻译失败！'+str(e)+'\n'
