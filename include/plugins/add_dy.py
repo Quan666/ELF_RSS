@@ -15,7 +15,7 @@ import re
 @on_command('add', aliases=('订阅', 'dy', 'DY'))
 async def add(session: CommandSession):
     # 从会话状态（session.state）中获取订阅信息链接(link)，如果当前不存在，则询问用户
-    rss_dy_link = session.get('add', prompt='要订阅的信息不能为空呢，请重新输入\n输入样例：\ntest /twitter/user/xx 11,11 -1 5 1 0 \n订阅名 订阅地址 qq(,分隔，为空-1) 群号(,分隔，为空-1) 更新时间(分钟，可选) 1/0(代理，可选) 1/0(第三方订阅链接，可选) 1/0(翻译,可选) 1/0(仅标题,可选)')
+    rss_dy_link = session.get('add', prompt='要订阅的信息不能为空呢，请重新输入\n输入样例：\ntest /twitter/user/xx 11,11 -1 5 1 0 \n订阅名 订阅地址 qq(,分隔，为空-1) 群号(,分隔，为空-1) 更新时间(分钟，可选) 1/0(代理，可选) 1/0(第三方订阅链接，可选) 1/0(翻译,可选) 1/0(仅标题,可选) 1/0(仅图片,可选)')
     # 权限判断
     user_id = session.ctx['user_id']
     if user_id in config.ROOTUSER:
@@ -51,7 +51,11 @@ async def add(session: CommandSession):
                 only_title = bool(int(dy[8]))
             else:
                 only_title = False
-            rss = RSS_class.rss(name, url, user_id, group_id, times, proxy, notrsshub,translation,only_title)
+            if len(dy) > 9:
+                only_pic = bool(int(dy[9]))
+            else:
+                only_pic = False
+            rss = RSS_class.rss(name, url, user_id, group_id, times, proxy, notrsshub,translation,only_title,only_pic)
             # 写入订阅配置文件 # 先读看是否重复再写
             flag = 0
             bot = nonebot.get_bot()
