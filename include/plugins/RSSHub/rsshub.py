@@ -23,6 +23,7 @@ from . import RSS_class
 from googletrans import Translator
 import emoji
 import socket
+from retrying import retry
 # 存储目录
 file_path = './data/'
 #代理
@@ -34,6 +35,7 @@ proxies = {
 status_code=[200,301,302]
 # 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告
 asyncio.log.logger.setLevel(40)
+@retry
 async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
     #设置全局超时 以解决 feedparser.parse 遇到 bad url 时卡住
     #socket.setdefaulttimeout(5000)
@@ -145,6 +147,7 @@ async def sendMsg(rss,msg,bot):
         logger.info('发生错误 消息发送失败 E:'+str(e))
 
 # 下载图片
+@retry
 async def dowimg(url:str,img_proxy:bool)->str:
     try:
         img_path = file_path + 'imgs' + os.sep
