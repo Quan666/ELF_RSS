@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 from io import BytesIO
-
+import unicodedata
 import feedparser
 import json
 import codecs
@@ -23,6 +23,7 @@ from . import RSS_class
 from googletrans import Translator
 import emoji
 import socket
+from retrying import retry
 # 存储目录
 file_path = './data/'
 #代理
@@ -34,6 +35,7 @@ proxies = {
 status_code=[200,301,302]
 # 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告
 asyncio.log.logger.setLevel(40)
+@retry
 async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
     #设置全局超时 以解决 feedparser.parse 遇到 bad url 时卡住
     #socket.setdefaulttimeout(5000)
@@ -145,6 +147,7 @@ async def sendMsg(rss,msg,bot):
         logger.info('发生错误 消息发送失败 E:'+str(e))
 
 # 下载图片
+@retry
 async def dowimg(url:str,img_proxy:bool)->str:
     try:
         img_path = file_path + 'imgs' + os.sep
@@ -319,8 +322,17 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool)->str:
         try:
             text=emoji.demojize(rss_str_tl)
             text = re.sub(r':[A-Za-z_]*:', ' ', text)
-            text = '\n翻译：\n' + translator.translate(re.escape(text), dest='zh-CN').text
+            if config.UseBaidu:
+                from . import rss_baidutrans
+                rss_str_tl = re.sub(r'\n', '百度翻译 ', rss_str_tl)
+                rss_str_tl = unicodedata.normalize('NFC', rss_str_tl)
+                text=emoji.demojize(rss_str_tl)
+                text = re.sub(r':[A-Za-z_]*:', ' ', text)
+                text = '\n翻译(BaiduAPI)：\n' + rss_baidutrans.baidu_translate(re.escape(text))
+            else:
+                text = '\n翻译：\n' + translator.translate(re.escape(text), dest='zh-CN').text
             text = re.sub(r'\\', '', text)
+            text = re.sub(r'百度翻译', '\n', text)
         except Exception as e:
             text = '\n翻译失败！'+str(e)+'\n'
     print()

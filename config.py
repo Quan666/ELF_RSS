@@ -33,6 +33,10 @@ PIXIV_PROXY = 'i.pximg.net'  # 反代图片服务器地址
 IsLinux = False  # 如果你是Linux部署的，请开启此项
 # Linux_Path='' # 该设置已失效
 
+# Baidu Translate API
+UseBaidu = False
+BaiduID = ''
+BaiduKEY = ''
 
 # MYELF博客地址 https://myelf.club
 # 出现问题请在 GitHub 上提 issues
