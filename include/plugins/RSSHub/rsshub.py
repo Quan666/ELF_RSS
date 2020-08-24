@@ -55,8 +55,6 @@ async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
                     r = await client.get(rss.geturl(),timeout=30)
                     #print(rss.name+":"+str(r.status_code)+' 长度：'+str(len(r.content)))
                     d = feedparser.parse(r.content)
-                    #if(len(r.content)<3000):
-                    #    print(r.content)
                 except BaseException as e:
                     logger.error(e)
                     if not rss.notrsshub and config.RSSHUB_backup:
@@ -239,19 +237,6 @@ async def zipPic(content,name):
         im.save(img_path + name + '.png', 'png')
         return name + '.png'
 
-async def google_tl(rss_str_tl:str):
-    try:
-        text = ''
-        translator = Translator()
-        text = emoji.demojize(rss_str_tl)
-        text = re.sub(r':[A-Za-z_]*:', ' ', text)
-        text = '\n翻译：\n' + translator.translate(re.escape(text), dest='zh-CN').text
-        text = re.sub(r'\\', '', text)
-        return text
-    except Exception as e:
-        print("谷歌翻译失败")
-        text = '\n翻译失败！'+str(e)+'\n'
-        return text
 
 #处理正文
 async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->str:
@@ -264,7 +249,7 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
 
     if config.showlottery == False:
         if "互动抽奖" in rss_str:
-            print("内容有互动抽奖，pass")
+            logger.info("内容有互动抽奖，pass")
             return
 
     # 处理一些标签
@@ -342,45 +327,27 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
     # 翻译
     text = ''
     if translation:
-        print("开始翻译")
+        translator = Translator()
         # rss_str_tl = re.sub(r'\n', ' ', rss_str_tl)
         try:
-            if config.appid != "" and config.secretKey != "":
-                appid = config.appid
-                secretKey = config.secretKey
-                url = f'http://api.fanyi.baidu.com/api/trans/vip/translate'
-                salt = str(random.randint(32768, 65536))
-                sign = hashlib.md5((appid+rss_str_tl+salt+secretKey).encode()).hexdigest()
-                params = {
-                    "q" : rss_str_tl,
-                    "from" : "auto",
-                    "to" : "zh",
-                    "appid" : appid,
-                    "salt" : salt,
-                    "sign" : sign
-                    }
-                r = requests.get(url,params=params)
-                try:
-                    i = 0
-                    text = ''
-                    while i < len(r.json()["trans_result"]):
-                        text += r.json()["trans_result"][i]["dst"] + "\n"
-                        i += 1
-                    text = "\n翻译：\n"+text
-                except:
-                    if r.json()["error_code"] == "52003":
-                        print("无效的appid，尝试使用谷歌翻译，错误信息："+ str(r.json()["error_msg"]))
-                        text = await google_tl(rss_str_tl)
-                    else:
-                        print("使用百度翻译错误："+str(r.json()["error_msg"])+"，开始尝试使用谷歌翻译")
-                        text = await google_tl(rss_str_tl)
+            text = emoji.demojize(rss_str_tl)
+            text = re.sub(r':[A-Za-z_]*:', ' ', text)
+            if config.UseBaidu:
+                from . import rss_baidutrans
+                rss_str_tl = re.sub(r'\n', '百度翻译 ', rss_str_tl)
+                rss_str_tl = unicodedata.normalize('NFC', rss_str_tl)
+                text = emoji.demojize(rss_str_tl)
+                text = re.sub(r':[A-Za-z_]*:', ' ', text)
+                text = '\n翻译(BaiduAPI)：\n' + rss_baidutrans.baidu_translate(re.escape(text))
             else:
-               text = await google_tl(rss_str_tl)
+               text = '\n翻译：\n' + translator.translate(re.escape(text), dest='zh-CN').text
+            text = re.sub(r'\\', '', text)
+            text = re.sub(r'百度翻译', '\n', text)
         except Exception as e:
             text = '\n翻译失败！'+str(e)+'\n'
-    print()
-    print("rss_str+text-----"+rss_str+text)
-    print()
+    #print()
+    #print("rss_str+text-----"+rss_str+text)
+    #print()
     return rss_str+text
 
 
