@@ -11,8 +11,9 @@ class rss:
     time=5 #更新频率 分钟/次
     translation=False # 翻译
     only_title=False #仅标题
+    only_pic=False #仅图片
     # 定义构造方法
-    def __init__(self,name:str, url:str, user_id:str, group_id:str,time=5,img_proxy=False,notrsshub=False,translation=False,only_title=False):
+    def __init__(self,name:str, url:str, user_id:str, group_id:str,time=5,img_proxy=False,notrsshub=False,translation=False,only_title=False,only_pic=False):
         self.name = name
         self.url = url
         if user_id!='-1' :
@@ -24,6 +25,7 @@ class rss:
         self.img_proxy=img_proxy
         self.translation=translation
         self.only_title=only_title
+        self.only_pic=only_pic
 
     def geturl(self)->str:
         if self.notrsshub :
