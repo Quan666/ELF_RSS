@@ -21,6 +21,18 @@ LIMT = 50  # 缓存rss条数
 # 图片压缩大小 kb * 1024 = MB
 ZIP_SIZE = 3 * 1024
 
+blockquote = True    #是否显示转发的内容，默认打开
+showlottery = True   #是否显示互动抽奖信息，默认打开
+
+#使用百度翻译API 可选，填的话两个都要填，不填默认使用谷歌翻译(需墙外？)
+# Baidu Translate API
+UseBaidu = False
+BaiduID = ''
+BaiduKEY = ''
+#百度翻译接口appid和secretKey，前往http://api.fanyi.baidu.com/获取
+#一般来说申请标准版免费就够了，想要好一点可以认证上高级版，有月限额，rss用也足够了
+
+
 # 解决pixiv.cat无法访问问题
 CLOSE_PIXIV_CAT = False  # 是否关闭使用 pixiv.cat，关闭后必须启用代理
 # 以下两项在关闭使用 pixiv.cat时有效，如果你有自己反代pixiv，填上你自己的反代服务器地址即可，没有不要填
@@ -37,4 +49,4 @@ IsLinux = False  # 如果你是Linux部署的，请开启此项
 # MYELF博客地址 https://myelf.club
 # 出现问题请在 GitHub 上提 issues
 # 项目地址 https://github.com/Quan666/ELF_RSS
-# v1.3.5
+# v1.3.7
