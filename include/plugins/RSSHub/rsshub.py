@@ -154,6 +154,7 @@ async def dowimg(url:str,img_proxy:bool)->str:
             os.makedirs(img_path)  # 创建目录
         file_suffix = os.path.splitext(url)  # 返回列表[路径/文件名，文件后缀]
         name = str(uuid.uuid4())
+        name = re.sub('#|-', '', name)
         if img_proxy:
             Proxy = httpx.Proxy(
                 url="http://"+proxy,
