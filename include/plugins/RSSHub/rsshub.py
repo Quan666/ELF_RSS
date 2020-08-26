@@ -154,7 +154,6 @@ async def dowimg(url:str,img_proxy:bool)->str:
             os.makedirs(img_path)  # 创建目录
         file_suffix = os.path.splitext(url)  # 返回列表[路径/文件名，文件后缀]
         name = str(uuid.uuid4())
-        name = re.sub('#|-', '', name)
         if img_proxy:
             Proxy = httpx.Proxy(
                 url="http://"+proxy,
@@ -295,12 +294,7 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
         rss_str_tl = re.sub(re.escape(str(img)), '', rss_str_tl)
         img_path = await dowimg(img.attr("src"), img_proxy)
         if len(img_path) > 0:
-            if config.IsLinux:
-                rss_str = re.sub(re.escape(str(img)),
-                                 r'[CQ:image,file=' + str(img_path) + ']',
-                                 rss_str)
-            else:
-                rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
+            rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
         else:
             rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
 
@@ -312,12 +306,7 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
         rss_str_tl = re.sub(re.escape(str(video)), '', rss_str_tl)
         img_path = await dowimg(video.attr("poster"), img_proxy)
         if len(img_path) > 0:
-            if config.IsLinux:
-                rss_str = re.sub(re.escape(str(img)),
-                                 r'[CQ:image,file=' + str(img_path) + ']',
-                                 rss_str)
-            else:
-                rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
+            rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
                                  rss_str)
         else:
             rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
