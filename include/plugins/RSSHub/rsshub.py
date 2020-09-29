@@ -24,6 +24,7 @@ from googletrans import Translator
 import emoji
 import socket
 from retrying import retry
+import base64
 # 存储目录
 file_path = './data/'
 #代理
@@ -209,7 +210,7 @@ async def dowimg(url:str,img_proxy:bool)->str:
                         imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
                         imgs_name = re.sub(r'/', r'\\\\', imgs_name)
                     return imgs_name
-            except IOError as e:
+            except BaseException as e:
                 logger.error('图片下载失败 2 E:' + str(e))
                 return ''
     except BaseException as e:
