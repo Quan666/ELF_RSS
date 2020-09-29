@@ -28,7 +28,7 @@ class rss:
         self.only_pic=only_pic
 
     def geturl(self)->str:
-        if self.url.find(u'[hH][tT]{2}[pP][sS]://')<0 :
+        if self.url.find(u'[hH][tT]{2}[pP][sS]://')>=0 :
             return self.url
         else:
             return config.RSSHUB+self.url

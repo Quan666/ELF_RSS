@@ -93,14 +93,18 @@ async def add(session: CommandSession):
             else:
                 proxy = False
             if len(dy) > 6:
+                notrsshub = bool(int(dy[6]))
+            else:
+                notrsshub = False
+            if len(dy) > 7:
                 translation = bool(int(dy[6]))
             else:
                 translation = False
-            if len(dy) > 7:
+            if len(dy) > 8:
                 only_title = bool(int(dy[7]))
             else:
                 only_title = False
-            if len(dy) > 8:
+            if len(dy) > 9:
                 only_pic = bool(int(dy[8]))
             else:
                 only_pic = False
@@ -126,7 +130,8 @@ async def add(session: CommandSession):
             logger.info('添加' + rss.name + '成功')
             # 向用户发送成功信息
             await session.send(rss.name + '订阅成功！')
-    except:
+    except BaseException as e:
+        logger.info(e)
         await session.send('参数不对哟！\n关于插件：http://ii1.fun/7byIVb')
 
 
