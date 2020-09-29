@@ -7,16 +7,21 @@ NICKNAME = {'ELF', 'elf'}
 
 COMMAND_START = {'', '/', '!', '／', '！'}
 
-SUPERUSERS = {123456789}  # 管理员（你）的QQ号
+SUPERUSERS = [123456789]  # 管理员（你）的QQ号
 
 API_ROOT = 'http://127.0.0.1:5700'  #
 RSS_PROXY = '127.0.0.1:7890'  # 代理地址
-ROOTUSER = [123456]  # 管理员qq,支持多管理员，逗号分隔 如 [1,2,3] 注意，启动消息只发送给第一个管理员
+###废弃ROOTUSER,只使用SUPERUSERS
+#ROOTUSER = [123456]  # 管理员qq,支持多管理员，逗号分隔 如 [1,2,3] 注意，启动消息只发送给第一个管理员
 DEBUG = False
 RSSHUB = 'https://rsshub.app'  # rsshub订阅地址
 RSSHUB_backup = []  # 备用rsshub地址 填写示例 ['https://rsshub.app','https://rsshub.app']
 DELCACHE = 3  # 缓存删除间隔 天
 LIMT = 50  # 缓存rss条数
+
+#群组订阅的默认参数
+add_uptime = 10    #默认订阅更新时间
+add_proxy = False  #默认是否启用代理
 
 # 图片压缩大小 kb * 1024 = MB
 ZIP_SIZE = 3 * 1024
@@ -49,4 +54,4 @@ IsLinux = False  # 如果你是Linux部署的，请开启此项
 # MYELF博客地址 https://myelf.club
 # 出现问题请在 GitHub 上提 issues
 # 项目地址 https://github.com/Quan666/ELF_RSS
-# v1.3.7
+# v1.3.8
