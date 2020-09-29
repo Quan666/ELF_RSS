@@ -50,10 +50,6 @@ async def add(session: CommandSession):
                     flag = 2
         except:
             print("error")
-        if str(url).lower().startswith("http"):
-            notrsshub = True
-        else:
-            notrsshub = False
         if group_id:
             if flag == 0:
                 if len(dy) > 2:
