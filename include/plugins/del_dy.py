@@ -10,23 +10,48 @@ import config
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger # 间隔触发器
 from nonebot import on_command, scheduler
-import os, sys
+from nonebot.permission import *
+import os, sys, re
 # 存储目录
 file_path = './data/'
 
 # on_command 装饰器将函数声明为一个命令处理器
 # 这里 uri 为命令的名字，同时允许使用别名
-@on_command('deldy')
+@on_command('deldy', aliases=('delrss','rssdel'), permission=GROUP_ADMIN|SUPERUSER)
 async def deldy(session: CommandSession):
     rss_name = session.get('deldy', prompt='输入要删除的订阅名或订阅地址')
-    # 权限判断
     user_id = session.ctx['user_id']
-    # print(type(user_id),type(config.ROOTUSER))
-    if int(user_id) in config.ROOTUSER:
-        # 获取、处理信息
-        flag = 0
-        try:
-            list_rss = RWlist.readRss()
+    try:
+        group_id = session.ctx['group_id']
+    except:
+        group_id = None
+        
+    # 获取、处理信息
+    flag = 0
+    try:
+        list_rss = RWlist.readRss()
+        if group_id:
+            for rss_ in list_rss:
+                if (rss_.name == rss_name and str(group_id) in str(rss_.group_id)) or (rss_.url == rss_name and str(group_id) in str(rss_.group_id)):
+                    rss_tmp = rss_
+                    if rss_tmp.group_id[0] == str(group_id):
+                        rss_tmp.group_id.pop(0)
+                    else:
+                        rss_tmp.group_id = eval(re.sub(f", '{group_id}'", "", str(rss_tmp.group_id)))
+                    await session.send('本群订阅 ' + rss_name + ' 删除成功！')
+                    if not rss_tmp.group_id and not rss_tmp.user_id:
+                        list_rss.remove(rss_)
+                        scheduler.remove_job(rss_.name)
+                        try:
+                            os.remove(file_path+rss_.name+".json")
+                        except BaseException as e:
+                            logger.info(e)
+                        RWlist.writeRss(list_rss)
+                    else:
+                        list_rss.remove(rss_)
+                        list_rss.append(rss_tmp)
+                        RWlist.writeRss(list_rss)
+        elif user_id:
             for rss_ in list_rss:
                 if rss_.name == rss_name or rss_.url == rss_name:
                     list_rss.remove(rss_)
@@ -42,11 +67,9 @@ async def deldy(session: CommandSession):
             else:
                 RWlist.writeRss(list_rss)
                 await session.send('删除 ' + str(flag) + ' 条订阅！')
-        except BaseException as e:
-            #logger.info(e)
-            await session.send('你还没有任何订阅！')
-    else:
-        await session.send('你没有权限进行此操作！\n关于插件：http://ii1.fun/7byIVb')
+    except BaseException as e:
+        #logger.info(e)
+        await session.send('你还没有任何订阅！\n关于插件：http://ii1.fun/7byIVb')
 
 
 # deldy.args_parser 装饰器将函数声明为 add 命令的参数解析器

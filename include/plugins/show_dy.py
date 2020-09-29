@@ -6,38 +6,32 @@ from .RSSHub import RWlist
 from .RSSHub import rsstrigger as TR
 import logging
 from nonebot.log import logger
+from nonebot.permission import *
 import config
 import nonebot
 
 
 # on_command 装饰器将函数声明为一个命令处理器
 # 这里 uri 为命令的名字，同时允许使用别名
-@on_command('show')
+@on_command('show', permission=SUPERUSER)
 async def show(session: CommandSession):
     rss_name = session.get('show', prompt='输入要查看的订阅名或订阅地址')
-    # 权限判断
     user_id = session.ctx['user_id']
-    # print(type(user_id),type(config.ROOTUSER))
-    if int(user_id) in config.ROOTUSER:
-        # 获取、处理信息
 
-        flag = 0
-
-        try:
-            list_rss = RWlist.readRss()
-            for rss_ in list_rss:
-                if rss_.name == rss_name or rss_.url == rss_name:
-                    await session.send(
-                        '名称：' + rss_.name + '\n订阅地址：' + rss_.url + '\n订阅QQ：' + str(rss_.user_id) + '\n订阅群：' + str(
-                            rss_.group_id) + '\n更新频率：' + str(rss_.time) + '分钟/次\n代理：' + str(rss_.img_proxy) + '\n第三方：' + str(rss_.notrsshub)
-                                + '\n翻译：' + str(rss_.translation) + '\n仅标题：' + str(rss_.only_title) + '\n仅图片：' + str(rss_.only_pic))
-                    flag = flag + 1
-            if flag <= 0:
-                await session.send('没有找到 ' + rss_name + ' 的订阅哟！')
-        except:
-            await session.send('你还没有任何订阅！')
-    else:
-        await session.send('你没有权限进行此操作！\n关于插件：http://ii1.fun/7byIVb')
+    flag = 0
+    try:
+        list_rss = RWlist.readRss()
+        for rss_ in list_rss:
+            if rss_.name == rss_name or rss_.url == rss_name:
+                await session.send(
+                    '名称：' + rss_.name + '\n订阅地址：' + rss_.url + '\n订阅QQ：' + str(rss_.user_id) + '\n订阅群：' + str(
+                        rss_.group_id) + '\n更新频率：' + str(rss_.time) + '分钟/次\n代理：' + str(rss_.img_proxy) + '\n第三方：' + str(rss_.notrsshub)
+                            + '\n翻译：' + str(rss_.translation) + '\n仅标题：' + str(rss_.only_title) + '\n仅图片：' + str(rss_.only_pic))
+                flag = flag + 1
+        if flag <= 0:
+            await session.send('没有找到 ' + rss_name + ' 的订阅哟！')
+    except:
+        await session.send('你还没有任何订阅！\n关于插件：http://ii1.fun/7byIVb')
 
 
 # show.args_parser 装饰器将函数声明为 add 命令的参数解析器
