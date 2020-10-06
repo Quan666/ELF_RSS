@@ -248,9 +248,10 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
     doc_rss = pq(rss_str)
     rss_str = str(doc_rss)
 
-    if config.showlottery == False:
-        if "互动抽奖" in rss_str:
-            logger.info("内容有互动抽奖，pass")
+    if config.showBlockword == False:
+        match = re.findall("|".join(config.Blockword), rss_str)
+        if match:
+            logger.info('内含屏蔽词，pass，可能会报"抓取失败，请检查订阅地址是否正确！E:can only concatenate str (not "NoneType") to str"错误，无视本条')
             return
 
     # 处理一些标签
