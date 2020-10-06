@@ -26,8 +26,9 @@ add_proxy = False  #默认是否启用代理
 # 图片压缩大小 kb * 1024 = MB
 ZIP_SIZE = 3 * 1024
 
-blockquote = True    #是否显示转发的内容，默认打开
-showlottery = True   #是否显示互动抽奖信息，默认打开
+blockquote = True    #是否显示转发的内容(主要是微博)，默认打开，如果关闭还有转发的信息的话，可以自行添加进屏蔽词(但是这整条消息就会没)
+showBlockword = True   #是否显示内含屏蔽词的信息信息，默认打开
+Blockword = ["互动抽奖","微博抽奖平台"]   #屏蔽词填写 支持正则,看里面格式就明白怎么添加了吧(
 
 #使用百度翻译API 可选，填的话两个都要填，不填默认使用谷歌翻译(需墙外？)
 # Baidu Translate API
