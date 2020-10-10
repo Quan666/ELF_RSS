@@ -6,27 +6,51 @@ from .RSSHub import RWlist
 from .RSSHub import rsstrigger as TR
 import logging
 from nonebot.log import logger
+from nonebot.permission import *
 import config
 import nonebot
 import nonebot
 
 
 # on_command 装饰器将函数声明为一个命令处理器
-@on_command('show_all', aliases=('showall','seeall'))
+@on_command('show_all', aliases=('showall','seeall'), permission=GROUP_ADMIN|SUPERUSER)
 async def show_all(session: CommandSession):
     #rss_name = session.get('show_all', prompt='查看所有订阅')
-    # 权限判断
+    
     user_id = session.ctx['user_id']
+    try:
+        group_id = session.ctx['group_id']
+    except:
+        group_id = None
     #print(type(user_id),type(config.ROOTUSER))
-    if user_id in config.ROOTUSER:
-        # 获取、处理信息
-        flag = 0
-        msg = ''
+    flag = 0
+    msg = ''
+    try:
+        list_rss = RWlist.readRss()
+    except:
+        await session.send('获取rss列表失败')
+        return
+    if group_id:
         try:
-            list_rss = RWlist.readRss()
+            for rss_ in list_rss:
+                if str(group_id) in str(rss_.group_id):
+                    msg = msg + '名称：' + rss_.name + '\n订阅地址：' + rss_.url + '\n\n'
+                    flag += 1
+                    if(flag%5==0):
+                        await session.send(msg)
+                        msg = ''
+            if flag <= 0:
+                await session.send('没有找到订阅哟！')
+            else:
+                await session.send(msg + '共' + str(flag) + '条订阅')
+        except:
+            await session.send('本群还没有任何订阅！')
+    elif user_id:
+        # 获取、处理信息
+        try:
             for rss_ in list_rss:
                 msg = msg + '名称：' + rss_.name + '\n订阅地址：' + rss_.url + '\n\n'
-                flag = flag + 1
+                flag += 1
                 #每条信息展示 5 条订阅
                 if(flag%5==0):
                     await session.send(msg)
@@ -36,7 +60,7 @@ async def show_all(session: CommandSession):
             else:
                 await session.send(msg + '共' + str(flag) + '条订阅')
         except:
-            await session.send('你还没有任何订阅！')
+            await session.send('还没有任何订阅！')
     else:
         await session.send('你没有权限进行此操作！\n关于插件：http://ii1.fun/7byIVb')
 

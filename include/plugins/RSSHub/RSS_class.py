@@ -1,4 +1,5 @@
 import config
+import re
 class rss:
     # 定义基本属性
     name = '' # 订阅名
@@ -28,7 +29,7 @@ class rss:
         self.only_pic=only_pic
 
     def geturl(self)->str:
-        if self.notrsshub :
+        if re.match(u'[hH][tT]{2}[pP][sS]{0,}://', self.url, flags=0) :
             return self.url
         else:
             return config.RSSHUB+self.url

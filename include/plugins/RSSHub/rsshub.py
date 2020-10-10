@@ -24,6 +24,7 @@ from googletrans import Translator
 import emoji
 import socket
 from retrying import retry
+import base64
 # 存储目录
 file_path = './data/'
 #代理
@@ -209,7 +210,7 @@ async def dowimg(url:str,img_proxy:bool)->str:
                         imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
                         imgs_name = re.sub(r'/', r'\\\\', imgs_name)
                     return imgs_name
-            except IOError as e:
+            except BaseException as e:
                 logger.error('图片下载失败 2 E:' + str(e))
                 return ''
     except BaseException as e:
@@ -247,9 +248,10 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
     doc_rss = pq(rss_str)
     rss_str = str(doc_rss)
 
-    if config.showlottery == False:
-        if "互动抽奖" in rss_str:
-            logger.info("内容有互动抽奖，pass")
+    if config.showBlockword == False:
+        match = re.findall("|".join(config.Blockword), rss_str)
+        if match:
+            logger.info('内含屏蔽词，pass，可能会报"抓取失败，请检查订阅地址是否正确！E:can only concatenate str (not "NoneType") to str"错误，无视本条')
             return
 
     # 处理一些标签
@@ -294,12 +296,7 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
         rss_str_tl = re.sub(re.escape(str(img)), '', rss_str_tl)
         img_path = await dowimg(img.attr("src"), img_proxy)
         if len(img_path) > 0:
-            if config.IsLinux:
-                rss_str = re.sub(re.escape(str(img)),
-                                 r'[CQ:image,file=' + str(img_path) + ']',
-                                 rss_str)
-            else:
-                rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
+            rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
         else:
             rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
 
@@ -311,12 +308,7 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
         rss_str_tl = re.sub(re.escape(str(video)), '', rss_str_tl)
         img_path = await dowimg(video.attr("poster"), img_proxy)
         if len(img_path) > 0:
-            if config.IsLinux:
-                rss_str = re.sub(re.escape(str(img)),
-                                 r'[CQ:image,file=' + str(img_path) + ']',
-                                 rss_str)
-            else:
-                rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
+            rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
                                  rss_str)
         else:
             rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
