@@ -10,7 +10,7 @@ rss订阅插件始终没找到个合适自己的，就自己写了一个。
 
 * 支持多种订阅源，主要兼容RSSHub生成的订阅源
 
-* 由于酷Q 已经不能再使用，本插件将会在 8 月前尽量适配 mirai，当前版本也可以直接在 mirai 下使用，但会有些许 bug。
+* 由于酷Q 已经不能再使用，本插件已经完美适配 Mirai
 * [迁移到 Mirai](https://github.com/Quan666/ELF_RSS/wiki/%E8%BF%81%E7%A7%BB%E5%88%B0-mirai)
 
 ### 更多信息 请移步 [Wiki](https://github.com/Quan666/ELF_RSS/wiki)
