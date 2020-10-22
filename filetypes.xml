@@ -1,6 +1,7 @@
 <application>
   <component name="FileTypeManager" version="17">
     <extensionMap>
+      <mapping pattern=".env" type="PLAIN_TEXT" />
       <mapping pattern="BT_downlod" type="Python" />
     </extensionMap>
   </component>
