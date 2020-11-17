@@ -1,0 +1,98 @@
+<application>
+  <component name="LocalDatabaseDriverManager" version="201">
+    <driver id="cassandra">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="clickhouse">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="db2.11">
+      <option name="auto-sync" value="false" />
+    </driver>
+    <driver id="db2">
+      <option name="auto-sync" value="false" />
+    </driver>
+    <driver id="db2.jtopen">
+      <option name="auto-sync" value="false" />
+    </driver>
+    <driver id="derby.embedded">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="derby.remote">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="exasol">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="greenplum">
+      <option name="auto-sync" value="true" />
+      <option name="schema-control" value="MANUAL" />
+      <option name="send-app-info" value="false" />
+    </driver>
+    <driver id="h2.unified">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="hive">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="hsqldb.local">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="hsqldb.remote">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="mariadb">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="mongo">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="sqlserver.ms">
+      <option name="auto-sync" value="true" />
+      <option name="send-app-info" value="false" />
+    </driver>
+    <driver id="sqlserver.jtds">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="azure.ms">
+      <option name="auto-sync" value="true" />
+      <option name="send-app-info" value="false" />
+    </driver>
+    <driver id="mysql.8">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="mysql">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="mysql_aurora">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="oracle">
+      <option name="auto-sync" value="true" />
+      <option name="auto-commit" value="false" />
+    </driver>
+    <driver id="postgresql">
+      <option name="auto-sync" value="true" />
+      <option name="schema-control" value="MANUAL" />
+    </driver>
+    <driver id="redshift">
+      <option name="auto-sync" value="true" />
+      <option name="schema-control" value="MANUAL" />
+    </driver>
+    <driver id="snowflake">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="sqlite.xerial">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="sybase.jtds">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="sybase.ase">
+      <option name="auto-sync" value="true" />
+    </driver>
+    <driver id="vertica">
+      <option name="auto-sync" value="true" />
+    </driver>
+  </component>
+</application>
