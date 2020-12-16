@@ -1,8 +1,9 @@
+
 import json
 import codecs
-import re
 import os.path
-from . import RSS_class
+from RSSHUB import RSS_class
+
 # 存储目录
 file_path = './data/'
 # 读取记录
@@ -11,7 +12,7 @@ def readRss() -> list:
     with codecs.open(file_path+"rss.json", 'r','utf-8') as load_f:
         rss_list_json = json.load(load_f)
         for rss_one in rss_list_json:
-            tmp_rss=RSS_class.rss('','','','')
+            tmp_rss= RSS_class.rss('', '', '', '')
             tmp_rss.__dict__=json.loads(rss_one)
             rss_list.append(tmp_rss)
     return rss_list

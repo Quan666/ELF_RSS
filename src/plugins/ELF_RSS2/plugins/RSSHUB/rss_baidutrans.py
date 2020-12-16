@@ -20,12 +20,15 @@ import hashlib
 import json
 import urllib
 import random
-import config
+
+from nonebot import logger
+
+from bot import config
 
 
 def baidu_translate(content):
-    appid = config.BaiduID
-    secretKey = config.BaiduKEY
+    appid = config.baiduid
+    secretKey = config.baidukey
     httpClient = None
     myurl = '/api/trans/vip/translate'
     q = content
@@ -48,7 +51,7 @@ def baidu_translate(content):
         dst = str(js["trans_result"][0]["dst"])  # 取得翻译后的文本结果
         return dst  # 打印结果
     except Exception as e:
-        print(e)
+        logger.error(e)
     finally:
         if httpClient:
             httpClient.close()

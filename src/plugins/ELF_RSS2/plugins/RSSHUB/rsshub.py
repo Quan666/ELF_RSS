@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+
 from io import BytesIO
 import unicodedata
 import feedparser
@@ -14,35 +15,32 @@ import os.path
 import requests
 import uuid
 import time
-from datetime import datetime,timezone,timedelta
-import config
+from bot import config
 import difflib
-import logging
 from nonebot.log import logger
-from . import RSS_class
+from RSSHUB import RSS_class
 from googletrans import Translator
 import emoji
-import socket
 from retrying import retry
-import base64
+
 # 存储目录
 file_path = './data/'
 #代理
-proxy = config.RSS_PROXY
+proxy = config.rss_proxy
 proxies = {
-    'http': 'http://' + proxy,
-    'https': 'https://' + proxy,
+    'http': 'http://' + str(proxy),
+    'https': 'https://' + str(proxy),
 }
 status_code=[200,301,302]
 # 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告
 asyncio.log.logger.setLevel(40)
 @retry
-async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
+async def getRSS(rss: RSS_class.rss)->list:# 链接，订阅名
     #设置全局超时 以解决 feedparser.parse 遇到 bad url 时卡住
     #socket.setdefaulttimeout(5000)
     if rss.img_proxy:
         Proxy = {
-            "all":"http://" + proxy
+            "all":"http://" + str(proxy)
         }
     else:
         Proxy = {}
@@ -54,13 +52,12 @@ async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
                 d=""
                 try:
                     r = await client.get(rss.geturl(),timeout=30)
-                    #print(rss.name+":"+str(r.status_code)+' 长度：'+str(len(r.content)))
                     d = feedparser.parse(r.content)
                 except BaseException as e:
                     logger.error(e)
-                    if not rss.notrsshub and config.RSSHUB_backup:
-                        logger.error('RSSHub :' + config.RSSHUB + ' 访问失败 ！使用备用RSSHub 地址！')
-                        for rsshub_url in config.RSSHUB_backup:
+                    if not rss.notrsshub and config.rsshub_backup:
+                        logger.error('RSSHub :' + config.rsshub + ' 访问失败 ！使用备用RSSHub 地址！')
+                        for rsshub_url in config.rsshub_backup:
                             async with httpx.AsyncClient(proxies=Proxy) as client:
                                 try:
                                     r = await client.get(rsshub_url + rss.url)
@@ -76,7 +73,7 @@ async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
                 if len(change) > 0:
                     writeRss(d, rss.name)  # 写入文件
                     msg_list = []
-                    bot = nonebot.get_bot()
+                    bot, = nonebot.get_bots().values()
                     for item in change:
                         msg = '【' + d.feed.title + '】更新了!\n----------------------\n'
 
@@ -85,7 +82,6 @@ async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
                             text = re.sub('<video.+?><\/video>|<img.+?>', '', item['summary'])
                             text = re.sub('<br>', '', text)
                             Similarity = difflib.SequenceMatcher(None, text, item['title'])
-                            # print(Similarity.quick_ratio())
                             if Similarity.quick_ratio() <= 0.1:  # 标题正文相似度
                                 msg = msg + '标题：' + item['title'] + '\n'
                             msg = msg + '内容：' + await checkstr(item['summary'], rss.img_proxy, rss.translation, rss.only_pic) + '\n'
@@ -101,7 +97,6 @@ async def getRSS(rss:RSS_class.rss)->list:# 链接，订阅名
                                                               time.localtime(loc_time + 28800.0)).format('月', '日')
                         except BaseException:
                             msg = msg + '日期：' + time.strftime("%m{}%d{} %H:%M:%S", time.localtime()).format('月', '日')
-                        # print(msg+'\n\n\n')
                         await sendMsg(rss, msg, bot)
                         # msg_list.append(msg)
                     return msg_list
@@ -164,9 +159,9 @@ async def dowimg(url:str,img_proxy:bool)->str:
             Proxy = {}
         async with httpx.AsyncClient(proxies=Proxy) as client:
             try:
-                if config.CLOSE_PIXIV_CAT and url.find('pixiv.cat') >= 0:
+                if config.close_pixiv_cat and url.find('pixiv.cat') >= 0:
                     img_proxy = False
-                    headers = {'referer': config.PIXIV_REFERER}
+                    headers = {'referer': config.pixiv_referer}
                     img_id = re.sub('https://pixiv.cat/', '', url)
                     img_id = img_id[:-4]
                     info_list = img_id.split('-')
@@ -177,14 +172,14 @@ async def dowimg(url:str,img_proxy:bool)->str:
                         url = req_json['response'][0]['image_urls']['large']
 
                     # 使用第三方反代服务器
-                    url = re.sub('i.pximg.net', config.PIXIV_PROXY, url)
+                    url = re.sub('i.pximg.net', config.pixiv_proxy, url)
                     pic = await client.get(url, headers=headers ,timeout=100.0)
                 else:
                     pic = await client.get(url)
 
 
                 # 大小控制，图片压缩
-                if (len(pic.content)/1024 > config.ZIP_SIZE):
+                if (float(len(pic.content)/1024) > float(config.zip_size)):
                     filename = await zipPic(pic.content,name)
                 else:
                     if len(file_suffix[1]) > 0:
@@ -198,7 +193,7 @@ async def dowimg(url:str,img_proxy:bool)->str:
                     with codecs.open(img_path + filename, "wb") as dump_f:
                         dump_f.write(pic.content)
 
-                if config.IsLinux:
+                if config.islinux:
                     imgs_name = img_path + filename
                     if len(imgs_name) > 0:
                         imgs_name = os.getcwd() + re.sub(r'\./|\\', r'/', imgs_name)
@@ -206,7 +201,7 @@ async def dowimg(url:str,img_proxy:bool)->str:
                 else:
                     imgs_name = img_path + filename
                     if len(imgs_name) > 0:
-                        imgs_name = os.getcwd() + re.sub('\./', r'\\', imgs_name)
+                        imgs_name = os.getcwd() + re.sub('/', r'\\', imgs_name)
                         imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
                         imgs_name = re.sub(r'/', r'\\\\', imgs_name)
                     return imgs_name
@@ -223,13 +218,13 @@ async def zipPic(content,name):
     im = Image.open(BytesIO(content))
     # 获得图像尺寸:
     w, h = im.size
-    print('Original image size: %sx%s' % (w, h))
+    logger.info('Original image size: %sx%s' % (w, h))
     # 算出缩小比
-    Proportion = int(len(content)/(config.ZIP_SIZE * 1024))
-    print('算出的缩小比:'+str(Proportion))
+    Proportion = int(len(content)/(float(config.zip_size) * 1024))
+    logger.info('算出的缩小比:'+str(Proportion))
     # 缩放
     im.thumbnail((w // Proportion, h // Proportion))
-    print('Resize image to: %sx%s' % (w // Proportion, h // Proportion))
+    logger.info('Resize image to: %sx%s' % (w // Proportion, h // Proportion))
     # 把缩放后的图像用jpeg格式保存:
     try:
         im.save(img_path + name + '.jpg', 'jpeg')
@@ -248,8 +243,8 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
     doc_rss = pq(rss_str)
     rss_str = str(doc_rss)
 
-    if config.showBlockword == False:
-        match = re.findall("|".join(config.Blockword), rss_str)
+    if config.showblockword == False:
+        match = re.findall("|".join(config.blockword), rss_str)
         if match:
             logger.info('内含屏蔽词，pass，可能会报"抓取失败，请检查订阅地址是否正确！E:can only concatenate str (not "NoneType") to str"错误，无视本条')
             return
@@ -290,7 +285,7 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
     # 处理图片
     doc_img = doc_rss('img')
     if not doc_img and only_pic:
-        print("没有图片，pass")
+        logger.info("没有图片，pass")
         return
     for img in doc_img.items():
         rss_str_tl = re.sub(re.escape(str(img)), '', rss_str_tl)
@@ -324,7 +319,7 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
         try:
             text = emoji.demojize(rss_str_tl)
             text = re.sub(r':[A-Za-z_]*:', ' ', text)
-            if config.UseBaidu:
+            if config.usebaidu:
                 from . import rss_baidutrans
                 rss_str_tl = re.sub(r'\n', '百度翻译 ', rss_str_tl)
                 rss_str_tl = unicodedata.normalize('NFC', rss_str_tl)
@@ -337,9 +332,6 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
             text = re.sub(r'百度翻译', '\n', text)
         except Exception as e:
             text = '\n翻译失败！'+str(e)+'\n'
-    #print()
-    #print("rss_str+text-----"+rss_str+text)
-    #print()
     return rss_str+text
 
 
@@ -349,20 +341,18 @@ def checkUpdate(new, old) -> list:
         a = new.entries
     except Exception as e:
         logger.error('拉取RSS失败，可能是网络开了小差 E:' + str(e))
-        print(new)
         return []
     b = old['entries']
 
     c = [];
     # 防止 rss 超过设置的缓存条数
-    if len(a)>= config.LIMT:
-        LIMT=len(a) + config.LIMT
+    if len(a)>= config.limt:
+        LIMT=len(a) + config.limt
     else:
-        LIMT=config.LIMT
+        LIMT=config.limt
 
     for i in a:
         count = 0;
-        # print(i['link'])
         for j in b:
             if i['id'] == j['id']:
                 count = 1
@@ -370,7 +360,6 @@ def checkUpdate(new, old) -> list:
             c.insert(0, i)
     for i in c:
         count = 0;
-        # print(i['link'])
         for j in b:
             if i['id'] == j['id']:
                 count = 1
@@ -389,19 +378,17 @@ def readRss(name):
 # 写入记录
 def writeRss(new, name):
     # 防止 rss 超过设置的缓存条数
-    if len(new.entries) >= config.LIMT:
-        LIMT = len(new.entries) + config.LIMT
+    if len(new.entries) >= config.limt:
+        LIMT = len(new.entries) + config.limt
     else:
-        LIMT = config.LIMT
+        LIMT = config.limt
     try:
         old = readRss(name)
-        print(len(old['entries']))
         change = checkUpdate(new, old)
 
         for tmp in change:
             old['entries'].insert(0, tmp)
         count = 0;
-        print(len(old['entries']))
         for i in old['entries']:
             count = count + 1
             if count > LIMT:

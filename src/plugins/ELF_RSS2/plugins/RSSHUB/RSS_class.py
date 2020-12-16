@@ -1,4 +1,5 @@
-import config
+
+from bot import config
 import re
 class rss:
     # 定义基本属性
@@ -32,4 +33,4 @@ class rss:
         if re.match(u'[hH][tT]{2}[pP][sS]{0,}://', self.url, flags=0) :
             return self.url
         else:
-            return config.RSSHUB+self.url
+            return config.rsshub+self.url

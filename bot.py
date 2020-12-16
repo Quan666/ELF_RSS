@@ -1,14 +1,28 @@
-from os import path
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import nonebot
 
-import config
+# Custom your logger
+#
+# from nonebot.log import logger, default_format
+# logger.add("error.log",
+#            rotation="00:00",
+#            diagnose=False,
+#            level="ERROR",
+#            format=default_format)
 
-if __name__ == '__main__':
-    nonebot.init(config)
-    nonebot.load_builtin_plugins()
-    nonebot.load_plugins(
-        path.join(path.dirname(__file__), 'include', 'plugins'),
-        'include.plugins'
-    )
-    nonebot.run()
+# You can pass some keyword args config to init function
+nonebot.init()
+app = nonebot.get_asgi()
+config = nonebot.get_driver().config
+nonebot.load_builtin_plugins()
+nonebot.load_plugins("src/plugins")
+# Modify some config / config depends on loaded configs
+#
+# config = nonebot.get_driver().config
+# do something...
+
+# https://v2.nonebot.dev/guide/basic-configuration.html
+if __name__ == "__main__":
+    nonebot.run(app="bot:app")

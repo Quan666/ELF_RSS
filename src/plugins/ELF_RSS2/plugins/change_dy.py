@@ -1,23 +1,31 @@
-from nonebot import on_command, CommandSession
-import requests
-from .RSSHub import rsshub
-from .RSSHub import RSS_class
-from .RSSHub import RWlist
-from .RSSHub import rsstrigger as TR
-import logging
+from RSSHUB import rsstrigger as TR, RWlist
 from nonebot.log import logger
-import config
-import nonebot
-from nonebot.permission import *
-from apscheduler.triggers.interval import IntervalTrigger # 间隔触发器
-from nonebot import on_command, scheduler
+from nonebot import scheduler, permission
+from nonebot import on_command
+from nonebot.rule import to_me
+from nonebot.adapters.cqhttp import Bot, Event
 
-# on_command 装饰器将函数声明为一个命令处理器
-@on_command('change', permission=SUPERUSER)
-async def change(session: CommandSession):
-    change_info = session.get('change',
-                           prompt='输入要修改的订阅的 \n订阅名 修改项=,属性 \n如:\n 订阅 dyqq=,xx dsf=0\n对应参数： 订阅地址-url，订阅QQ-dyqq，订阅群-dyqun，更新频率-uptime，代理-proxy，第三方-dsf，翻译-tl，仅title-ot，仅图片-op\n\n注：\n代理、第三方、翻译、仅title属性值为1/0\nqq、群号前加英文逗号表示追加')
-    user_id = session.ctx['user_id']
+# 存储目录
+file_path = './data/'
+
+RssChange = on_command('change', aliases={'changedy','moddy'}, rule=to_me(), priority=5,permission=permission.SUPERUSER)
+
+
+@RssChange.handle()
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
+    args = str(event.message).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
+    if args:
+        state["RssChange"] = args  # 如果用户发送了参数则直接赋值
+
+
+@RssChange.got("RssChange", prompt='输入要修改的订阅的 \n订阅名 修改项=,属性 \n如:\n 订阅 dyqq=,xx dsf=0\n对应参数:地址-url，QQ-dyqq，群-dyqun，更新频率-uptime，代理-proxy,翻译-tl，仅title-ot，仅图片-op\n注：\n代理、翻译、仅title属性值为1/0\nqq、群号前加英文逗号表示追加')
+async def handle_RssAdd(bot: Bot, event: Event, state: dict):
+    change_info = state["RssChange"]
+    # user_id = event.user_id
+    # try:
+    #     group_id = event.group_id
+    # except:
+    #     group_id = None
     
     flag = 0
     try:
@@ -31,7 +39,7 @@ async def change(session: CommandSession):
                 rss_a=rss_
                 flag = flag + 1
         if flag <= 0:
-            await session.send('订阅 ' + name + ' 不存在！')
+            await RssChange.send('订阅 ' + name + ' 不存在！')
         else:
             try:
                 rss_tmp = rss_a
@@ -63,7 +71,6 @@ async def change(session: CommandSession):
                         rss_tmp.time = int(info_this[1])
                     if info_this[0] == 'proxy':
                         rss_tmp.img_proxy = bool(int(info_this[1]))
-                        #print(bool(info_this[1]))
                     if info_this[0] == 'dsf':
                         rss_tmp.notrsshub = bool(int(info_this[1]))
                     if info_this[0] == 'tl':
@@ -78,38 +85,17 @@ async def change(session: CommandSession):
                 try:
                     scheduler.remove_job(name)
                 except Exception as e:
-                    print(e)
+                    logger.error(e)
                 # 加入订阅任务队列
                 TR.rss_trigger(rss_tmp.time, rss_tmp)
                 logger.info('修改' + name + '成功')
-                await session.send('修改 ' + name + ' 订阅成功！')
+                await RssChange.send('修改 ' + name + ' 订阅成功！')
             except Exception as e:
-                await session.send('命令出错，修改失败！')
-                print(e)
+                await RssChange.send('命令出错，修改失败！')
+                logger.error(e)
     except:
-        await session.send('你还没有任何订阅！\n关于插件：http://ii1.fun/7byIVb')
+        await RssChange.send('你还没有任何订阅！\n关于插件：http://ii1.fun/7byIVb')
 
 
 
 
-# deldy.args_parser 装饰器将函数声明为 add 命令的参数解析器
-# 命令解析器用于将用户输入的参数解析成命令真正需要的数据
-@change.args_parser
-async def _(session: CommandSession):
-    # 去掉消息首尾的空白符
-    stripped_arg = session.current_arg_text.strip()
-
-    if session.is_first_run:
-        # 该命令第一次运行（第一次进入命令会话）
-        if stripped_arg:
-            session.state['change'] = stripped_arg
-        return
-
-    if not stripped_arg:
-        # 用户没有发送有效的订阅（而是发送了空白字符），则提示重新输入
-        # 这里 session.pause() 将会发送消息并暂停当前会话（该行后面的代码不会被运行）
-        session.pause(
-            '输入不能为空！')
-
-    # 如果当前正在向用户询问更多信息，且用户输入有效，则放入会话状态
-    session.state[session.current_key] = stripped_arg

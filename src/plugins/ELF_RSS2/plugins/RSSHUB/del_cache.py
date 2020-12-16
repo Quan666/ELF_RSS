@@ -1,30 +1,25 @@
-from . import rsshub
-from . import RSS_class
-from . import RWlist
-import asyncio
 import nonebot
-import config
-import os
+from bot import config
 import shutil
 from apscheduler.triggers.interval import IntervalTrigger # 间隔触发器
-from nonebot import on_command, scheduler
-import time
+from nonebot import scheduler, logger
+
 # 图片存储目录
 file_path = './data/imgs'
 
 async def del_img(int):
-    bot = nonebot.get_bot()
+    bot, = nonebot.get_bots().values()
     try:
         shutil.rmtree(file_path)
-        await bot.send_msg(message_type='private', user_id=config.ROOTUSER[0], message='图片缓存已经删除！')
+        await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]), message='图片缓存已经删除！')
     except Exception as e:
-        print(e)
-        await bot.send_msg(message_type='private', user_id=config.ROOTUSER[0], message='图片缓存删除失败！')
+        logger.error(e)
+        await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]), message='图片缓存删除失败！')
 
 def delcache_trigger():
     # 制作一个“time分钟/次”触发器
     trigger = IntervalTrigger(
-        days=config.DELCACHE,
+        days=config.delcache,
         #minutes=1,
         jitter=10
     )
