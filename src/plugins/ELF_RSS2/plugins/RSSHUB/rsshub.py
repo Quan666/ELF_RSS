@@ -27,7 +27,7 @@ from bot import config
 from . import RSS_class
 
 # 存储目录
-file_path = Path.cwd() / 'data'
+file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 # 代理
 proxy = config.rss_proxy
 proxies = {
@@ -51,7 +51,7 @@ async def getRSS(rss: RSS_class.rss) -> list:  # 链接，订阅名
         Proxy = {}
     try:
         # 检查是否存在rss记录
-        if os.path.isfile(file_path / (rss.name + '.json')):
+        if os.path.isfile(file_path + (rss.name + '.json')):
             # 异步获取 xml
             async with httpx.AsyncClient(proxies=Proxy) as client:
                 d = ""
@@ -152,7 +152,7 @@ async def sendMsg(rss, msg, bot):
 @retry
 async def dowimg(url: str, img_proxy: bool) -> str:
     try:
-        img_path = file_path / 'imgs' / os.sep
+        img_path = file_path + 'imgs' + os.sep
         if not os.path.isdir(img_path):
             logger.info(str(img_path) + '文件夹不存在，已重新创建')
             os.makedirs(img_path)  # 创建目录
@@ -197,18 +197,19 @@ async def dowimg(url: str, img_proxy: bool) -> str:
                         filename = name + '.png'
                     else:
                         filename = name + '.jpg'
-                    with codecs.open(str(img_path / filename), "wb") as dump_f:
+                    with codecs.open(str(img_path + filename), "wb") as dump_f:
                         dump_f.write(pic.content)
 
                 if config.islinux:
-                    imgs_name = img_path / filename
+                    imgs_name = img_path + filename
                     if len(imgs_name) > 0:
-                        imgs_name = os.getcwd() + re.sub(r'\./|\\', r'/', imgs_name)
+                        # imgs_name = os.getcwd() + re.sub(r'\./|\\', r'/', imgs_name)
+                        imgs_name = re.sub(r'\./|\\', r'/', imgs_name)
                     return imgs_name
                 else:
-                    imgs_name = img_path / filename
+                    imgs_name = img_path + filename
                     if len(imgs_name) > 0:
-                        imgs_name = os.getcwd() + re.sub('/', r'\\', imgs_name)
+                        imgs_name = re.sub('/', r'\\', imgs_name)
                         imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
                         imgs_name = re.sub(r'/', r'\\\\', imgs_name)
                     return imgs_name
@@ -221,7 +222,7 @@ async def dowimg(url: str, img_proxy: bool) -> str:
 
 
 async def zipPic(content, name):
-    img_path = file_path / 'imgs' / os.sep
+    img_path = file_path + 'imgs' + os.sep
     # 打开一个jpg/png图像文件，注意是当前路径:
     im = Image.open(BytesIO(content))
     # 获得图像尺寸:
@@ -235,10 +236,10 @@ async def zipPic(content, name):
     logger.info('Resize image to: %sx%s' % (w // Proportion, h // Proportion))
     # 把缩放后的图像用jpeg格式保存:
     try:
-        im.save(img_path / name + '.jpg', 'jpeg')
+        im.save(img_path + name + '.jpg', 'jpeg')
         return name + '.jpg'
     except Exception:
-        im.save(img_path / name + '.png', 'png')
+        im.save(img_path + name + '.png', 'png')
         return name + '.png'
 
 
@@ -372,7 +373,7 @@ def checkUpdate(new, old) -> list:
 
 # 读取记录
 def readRss(name):
-    with codecs.open(file_path / (name + ".json"), 'r', 'utf-8') as load_f:
+    with codecs.open(file_path + (name + ".json"), 'r', 'utf-8') as load_f:
         load_dict = json.load(load_f)
     return load_dict
 
@@ -400,5 +401,5 @@ def writeRss(new, name):
 
     if not os.path.isdir(file_path):
         os.makedirs(file_path)
-    with codecs.open(file_path / (name + ".json"), "w", 'utf-8') as dump_f:
+    with codecs.open(file_path + (name + ".json"), "w", 'utf-8') as dump_f:
         dump_f.write(json.dumps(old, sort_keys=True, indent=4, ensure_ascii=False))

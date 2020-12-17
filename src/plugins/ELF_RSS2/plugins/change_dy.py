@@ -1,13 +1,11 @@
 from RSSHUB import rsstrigger as TR, RWlist
-# from nonebot import scheduler,
-from apscheduler.schedulers.background import BackgroundScheduler
 from nonebot import on_command, permission, require
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
 from nonebot.rule import to_me
 
-# scheduler = require("nonebot_plugin_apscheduler").scheduler
-scheduler = BackgroundScheduler()
+scheduler = require("nonebot_plugin_apscheduler").scheduler
+
 # 存储目录
 # file_path = './data/'
 

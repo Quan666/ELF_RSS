@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from RSSHUB import RWlist
@@ -7,7 +8,7 @@ from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.rule import to_me
 
 # 存储目录
-file_path = Path.cwd() / 'data'
+# file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 
 RssShow = on_command('show', aliases={'showdy', 'lookdy'}, rule=to_me(), priority=5, permission=permission.SUPERUSER)
 

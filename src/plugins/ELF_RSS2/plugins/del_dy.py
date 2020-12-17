@@ -3,16 +3,14 @@ import re
 from pathlib import Path
 
 from RSSHUB import RWlist
-from apscheduler.schedulers.background import BackgroundScheduler
 from nonebot import on_command, require, permission
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
 from nonebot.rule import to_me
 
-# scheduler = require("nonebot_plugin_apscheduler").scheduler
-scheduler = BackgroundScheduler()
+scheduler = require("nonebot_plugin_apscheduler").scheduler
 # 存储目录
-file_path = Path.cwd() / 'data'
+file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 
 Rssdel = on_command('deldy', aliases={'delrss', 'rssdel'}, rule=to_me(), priority=5, permission=permission.SUPERUSER)
 
@@ -51,7 +49,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                         list_rss.remove(rss_)
                         scheduler.remove_job(rss_.name)
                         try:
-                            os.remove(file_path / (rss_.name + ".json"))
+                            os.remove(file_path + (rss_.name + ".json"))
                         except BaseException as e:
                             logger.info(e)
                         RWlist.writeRss(list_rss)
@@ -65,7 +63,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                     list_rss.remove(rss_)
                     scheduler.remove_job(rss_.name)
                     try:
-                        os.remove(file_path / (rss_.name + ".json"))
+                        os.remove(file_path + (rss_.name + ".json"))
                     except BaseException as e:
                         logger.info(e)
                     await Rssdel.send('订阅 ' + rss_name + ' 删除成功！')

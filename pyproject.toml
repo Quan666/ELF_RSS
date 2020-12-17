@@ -3,7 +3,7 @@ name = "ELF_RSS"
 version = "2.0.0"
 description = "ELF_RSS"
 authors = ["Quan666"]
-license = "MIT"
+license = "GPL v3"
 readme = "README.md"
 
 homepage = "https://github.com/Quan666/ELF_RSS"
@@ -12,8 +12,9 @@ keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-nonebot2 = "^2.0.0.a1"
-nb-cli = "^0.1.0"
+nonebot2 = "^2.0.0.a8"
+nb-cli = "^0.3.1"
+nonebot-plugin-apscheduler = "^0.1.0"
 
 [tool.poetry.dev-dependencies]
 nonebot-test = "^0.1.0"
