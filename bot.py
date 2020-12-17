@@ -17,7 +17,10 @@ nonebot.init()
 app = nonebot.get_asgi()
 config = nonebot.get_driver().config
 nonebot.load_builtin_plugins()
+nonebot.load_plugin("nonebot_plugin_apscheduler")
+
 nonebot.load_plugins("src/plugins")
+
 # Modify some config / config depends on loaded configs
 #
 # config = nonebot.get_driver().config

@@ -1,14 +1,17 @@
 from RSSHUB import rsstrigger as TR, RWlist
-from nonebot.log import logger
-from nonebot import scheduler, permission
-from nonebot import on_command
-from nonebot.rule import to_me
+# from nonebot import scheduler,
+from nonebot import on_command, permission, require
 from nonebot.adapters.cqhttp import Bot, Event
+from nonebot.log import logger
+from nonebot.rule import to_me
 
+scheduler = require("nonebot_plugin_apscheduler").scheduler
+# from pathlib impo
 # 存储目录
-file_path = './data/'
+# file_path = './data/'
 
-RssChange = on_command('change', aliases={'changedy','moddy'}, rule=to_me(), priority=5,permission=permission.SUPERUSER)
+RssChange = on_command('change', aliases={'changedy', 'moddy'}, rule=to_me(), priority=5,
+                       permission=permission.SUPERUSER)
 
 
 @RssChange.handle()
@@ -18,7 +21,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         state["RssChange"] = args  # 如果用户发送了参数则直接赋值
 
 
-@RssChange.got("RssChange", prompt='输入要修改的订阅的 \n订阅名 修改项=,属性 \n如:\n 订阅 dyqq=,xx dsf=0\n对应参数:地址-url，QQ-dyqq，群-dyqun，更新频率-uptime，代理-proxy,翻译-tl，仅title-ot，仅图片-op\n注：\n代理、翻译、仅title属性值为1/0\nqq、群号前加英文逗号表示追加')
+@RssChange.got("RssChange",
+               prompt='输入要修改的订阅的 \n订阅名 修改项=,属性 \n如:\n 订阅 dyqq=,xx dsf=0\n对应参数:地址-url，QQ-dyqq，群-dyqun，更新频率-uptime，代理-proxy,翻译-tl，仅title-ot，仅图片-op\n注：\n代理、翻译、仅title属性值为1/0\nqq、群号前加英文逗号表示追加')
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     change_info = state["RssChange"]
     # user_id = event.user_id
@@ -26,7 +30,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     #     group_id = event.group_id
     # except:
     #     group_id = None
-    
+
     flag = 0
     try:
         list_rss = RWlist.readRss()
@@ -35,8 +39,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         name = list_info[0]  # 取订阅名
         list_info.pop(0)  # 从列表删除
         for rss_ in list_rss:
-            if rss_.name == name :
-                rss_a=rss_
+            if rss_.name == name:
+                rss_a = rss_
                 flag = flag + 1
         if flag <= 0:
             await RssChange.send('订阅 ' + name + ' 不存在！')
@@ -44,7 +48,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
             try:
                 rss_tmp = rss_a
                 for info in list_info:
-                    info_this = info.split('=',1)
+                    info_this = info.split('=', 1)
                     if info_this[0] == 'url':
                         rss_tmp.url = info_this[1]
                     if info_this[0] == 'dyqq':
@@ -53,7 +57,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                             list_user_id.pop(0)
                             rss_tmp.user_id = rss_tmp.user_id + list_user_id
                         else:
-                            if info_this[1]!='-1':
+                            if info_this[1] != '-1':
                                 rss_tmp.user_id = list_user_id
                             else:
                                 rss_tmp.user_id = []
@@ -95,7 +99,3 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 logger.error(e)
     except:
         await RssChange.send('你还没有任何订阅！\n关于插件：http://ii1.fun/7byIVb')
-
-
-
-

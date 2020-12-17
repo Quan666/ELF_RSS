@@ -1,12 +1,14 @@
-from RSSHUB import RSS_class, RWlist, rsstrigger as TR
-from nonebot.log import logger
-from bot import config
 import re
-from nonebot import on_command,permission
-from nonebot.rule import to_me
-from nonebot.adapters.cqhttp import Bot, Event
 
-RssAdd = on_command('add',aliases={'订阅','rssadd','dy'}, rule=to_me(), priority=5,permission=permission.SUPERUSER)
+from RSSHUB import RSS_class, RWlist, rsstrigger as TR
+from nonebot import on_command, permission
+from nonebot.adapters.cqhttp import Bot, Event
+from nonebot.log import logger
+from nonebot.rule import to_me
+
+from bot import config
+
+RssAdd = on_command('add', aliases={'订阅', 'rssadd', 'dy'}, rule=to_me(), priority=5, permission=permission.SUPERUSER)
 
 
 @RssAdd.handle()
@@ -16,7 +18,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         state["RssAdd"] = args  # 如果用户发送了参数则直接赋值
 
 
-@RssAdd.got("RssAdd", prompt="要订阅的信息不能为空呢，请重新输入\n输入样例：\ntest /twitter/user/xx 11,11 -1 5 0 1 \n订阅名 订阅地址 qq(,分隔，为空-1) 群号(,分隔，为空-1) 更新时间(分钟，可选) 1/0(代理，可选)")
+@RssAdd.got("RssAdd",
+            prompt="要订阅的信息不能为空呢，请重新输入\n输入样例：\ntest /twitter/user/xx 11,11 -1 5 0 1 \n订阅名 订阅地址 qq(,分隔，为空-1) 群号(,分隔，为空-1) 更新时间(分钟，可选) 1/0(代理，可选)")
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     rss_dy_link = state["RssAdd"]
     user_id = event.user_id
@@ -30,13 +33,12 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     # else:
     #     rss_dy_link = await RssAdd.reject('要订阅的信息不能为空呢，请重新输入\n输入样例：\ntest /twitter/user/xx 11,11 -1 5 1 0 \n订阅名 订阅地址 qq(,分隔，为空-1) 群号(,分隔，为空-1) 更新时间(分钟，可选) 1/0(代理，可选) 1/0(翻译,可选) 1/0(仅标题,可选) 1/0(仅图片,可选)')
 
-
     # 获取、处理信息
     dy = rss_dy_link.split(' ')
     try:
         name = dy[0]
-        name=re.sub(r'\?|\*|\:|\"|\<|\>|\\|/|\|', '_', name)
-        if name=='rss':
+        name = re.sub(r'\?|\*|\:|\"|\<|\>|\\|/|\|', '_', name)
+        if name == 'rss':
             name = 'rss_'
         try:
             url = dy[1]
@@ -55,7 +57,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 elif old.name == name:
                     flag = 3
         except BaseException as e:
-            logger.info("E :"+str(e))
+            logger.info("E :" + str(e))
         if group_id:
             if flag == 0 and url:
                 if len(dy) > 2:
@@ -95,7 +97,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         elif user_id and flag == 0:
             user_id = dy[2]
             group_id = dy[3]
-            if len(dy) > 4 and int(dy[4])>0:
+            if len(dy) > 4 and int(dy[4]) > 0:
                 times = int(dy[4])
             else:
                 times = 5
@@ -124,7 +126,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
             logger.info('添加' + name + '失败，已存在')
             await RssAdd.send('订阅名或订阅链接已经存在！')
             return
-        rss = RSS_class.rss(name, url, str(user_id), str(group_id), times, proxy, notrsshub, translation, only_title, only_pic)
+        rss = RSS_class.rss(name, url, str(user_id), str(group_id), times, proxy, notrsshub, translation, only_title,
+                            only_pic)
         # 写入订阅配置文件
         try:
             list_rss.append(rss)
@@ -142,7 +145,3 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     except BaseException as e:
         logger.info(e)
         await RssAdd.send('参数不对哟！\n关于插件：http://ii1.fun/7byIVb')
-
-
-
-

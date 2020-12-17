@@ -1,13 +1,15 @@
+from pathlib import Path
+
 from RSSHUB import RWlist
-from nonebot import permission
 from nonebot import on_command
-from nonebot.rule import to_me
+from nonebot import permission
 from nonebot.adapters.cqhttp import Bot, Event
+from nonebot.rule import to_me
 
 # 存储目录
-file_path = './data/'
+file_path = Path.cwd() / 'data'
 
-RssShow = on_command('show', aliases={'showdy','lookdy'}, rule=to_me(), priority=5,permission=permission.SUPERUSER)
+RssShow = on_command('show', aliases={'showdy', 'lookdy'}, rule=to_me(), priority=5, permission=permission.SUPERUSER)
 
 
 @RssShow.handle()
@@ -33,8 +35,9 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
             if rss_.name == rss_name or rss_.url == rss_name:
                 await RssShow.send(
                     '名称：' + rss_.name + '\n订阅地址：' + rss_.url + '\n订阅QQ：' + str(rss_.user_id) + '\n订阅群：' + str(
-                        rss_.group_id) + '\n更新频率：' + str(rss_.time) + '分钟/次\n代理：' + str(rss_.img_proxy) + '\n第三方：' + str(rss_.notrsshub)
-                            + '\n翻译：' + str(rss_.translation) + '\n仅标题：' + str(rss_.only_title) + '\n仅图片：' + str(rss_.only_pic))
+                        rss_.group_id) + '\n更新频率：' + str(rss_.time) + '分钟/次\n代理：' + str(
+                        rss_.img_proxy) + '\n第三方：' + str(rss_.notrsshub)
+                    + '\n翻译：' + str(rss_.translation) + '\n仅标题：' + str(rss_.only_title) + '\n仅图片：' + str(rss_.only_pic))
                 flag = flag + 1
         if flag <= 0:
             await RssShow.send('没有找到 ' + rss_name + ' 的订阅哟！')
