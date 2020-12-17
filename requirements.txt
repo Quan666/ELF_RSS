@@ -9,6 +9,6 @@ googletrans==2.4.0
 APScheduler==3.6.3
 httpx==0.12.1
 Pillow==8.0.1
-nonebot2==2.0.0a6
-nb-cli==0.2.0
+nonebot2==2.0.0a7
+nb-cli==0.3.1
 nonebot-test==0.1.0

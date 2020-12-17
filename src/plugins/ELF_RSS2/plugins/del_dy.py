@@ -3,12 +3,14 @@ import re
 from pathlib import Path
 
 from RSSHUB import RWlist
+from apscheduler.schedulers.background import BackgroundScheduler
 from nonebot import on_command, require, permission
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
 from nonebot.rule import to_me
 
-scheduler = require("nonebot_plugin_apscheduler").scheduler
+# scheduler = require("nonebot_plugin_apscheduler").scheduler
+scheduler = BackgroundScheduler()
 # 存储目录
 file_path = Path.cwd() / 'data'
 

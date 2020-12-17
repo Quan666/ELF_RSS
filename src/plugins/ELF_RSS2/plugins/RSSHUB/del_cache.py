@@ -2,13 +2,15 @@ import shutil
 from pathlib import Path
 
 import nonebot
+from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger  # 间隔触发器
 from nonebot import logger
 from nonebot import require
 
 from bot import config
 
-scheduler = require("nonebot_plugin_apscheduler").scheduler
+# scheduler = require("nonebot_plugin_apscheduler").scheduler
+scheduler = BackgroundScheduler()
 # 图片存储目录
 file_path = Path.cwd() / 'data' / 'imgs'
 
