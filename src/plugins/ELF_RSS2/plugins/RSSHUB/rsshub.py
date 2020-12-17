@@ -1,57 +1,62 @@
 # -*- coding: UTF-8 -*-
 
-from io import BytesIO
-import unicodedata
-import feedparser
-import json
-import codecs
 import asyncio
-from PIL import Image
+import codecs
+import difflib
+import json
+import os.path
+import re
+import time
+import uuid
+from io import BytesIO
+from pathlib import Path
+
+import emoji
+import feedparser
 import httpx
 import nonebot
-from pyquery import PyQuery as pq
-import re
-import os.path
 import requests
-import uuid
-import time
-from bot import config
-import difflib
-from nonebot.log import logger
-from RSSHUB import RSS_class
+import unicodedata
+from PIL import Image
 from googletrans import Translator
-import emoji
+from nonebot.log import logger
+from pyquery import PyQuery as pq
 from retrying import retry
 
+from bot import config
+from . import RSS_class
+
 # 存储目录
-file_path = './data/'
-#代理
+file_path = Path.cwd() / 'data'
+# 代理
 proxy = config.rss_proxy
 proxies = {
     'http': 'http://' + str(proxy),
     'https': 'https://' + str(proxy),
 }
-status_code=[200,301,302]
+status_code = [200, 301, 302]
 # 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告
 asyncio.log.logger.setLevel(40)
+
+
 @retry
-async def getRSS(rss: RSS_class.rss)->list:# 链接，订阅名
-    #设置全局超时 以解决 feedparser.parse 遇到 bad url 时卡住
-    #socket.setdefaulttimeout(5000)
+async def getRSS(rss: RSS_class.rss) -> list:  # 链接，订阅名
+    # 设置全局超时 以解决 feedparser.parse 遇到 bad url 时卡住
+    # socket.setdefaulttimeout(5000)
     if rss.img_proxy:
         Proxy = {
-            "all":"http://" + str(proxy)
+            "all": "http://" + str(proxy)
         }
     else:
         Proxy = {}
     try:
         # 检查是否存在rss记录
-        if os.path.isfile(file_path + rss.name + '.json'):
+        if os.path.isfile(file_path / (rss.name + '.json')):
             # 异步获取 xml
             async with httpx.AsyncClient(proxies=Proxy) as client:
-                d=""
+                d = ""
                 try:
-                    r = await client.get(rss.geturl(),timeout=30)
+                    r = await client.get(rss.geturl(), timeout=30)
                     d = feedparser.parse(r.content)
                 except BaseException as e:
                     logger.error(e)
@@ -67,7 +72,7 @@ async def getRSS(rss: RSS_class.rss)->list:# 链接，订阅名
                                 if r.status_code in status_code:
                                     d = feedparser.parse(r.content)
                                     logger.info(rsshub_url + ' 抓取成功！')
-                                    break;
+                                    break
 
                 change = checkUpdate(d, readRss(rss.name))  # 检查更新
                 if len(change) > 0:
@@ -84,7 +89,8 @@ async def getRSS(rss: RSS_class.rss)->list:# 链接，订阅名
                             Similarity = difflib.SequenceMatcher(None, text, item['title'])
                             if Similarity.quick_ratio() <= 0.1:  # 标题正文相似度
                                 msg = msg + '标题：' + item['title'] + '\n'
-                            msg = msg + '内容：' + await checkstr(item['summary'], rss.img_proxy, rss.translation, rss.only_pic) + '\n'
+                            msg = msg + '内容：' + await checkstr(item['summary'], rss.img_proxy, rss.translation,
+                                                               rss.only_pic) + '\n'
                         else:
                             msg = msg + '标题：' + item['title'] + '\n'
                         str_link = re.sub('member_illust.php\?mode=medium&illust_id=', 'i/', item['link'])
@@ -116,10 +122,11 @@ async def getRSS(rss: RSS_class.rss)->list:# 链接，订阅名
                     logger.error('出现异常，获取 ' + rss.name + ' 订阅xml失败！！！请检查订阅地址是否可用！  E:' + str(e))
                 return []
     except BaseException as e:
-        logger.error(rss.name + ' 抓取失败，请检查订阅地址是否正确！ E:'+str(e))
+        logger.error(rss.name + ' 抓取失败，请检查订阅地址是否正确！ E:' + str(e))
         return []
 
-async def sendMsg(rss,msg,bot):
+
+async def sendMsg(rss, msg, bot):
     try:
         if len(msg) <= 0:
             return
@@ -128,31 +135,32 @@ async def sendMsg(rss,msg,bot):
                 try:
                     await bot.send_msg(message_type='private', user_id=id, message=str(msg))
                 except Exception as e:
-                    logger.error('QQ号'+id+'不合法或者不是好友 E:' + str(e))
+                    logger.error('QQ号' + id + '不合法或者不是好友 E:' + str(e))
 
         if rss.group_id:
             for id in rss.group_id:
                 try:
                     await bot.send_msg(message_type='group', group_id=id, message=str(msg))
                 except Exception as e:
-                    logger.info('群号'+id+'不合法或者未加群 E:' + str(e))
+                    logger.info('群号' + id + '不合法或者未加群 E:' + str(e))
 
     except Exception as e:
-        logger.info('发生错误 消息发送失败 E:'+str(e))
+        logger.info('发生错误 消息发送失败 E:' + str(e))
+
 
 # 下载图片
 @retry
-async def dowimg(url:str,img_proxy:bool)->str:
+async def dowimg(url: str, img_proxy: bool) -> str:
     try:
-        img_path = file_path + 'imgs' + os.sep
+        img_path = file_path / 'imgs' / os.sep
         if not os.path.isdir(img_path):
-            logger.info(img_path + '文件夹不存在，已重新创建')
+            logger.info(str(img_path) + '文件夹不存在，已重新创建')
             os.makedirs(img_path)  # 创建目录
         file_suffix = os.path.splitext(url)  # 返回列表[路径/文件名，文件后缀]
         name = str(uuid.uuid4())
         if img_proxy:
             Proxy = httpx.Proxy(
-                url="http://"+proxy,
+                url="http://" + proxy,
                 mode="TUNNEL_ONLY"  # May be "TUNNEL_ONLY" or "FORWARD_ONLY". Defaults to "DEFAULT".
             )
         else:
@@ -173,14 +181,13 @@ async def dowimg(url:str,img_proxy:bool)->str:
 
                     # 使用第三方反代服务器
                     url = re.sub('i.pximg.net', config.pixiv_proxy, url)
-                    pic = await client.get(url, headers=headers ,timeout=100.0)
+                    pic = await client.get(url, headers=headers, timeout=100.0)
                 else:
                     pic = await client.get(url)
 
-
                 # 大小控制，图片压缩
-                if (float(len(pic.content)/1024) > float(config.zip_size)):
-                    filename = await zipPic(pic.content,name)
+                if (float(len(pic.content) / 1024) > float(config.zip_size)):
+                    filename = await zipPic(pic.content, name)
                 else:
                     if len(file_suffix[1]) > 0:
                         filename = name + file_suffix[1]
@@ -190,16 +197,16 @@ async def dowimg(url:str,img_proxy:bool)->str:
                         filename = name + '.png'
                     else:
                         filename = name + '.jpg'
-                    with codecs.open(img_path + filename, "wb") as dump_f:
+                    with codecs.open(str(img_path / filename), "wb") as dump_f:
                         dump_f.write(pic.content)
 
                 if config.islinux:
-                    imgs_name = img_path + filename
+                    imgs_name = img_path / filename
                     if len(imgs_name) > 0:
                         imgs_name = os.getcwd() + re.sub(r'\./|\\', r'/', imgs_name)
                     return imgs_name
                 else:
-                    imgs_name = img_path + filename
+                    imgs_name = img_path / filename
                     if len(imgs_name) > 0:
                         imgs_name = os.getcwd() + re.sub('/', r'\\', imgs_name)
                         imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
@@ -212,31 +219,31 @@ async def dowimg(url:str,img_proxy:bool)->str:
         logger.error('图片下载失败 1 E:' + str(e))
         return ''
 
-async def zipPic(content,name):
-    img_path = file_path + 'imgs' + os.sep
+
+async def zipPic(content, name):
+    img_path = file_path / 'imgs' / os.sep
     # 打开一个jpg/png图像文件，注意是当前路径:
     im = Image.open(BytesIO(content))
     # 获得图像尺寸:
     w, h = im.size
     logger.info('Original image size: %sx%s' % (w, h))
     # 算出缩小比
-    Proportion = int(len(content)/(float(config.zip_size) * 1024))
-    logger.info('算出的缩小比:'+str(Proportion))
+    Proportion = int(len(content) / (float(config.zip_size) * 1024))
+    logger.info('算出的缩小比:' + str(Proportion))
     # 缩放
     im.thumbnail((w // Proportion, h // Proportion))
     logger.info('Resize image to: %sx%s' % (w // Proportion, h // Proportion))
     # 把缩放后的图像用jpeg格式保存:
     try:
-        im.save(img_path + name + '.jpg', 'jpeg')
+        im.save(img_path / name + '.jpg', 'jpeg')
         return name + '.jpg'
     except Exception:
-        im.save(img_path + name + '.png', 'png')
+        im.save(img_path / name + '.png', 'png')
         return name + '.png'
 
 
-#处理正文
-async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->str:
-
+# 处理正文
+async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: bool) -> str:
     # 去掉换行
     rss_str = re.sub('\n', '', rss_str)
 
@@ -263,12 +270,12 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
     rss_str = re.sub('<iframe.+?\"/>', '', rss_str)
     rss_str = re.sub('<i.+?\">|<i>|</i>', '', rss_str)
     rss_str = re.sub('<code>|</code>|<ul>|</ul>', '', rss_str)
-    #解决 issue #3
+    # 解决 issue #3
     rss_str = re.sub('<dd.+?\">|<dd>|</dd>', '', rss_str)
     rss_str = re.sub('<dl.+?\">|<dl>|</dl>', '', rss_str)
     rss_str = re.sub('<dt.+?\">|<dt>|</dt>', '', rss_str)
 
-    rss_str_tl = rss_str # 翻译用副本
+    rss_str_tl = rss_str  # 翻译用副本
     # <a> 标签处理
     doc_a = doc_rss('a')
     for a in doc_a.items():
@@ -295,8 +302,6 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
         else:
             rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
 
-
-
     # 处理视频
     doc_video = doc_rss('video')
     for video in doc_video.items():
@@ -304,12 +309,9 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
         img_path = await dowimg(video.attr("poster"), img_proxy)
         if len(img_path) > 0:
             rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
-                                 rss_str)
+                             rss_str)
         else:
             rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
-
-
-
 
     # 翻译
     text = ''
@@ -327,12 +329,12 @@ async def checkstr(rss_str:str,img_proxy:bool,translation:bool,only_pic:bool)->s
                 text = re.sub(r':[A-Za-z_]*:', ' ', text)
                 text = '\n翻译(BaiduAPI)：\n' + rss_baidutrans.baidu_translate(re.escape(text))
             else:
-               text = '\n翻译：\n' + translator.translate(re.escape(text), dest='zh-CN').text
+                text = '\n翻译：\n' + translator.translate(re.escape(text), dest='zh-CN').text
             text = re.sub(r'\\', '', text)
             text = re.sub(r'百度翻译', '\n', text)
         except Exception as e:
-            text = '\n翻译失败！'+str(e)+'\n'
-    return rss_str+text
+            text = '\n翻译失败！' + str(e) + '\n'
+    return rss_str + text
 
 
 # 检查更新
@@ -344,22 +346,22 @@ def checkUpdate(new, old) -> list:
         return []
     b = old['entries']
 
-    c = [];
+    c = []
     # 防止 rss 超过设置的缓存条数
-    if len(a)>= config.limt:
-        LIMT=len(a) + config.limt
+    if len(a) >= config.limt:
+        LIMT = len(a) + config.limt
     else:
-        LIMT=config.limt
+        LIMT = config.limt
 
     for i in a:
-        count = 0;
+        count = 0
         for j in b:
             if i['id'] == j['id']:
                 count = 1
         if count == 0:
             c.insert(0, i)
     for i in c:
-        count = 0;
+        count = 0
         for j in b:
             if i['id'] == j['id']:
                 count = 1
@@ -370,7 +372,7 @@ def checkUpdate(new, old) -> list:
 
 # 读取记录
 def readRss(name):
-    with codecs.open(file_path + name + ".json", 'r', 'utf-8') as load_f:
+    with codecs.open(file_path / (name + ".json"), 'r', 'utf-8') as load_f:
         load_dict = json.load(load_f)
     return load_dict
 
@@ -388,7 +390,7 @@ def writeRss(new, name):
 
         for tmp in change:
             old['entries'].insert(0, tmp)
-        count = 0;
+        count = 0
         for i in old['entries']:
             count = count + 1
             if count > LIMT:
@@ -398,5 +400,5 @@ def writeRss(new, name):
 
     if not os.path.isdir(file_path):
         os.makedirs(file_path)
-    with codecs.open(file_path + name + ".json", "w", 'utf-8') as dump_f:
+    with codecs.open(file_path / (name + ".json"), "w", 'utf-8') as dump_f:
         dump_f.write(json.dumps(old, sort_keys=True, indent=4, ensure_ascii=False))

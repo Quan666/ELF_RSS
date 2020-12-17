@@ -1,11 +1,19 @@
-import nonebot
-from bot import config
 import shutil
-from apscheduler.triggers.interval import IntervalTrigger # 间隔触发器
-from nonebot import scheduler, logger
+from pathlib import Path
 
+import nonebot
+from apscheduler.triggers.interval import IntervalTrigger  # 间隔触发器
+from nonebot import logger
+from nonebot import require
+
+from bot import config
+
+scheduler = require("nonebot_plugin_apscheduler").scheduler
 # 图片存储目录
-file_path = './data/imgs'
+file_path = Path.cwd() / 'data' / 'imgs'
+
+
+# file_path = './data/imgs'
 
 async def del_img(int):
     bot, = nonebot.get_bots().values()
@@ -16,14 +24,16 @@ async def del_img(int):
         logger.error(e)
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]), message='图片缓存删除失败！')
 
+
 def delcache_trigger():
     # 制作一个“time分钟/次”触发器
     trigger = IntervalTrigger(
         days=config.delcache,
-        #minutes=1,
+        # minutes=1,
         jitter=10
     )
     # 添加任务
+
     scheduler.add_job(
         func=del_img,  # 要添加任务的函数，不要带参数
         trigger=trigger,  # 触发器
