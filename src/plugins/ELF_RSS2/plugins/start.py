@@ -26,7 +26,6 @@ async def start():
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]),
                            message='第一次启动，你还没有订阅，记得添加哟！\nVERSION: {}'.format(config.version))
         logger.info('第一次启动，你还没有订阅，记得添加哟！')
-        e.with_traceback()
 
 
 def startfun():
