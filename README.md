@@ -123,7 +123,7 @@
 
 2. 运行 `pip install -r requirements.txt` 
 
-3. 修改插件配置 （文件 `.env` ）
+3. 修改插件配置 （复制文件 `env`，将其重命名为 `.env` ,点不能忘记）
 
    > **注意：请将 `ENVIRONMENT=dev` 的值 `env` 删除**
    >
