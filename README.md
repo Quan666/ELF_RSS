@@ -7,6 +7,12 @@
 3. 性能优化
 4. 代码结构优化
 注意：1.x 仍然可以使用
+
+## 效果预览
+![](https://cdn.jsdelivr.net/gh/Quan666/CDN@master/pic/elfrss_1.png)
+![](https://cdn.jsdelivr.net/gh/Quan666/CDN@master/pic/elfrss_2.png)
+![](https://cdn.jsdelivr.net/gh/Quan666/CDN@master/pic/elfrss_3.png)
+
 ## 如何使用
 
 >  **注意： 需要 Python 3.7+**
