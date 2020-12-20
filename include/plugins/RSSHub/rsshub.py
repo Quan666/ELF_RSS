@@ -364,16 +364,24 @@ def checkUpdate(new, old) -> list:
         count = 0;
         # print(i['link'])
         for j in b:
-            if i['id'] == j['id']:
-                count = 1
+            try:
+                if i['id'] == j['id']:
+                    count = 1
+            except:
+                if i['link'] == j['link']:
+                    count = 1
         if count == 0:
             c.insert(0, i)
     for i in c:
         count = 0;
         # print(i['link'])
         for j in b:
-            if i['id'] == j['id']:
-                count = 1
+            try:
+                if i['id'] == j['id']:
+                    count = 1
+            except:
+                if i['link'] == j['link']:
+                    count = 1
         if count == 1:
             c.remove(i)
     return c
