@@ -123,9 +123,9 @@
 
 2. 运行 `pip install -r requirements.txt` 
 
-3. 修改插件配置 （复制文件 `env`，将其重命名为 `.env` ,点不能忘记）
+3. 修改插件配置 （复制文件 `env`，将其重命名为 `.env.prod` ,点不能忘记）
 
-   > **注意：请将 `ENVIRONMENT=dev` 的值 `dev` 删除**
+   > **注意：请将第一行 `ENVIRONMENT=dev` 删除**
    >
    > 请按照 注释 修改配置文件
 
@@ -210,4 +210,3 @@
 #### docker 部署
 
 1. 待补充
-
