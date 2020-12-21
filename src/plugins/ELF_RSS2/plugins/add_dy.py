@@ -8,7 +8,7 @@ from nonebot.rule import to_me
 
 from bot import config
 
-RssAdd = on_command('add', aliases={'订阅', 'rssadd', 'dy'}, rule=to_me(), priority=5, permission=permission.SUPERUSER)
+RssAdd = on_command('add', aliases={'添加订阅', 'sub'}, rule=to_me(), priority=5, permission=permission.SUPERUSER|permission.GROUP_ADMIN)
 
 
 @RssAdd.handle()
@@ -17,9 +17,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     if args:
         state["RssAdd"] = args  # 如果用户发送了参数则直接赋值
 
-
+# 如果只有名称就把该 名称订阅 订阅到当前账号或群组
 @RssAdd.got("RssAdd",
-            prompt="要订阅的信息不能为空呢，请重新输入\n输入样例：\ntest /twitter/user/xx 11,11 -1 5 0 1 \n订阅名 订阅地址 qq(,分隔，为空-1) 群号(,分隔，为空-1) 更新时间(分钟，可选) 1/0(代理，可选)")
+            prompt="请输入\n名称 [订阅地址]\n空格分割、[]表示可选\n私聊默认订阅到当前账号，群聊默认订阅到当前群组\n更多信息可通过 change 命令修改")
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     rss_dy_link = state["RssAdd"]
     user_id = event.user_id
@@ -28,120 +28,56 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     except:
         group_id = None
 
-    # if group_id:
-    #     rss_dy_link = await RssAdd.reject('要订阅的信息不能为空呢，请重新输入\n输入样例：\ntest /twitter/user/xx \n关于插件：http://ii1.fun/7byIVb')
-    # else:
-    #     rss_dy_link = await RssAdd.reject('要订阅的信息不能为空呢，请重新输入\n输入样例：\ntest /twitter/user/xx 11,11 -1 5 1 0 \n订阅名 订阅地址 qq(,分隔，为空-1) 群号(,分隔，为空-1) 更新时间(分钟，可选) 1/0(代理，可选) 1/0(翻译,可选) 1/0(仅标题,可选) 1/0(仅图片,可选)')
-
-    # 获取、处理信息
     dy = rss_dy_link.split(' ')
+
+    rss = RSS_class.rss(name='',url='',user_id='-1',group_id='-1')
+    # 判断是否有该名称订阅，有就将当前qq或群加入订阅
     try:
         name = dy[0]
-        name = re.sub(r'\?|\*|\:|\"|\<|\>|\\|/|\|', '_', name)
-        if name == 'rss':
-            name = 'rss_'
-        try:
-            url = dy[1]
-        except:
-            url = None
-        flag = 0
-        try:
-            list_rss = RWlist.readRss()
-            for old in list_rss:
-                if old.name == name and not url:
-                    old_rss = old
-                    flag = 1
-                elif str(old.url).lower() in str(url).lower():
-                    old_rss = old
-                    flag = 2
-                elif old.name == name:
-                    flag = 3
-        except BaseException as e:
-            logger.info("E :" + str(e))
+    except:
+        await RssAdd.send('输入的订阅名为空！')
+        return
+
+    if rss.findName(name=name):
+        rss = rss.findName(name=name)
         if group_id:
-            if flag == 0 and url:
-                if len(dy) > 2:
-                    only_title = bool(int(dy[2]))
-                else:
-                    only_title = False
-                if len(dy) > 3:
-                    only_pic = bool(int(dy[3]))
-                else:
-                    only_pic = False
-                translation = False
-                times = int(config.add_uptime)
-                proxy = config.add_proxy
-                if user_id in config.SUPERUSERS and len(dy) > 4:
-                    proxy = bool(int(dy[4]))
-                if user_id in config.SUPERUSERS and len(dy) > 5:
-                    times = int(dy[5])
-                user_id = -1
-            else:
-                if flag == 1 or flag == 2:
-                    if str(group_id) not in str(old_rss.group_id):
-                        list_rss.remove(old_rss)
-                        old_rss.group_id.append(str(group_id))
-                        list_rss.append(old_rss)
-                        RWlist.writeRss(list_rss)
-                        if flag == 1:
-                            await RssAdd.send(str(name) + '订阅名已存在，自动加入现有订阅，订阅地址为：' + str(old_rss.url))
-                        else:
-                            await RssAdd.send(str(url) + '订阅链接已存在，订阅名使用已有的订阅名"' + str(old_rss.name) + '"，订阅成功！')
-                    else:
-                        await RssAdd.send('订阅链接已经存在！')
-                elif not url:
-                    await RssAdd.send('订阅名不存在！')
-                else:
-                    await RssAdd.send('订阅名已存在，请更换个订阅名订阅')
-                return
-        elif user_id and flag == 0:
-            user_id = dy[2]
-            group_id = dy[3]
-            if len(dy) > 4 and int(dy[4]) > 0:
-                times = int(dy[4])
-            else:
-                times = 5
-            if len(dy) > 5:
-                proxy = bool(int(dy[5]))
-            else:
-                proxy = False
-            if len(dy) > 6:
-                notrsshub = bool(int(dy[6]))
-            else:
-                notrsshub = False
-            if len(dy) > 7:
-                translation = bool(int(dy[6]))
-            else:
-                translation = False
-            if len(dy) > 8:
-                only_title = bool(int(dy[7]))
-            else:
-                only_title = False
-            if len(dy) > 9:
-                only_pic = bool(int(dy[8]))
-            else:
-                only_pic = False
+            rss.addGroup(group=group_id)
+            await TR.addJob(rss)
+            await RssAdd.send('订阅到当前群组成功！')
         else:
-            # 向用户发送失败信息
-            logger.info('添加' + name + '失败，已存在')
-            await RssAdd.send('订阅名或订阅链接已经存在！')
-            return
-        rss = RSS_class.rss(name, url, str(user_id), str(group_id), times, proxy, notrsshub, translation, only_title,
-                            only_pic)
-        # 写入订阅配置文件
-        try:
-            list_rss.append(rss)
-            RWlist.writeRss(list_rss)
-        except:
-            list_rss = []
-            list_rss.append(rss)
-            RWlist.writeRss(list_rss)
-        if flag == 0:
-            # 加入订阅任务队列
-            TR.rss_trigger(times, rss)
-            logger.info('添加' + rss.name + '成功')
-            # 向用户发送成功信息
-            await RssAdd.send(rss.name + '订阅成功！')
-    except BaseException as e:
-        logger.info(e)
-        await RssAdd.send('参数不对哟！\n关于插件：http://ii1.fun/7byIVb')
+            rss.addUser(user=user_id)
+            await TR.addJob(rss)
+            await RssAdd.send('订阅到当前账号成功！')
+        return
+
+    try:
+        url = dy[1]
+    except:
+        await RssAdd.send('输入的订阅地址为空！')
+        return
+
+    # 判断当前订阅地址存在否
+    if rss.findURL(url=url):
+        rss = rss.findURL(url=url)
+        if group_id:
+            rss.addGroup(group=group_id)
+            await TR.addJob(rss)
+            await RssAdd.send('订阅到当前群组成功！')
+        else:
+            rss.addUser(user=user_id)
+            await TR.addJob(rss)
+            await RssAdd.send('订阅到当前账号成功！')
+        return
+
+    # 当前名称、url都不存在
+    rss.name=name
+    rss.url=url
+    print(rss.geturl())
+    if group_id:
+        rss.addGroup(group=group_id)
+        await TR.addJob(rss)
+        await RssAdd.send('订阅到当前群组成功！')
+    else:
+        rss.addUser(user=user_id)
+        await TR.addJob(rss)
+        await RssAdd.send('订阅到当前账号成功！')

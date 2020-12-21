@@ -1,7 +1,7 @@
 import asyncio
 
 import nonebot
-from RSSHUB import del_cache as DC, rsstrigger as RT, RWlist
+from RSSHUB import RSS_class,del_cache as DC, rsstrigger as RT, RWlist
 from nonebot import on_metaevent, logger
 from nonebot.adapters.cqhttp import Bot, Event
 
@@ -17,17 +17,20 @@ async def start():
         pass
 
     try:
-        rss_list = RWlist.readRss()  # 读取list
-        for rss in rss_list:
-            RT.rss_trigger(rss.time, rss)  # 创建检查更新任务
+        rss = RSS_class.rss('','','-1','-1')
+        rss_list = rss.readRss()  # 读取list
+        if not rss_list:
+            raise Exception('第一次启动，你还没有订阅，记得添加哟！')
+        for rss_tmp in rss_list:
+            await RT.addJob(rss_tmp)  # 创建检查更新任务
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]),
-                           message='ELF_RSS 订阅器启动成功！\nVERSION: {}'.format(config.version))
+                           message='ELF_RSS 订阅器启动成功！\nversion: {}\nAuthor：Quan666\nhttps://myelf.club'.format(config.version))
         logger.info('ELF_RSS 订阅器启动成功！')
     except Exception as e:
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]),
-                           message='第一次启动，你还没有订阅，记得添加哟！\nVERSION: {}'.format(config.version))
+                           message='第一次启动，你还没有订阅，记得添加哟！\nversion: {}\nAuthor：Quan666\nhttps://myelf.club'.format(config.version))
         logger.info('第一次启动，你还没有订阅，记得添加哟！')
-        logger.debug(e)
+        # logger.debug(e)
 
 
 def startfun():

@@ -1,4 +1,4 @@
-from RSSHUB import rsstrigger as TR, RWlist
+from RSSHUB import rsstrigger as TR, RWlist,RSS_class
 from nonebot import on_command, permission, require
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
@@ -9,92 +9,101 @@ scheduler = require("nonebot_plugin_apscheduler").scheduler
 # 存储目录
 # file_path = './data/'
 
-RssChange = on_command('change', aliases={'changedy', 'moddy'}, rule=to_me(), priority=5,
-                       permission=permission.SUPERUSER)
+RssChange = on_command('change', aliases={'修改订阅', 'moddy'}, rule=to_me(), priority=5,
+                       permission=permission.SUPERUSER|permission.GROUP_ADMIN)
 
 
 @RssChange.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    args = str(event.message).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
+    args = str(event.message).strip()
     if args:
         state["RssChange"] = args  # 如果用户发送了参数则直接赋值
+    else:
+        await RssChange.send('请输入要修改的订阅'\
+        '\n订阅名 属性=,值'\
+        '\n如:'\
+        '\ntest qq=,123,234 qun=-1'\
+        '\n对应参数:'\
+        '\n订阅链接-url QQ-q 群-qun 更新频率-time'\
+        '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op'\
+        '\n注：'\
+        '\nproxy、tl、ot、op 值为 1/0'\
+        '\nQQ、群号前加英文逗号表示追加,-1设为空'\
+        '\n各个属性空格分割'.strip())
 
 
-@RssChange.got("RssChange",
-               prompt='输入要修改的订阅的 \n订阅名 修改项=,属性 \n如:\n 订阅 dyqq=,xx dsf=0\n对应参数:地址-url，QQ-dyqq，群-dyqun，更新频率-uptime，代理-proxy,翻译-tl，仅title-ot，仅图片-op\n注：\n代理、翻译、仅title属性值为1/0\nqq、群号前加英文逗号表示追加')
+@RssChange.got("RssChange",prompt='')
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     change_info = state["RssChange"]
-    # user_id = event.user_id
-    # try:
-    #     group_id = event.group_id
-    # except:
-    #     group_id = None
 
-    flag = 0
+    change_list = change_info.split(' ')
     try:
-        list_rss = RWlist.readRss()
-        # 获取、处理信息
-        list_info = change_info.split(' ')
-        name = list_info[0]  # 取订阅名
-        list_info.pop(0)  # 从列表删除
-        for rss_ in list_rss:
-            if rss_.name == name:
-                rss_a = rss_
-                flag = flag + 1
-        if flag <= 0:
-            await RssChange.send('订阅 ' + name + ' 不存在！')
-        else:
-            try:
-                rss_tmp = rss_a
-                for info in list_info:
-                    info_this = info.split('=', 1)
-                    if info_this[0] == 'url':
-                        rss_tmp.url = info_this[1]
-                    if info_this[0] == 'dyqq':
-                        list_user_id = info_this[1].split(',')
-                        if list_user_id[0] == '':
-                            list_user_id.pop(0)
-                            rss_tmp.user_id = rss_tmp.user_id + list_user_id
-                        else:
-                            if info_this[1] != '-1':
-                                rss_tmp.user_id = list_user_id
-                            else:
-                                rss_tmp.user_id = []
-                    if info_this[0] == 'dyqun':
-                        list_group_id = info_this[1].split(',')
-                        if list_group_id[0] == '':
-                            list_group_id.pop(0)
-                            rss_tmp.group_id = rss_tmp.group_id + list_group_id
-                        else:
-                            if info_this[1] != '-1':
-                                rss_tmp.group_id = list_group_id
-                            else:
-                                rss_tmp.group_id = []
-                    if info_this[0] == 'uptime':
-                        rss_tmp.time = int(info_this[1])
-                    if info_this[0] == 'proxy':
-                        rss_tmp.img_proxy = bool(int(info_this[1]))
-                    if info_this[0] == 'dsf':
-                        rss_tmp.notrsshub = bool(int(info_this[1]))
-                    if info_this[0] == 'tl':
-                        rss_tmp.translation = bool(int(info_this[1]))
-                    if info_this[0] == 'ot':
-                        rss_tmp.only_title = bool(int(info_this[1]))
-                    if info_this[0] == 'op':
-                        rss_tmp.only_pic = bool(int(info_this[1]))
-                list_rss.remove(rss_a)
-                list_rss.append(rss_tmp)
-                RWlist.writeRss(list_rss)
-                try:
-                    scheduler.remove_job(name)
-                except Exception as e:
-                    logger.error(e)
-                # 加入订阅任务队列
-                TR.rss_trigger(rss_tmp.time, rss_tmp)
-                logger.info('修改' + name + '成功')
-                await RssChange.send('修改 ' + name + ' 订阅成功！')
-            except Exception as e:
-                await RssChange.send('命令出错，修改失败！')
-                logger.error(e)
+        name = change_list[0]
+        change_list.remove(name)
     except:
-        await RssChange.send('你还没有任何订阅！\n关于插件：http://ii1.fun/7byIVb')
+        await RssChange.send('订阅名称参数错误！')
+        return
+
+    rss = RSS_class.rss(name,'','-1','-1')
+    if not rss.findName(name=name):
+        await RssChange.send('订阅 {} 不存在！'.format(name))
+        return
+
+    rss = rss.findName(name=name)
+
+    try:
+        for change_tmp in change_list:
+            one_info_list = change_tmp.split('=', 1)
+            if one_info_list[0]=='qq':
+                if one_info_list[1]=='-1':
+                    rss.user_id=[]
+                    continue
+                qq_list = one_info_list[1].split(',')
+                # 表示追加
+                if qq_list[0] == '':
+                    qq_list.remove(qq_list[0])
+                    for qq_tmp in qq_list:
+                        if not qq_tmp in rss.user_id:
+                            rss.user_id.append(str(qq_tmp))
+                else:
+                    rss.user_id=qq_list
+            elif one_info_list[0]=='qun':
+                if one_info_list[1]=='-1':
+                    rss.group_id=[]
+                    continue
+                qun_list = one_info_list[1].split(',')
+                # 表示追加
+                if qun_list[0] == '':
+                    qun_list.remove(qun_list[0])
+                    for qun_tmp in qun_list:
+                        if not qun_tmp in rss.group_id:
+                            rss.group_id.append(str(qun_tmp))
+                else:
+                    rss.group_id=qun_list
+            elif one_info_list[0]=='url':
+                rss.url = one_info_list[1]
+            elif one_info_list[0]=='time':
+                time = int(one_info_list[1])
+                if time < 1:
+                    rss.time = 1
+                else:
+                    rss.time = time
+            elif one_info_list[0]=='proxy':
+                rss.img_proxy = bool(int(one_info_list[1]))
+            elif one_info_list[0]=='tl':
+                rss.translation = bool(int(one_info_list[1]))
+            elif one_info_list[0]=='ot':
+                rss.only_title = bool(int(one_info_list[1]))
+            elif one_info_list[0]=='op':
+                rss.only_pic = bool(int(one_info_list[1]))
+            else:
+                await RssChange.send('参数错误！\n{}'.format(change_tmp))
+        # 参数解析完毕，写入
+        rss.writeRss()
+        # 加入定时任务
+        await TR.addJob(rss)
+        await RssChange.send('修改成功\n{}'.format(rss.toString()))
+        logger.info('修改成功\n{}'.format(rss.toString()))
+    except BaseException as e:
+        await RssChange.send('参数解析出现错误！\nE: {}'.format(str(e)))
+        logger.error('参数解析出现错误！\nE: {}'.format(str(e)))

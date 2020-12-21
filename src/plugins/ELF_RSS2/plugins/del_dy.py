@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-
+from RSSHUB import RSS_class, rsstrigger as TR
 from RSSHUB import RWlist
 from nonebot import on_command, require, permission
 from nonebot.adapters.cqhttp import Bot, Event
@@ -12,7 +12,7 @@ scheduler = require("nonebot_plugin_apscheduler").scheduler
 # 存储目录
 file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 
-Rssdel = on_command('deldy', aliases={'delrss', 'rssdel'}, rule=to_me(), priority=5, permission=permission.SUPERUSER)
+Rssdel = on_command('deldy', aliases={'drop', '删除订阅'}, rule=to_me(), priority=5, permission=permission.SUPERUSER|permission.GROUP_ADMIN)
 
 
 @Rssdel.handle()
@@ -31,48 +31,18 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     except:
         group_id = None
 
-    # 获取、处理信息
-    flag = 0
-    try:
-        list_rss = RWlist.readRss()
-        if group_id:
-            for rss_ in list_rss:
-                if (rss_.name == rss_name and str(group_id) in str(rss_.group_id)) or (
-                        rss_.url == rss_name and str(group_id) in str(rss_.group_id)):
-                    rss_tmp = rss_
-                    if rss_tmp.group_id[0] == str(group_id):
-                        rss_tmp.group_id.pop(0)
-                    else:
-                        rss_tmp.group_id = eval(re.sub(f", '{group_id}'", "", str(rss_tmp.group_id)))
-                    await Rssdel.send('本群订阅 ' + rss_name + ' 删除成功！')
-                    if not rss_tmp.group_id and not rss_tmp.user_id:
-                        list_rss.remove(rss_)
-                        scheduler.remove_job(rss_.name)
-                        try:
-                            os.remove(file_path + (rss_.name + ".json"))
-                        except BaseException as e:
-                            logger.info(e)
-                        RWlist.writeRss(list_rss)
-                    else:
-                        list_rss.remove(rss_)
-                        list_rss.append(rss_tmp)
-                        RWlist.writeRss(list_rss)
-        elif user_id:
-            for rss_ in list_rss:
-                if rss_.name == rss_name or rss_.url == rss_name:
-                    list_rss.remove(rss_)
-                    scheduler.remove_job(rss_.name)
-                    try:
-                        os.remove(file_path + (rss_.name + ".json"))
-                    except BaseException as e:
-                        logger.info(e)
-                    await Rssdel.send('订阅 ' + rss_name + ' 删除成功！')
-                    flag = flag + 1
-            if flag <= 0:
-                await Rssdel.send('订阅 ' + rss_name + ' 删除失败！该订阅不存在！')
-            else:
-                RWlist.writeRss(list_rss)
-                await Rssdel.send('删除 ' + str(flag) + ' 条订阅！')
-    except BaseException as e:
-        # logger.info(e)
-        await Rssdel.send('你还没有任何订阅！\n关于插件：http://ii1.fun/7byIVb')
+    rss = RSS_class.rss('','','-1','-1')
+    if rss.findName(name=rss_name):
+        rss = rss.findName(name=rss_name)
+    else:
+        await Rssdel.send('删除失败！不存在该订阅！')
+        return
+
+    if group_id:
+        rss.delGroup(group=group_id)
+        await TR.addJob(rss)
+        await Rssdel.send('当前群组取消订阅 {} 成功！'.format(rss.name))
+    else:
+        rss.delRss(rss)
+        await TR.delJob(rss)
+        await Rssdel.send('订阅 {} 删除成功！'.format(rss.name))
