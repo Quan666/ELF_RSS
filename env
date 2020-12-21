@@ -14,9 +14,6 @@ RSSHUB_backup = []  # 备用rsshub地址 填写示例 ['https://rsshub.app','htt
 DELCACHE = 3  # 缓存删除间隔 天
 LIMT = 50  # 缓存rss条数
 
-#群组订阅的默认参数
-add_uptime = 10    #默认订阅更新时间
-add_proxy = false  #默认是否启用代理
 
 # 图片压缩大小 kb * 1024 = MB
 ZIP_SIZE = 3072
