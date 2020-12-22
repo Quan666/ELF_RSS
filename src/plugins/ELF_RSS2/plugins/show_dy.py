@@ -32,7 +32,6 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         await RssShow.send(rss.toString())
         return
 
-
     if group_id:
         rss_list = rss.findGroup(group=str(group_id))
         if not rss_list:

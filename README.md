@@ -22,6 +22,13 @@
 > * [常见问题](https://github.com/Quan666/ELF_RSS/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
 > * [迁移到 Mirai](https://github.com/Quan666/ELF_RSS/wiki/%E8%BF%81%E7%A7%BB%E5%88%B0-mirai)
 
+### TODO
+
+> 1. 订阅信息保护，不在群组中输出订阅QQ、群组
+> 2. 指定时间检查更新
+> 3. 暂停检查订阅更新
+> 4. ...
+
 ## 效果预览
 
 ![image-20201221163514747](https://cdn.jsdelivr.net/gh/Quan666/CDN/pic/image-20201221163514747.png)
