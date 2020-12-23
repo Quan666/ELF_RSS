@@ -35,7 +35,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 @RssChange.got("RssChange",prompt='')
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     change_info = state["RssChange"]
-
+    try:
+        group_id = event.group_id
+    except:
+        group_id = None
     change_list = change_info.split(' ')
     try:
         name = change_list[0]
@@ -50,11 +53,14 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         return
 
     rss = rss.findName(name=name)
-
+    if group_id:
+        if not str(group_id) in rss.group_id:
+            await RssChange.send('修改失败，当前群组无权操作订阅：{}'.format(rss.name))
+            return
     try:
         for change_tmp in change_list:
             one_info_list = change_tmp.split('=', 1)
-            if one_info_list[0]=='qq':
+            if one_info_list[0]=='qq' and not group_id:# 暂时禁止群管理员修改 QQ
                 if one_info_list[1]=='-1':
                     rss.user_id=[]
                     continue
@@ -67,7 +73,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                             rss.user_id.append(str(qq_tmp))
                 else:
                     rss.user_id=qq_list
-            elif one_info_list[0]=='qun':
+            elif one_info_list[0]=='qun'and not group_id: # 暂时禁止群管理员修改群号，如要取消订阅可以使用 deldy 命令
                 if one_info_list[1]=='-1':
                     rss.group_id=[]
                     continue
@@ -97,11 +103,17 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
             elif one_info_list[0]=='op':
                 rss.only_pic = bool(int(one_info_list[1]))
             else:
-                await RssChange.send('参数错误！\n{}'.format(change_tmp))
+                await RssChange.send('参数错误或无权修改！\n{}'.format(change_tmp))
+                return
         # 参数解析完毕，写入
         rss.writeRss()
         # 加入定时任务
         await TR.addJob(rss)
+        if group_id:
+            # 隐私考虑，群组下不展示除当前群组外的群号和QQ
+            # 奇怪的逻辑，群管理能修改订阅消息，这对其他订阅者不公平。
+            rss.group_id=[str(group_id),'*']
+            rss.user_id=['*']
         await RssChange.send('修改成功\n{}'.format(rss.toString()))
         logger.info('修改成功\n{}'.format(rss.toString()))
     except BaseException as e:

@@ -22,10 +22,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         state["Rssdel"] = args  # 如果用户发送了参数则直接赋值
 
 
-@Rssdel.got("Rssdel", prompt="输入要删除的订阅名或订阅地址")
+@Rssdel.got("Rssdel", prompt="输入要删除的订阅名")
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     rss_name = state["Rssdel"]
-    user_id = event.user_id
     try:
         group_id = event.group_id
     except:
@@ -39,9 +38,11 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         return
 
     if group_id:
-        rss.delGroup(group=group_id)
-        await TR.addJob(rss)
-        await Rssdel.send('当前群组取消订阅 {} 成功！'.format(rss.name))
+        if rss.delGroup(group=group_id):
+            await TR.addJob(rss)
+            await Rssdel.send('当前群组取消订阅 {} 成功！'.format(rss.name))
+        else:
+            await Rssdel.send('当前群组没有订阅： {} ！'.format(rss.name))
     else:
         rss.delRss(rss)
         await TR.delJob(rss)

@@ -126,18 +126,20 @@ class rss:
         self.writeRss()
 
     # 删除订阅 QQ
-    def delUser(self,user:str):
+    def delUser(self,user:str)->bool:
         if not str(user) in self.user_id:
-            return
+            return False
         self.user_id.remove(str(user))
         self.writeRss()
+        return True
 
     # 删除订阅 群组
-    def delGroup(self,group:str):
+    def delGroup(self,group:str)->bool:
         if not str(group) in self.group_id:
-            return
+            return False
         self.group_id.remove(str(group))
         self.writeRss()
+        return True
 
     # 删除整个订阅
     def delRss(self,delrss):
@@ -153,15 +155,18 @@ class rss:
         with codecs.open(str(file_path + "rss.json"), "w", 'utf-8') as dump_f:
             dump_f.write(json.dumps(rss_json, sort_keys=True, indent=4, ensure_ascii=False))
 
-    def findGroup(self,group:str):
+    def findGroup(self,group:str)->list:
         rss_old = self.readRss()
         re = []
         for rss_tmp in rss_old:
             for group_tmp in rss_tmp.group_id:
                 if group_tmp==str(group):
+                    # 隐私考虑，群组下不展示除当前群组外的群号和QQ
+                    rss_tmp.group_id=[str(group),'*']
+                    rss_tmp.user_id=['*']
                     re.append(rss_tmp)
         return re
-    def findUser(self,user:str):
+    def findUser(self,user:str)->list:
         rss_old = self.readRss()
         re = []
         for rss_tmp in rss_old:

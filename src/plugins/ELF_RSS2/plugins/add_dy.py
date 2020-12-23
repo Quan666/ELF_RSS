@@ -56,23 +56,23 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         await RssAdd.send('输入的订阅地址为空！')
         return
 
-    # 判断当前订阅地址存在否
-    if rss.findURL(url=url):
-        rss = rss.findURL(url=url)
-        if group_id:
-            rss.addGroup(group=group_id)
-            await TR.addJob(rss)
-            await RssAdd.send('订阅到当前群组成功！')
-        else:
-            rss.addUser(user=user_id)
-            await TR.addJob(rss)
-            await RssAdd.send('订阅到当前账号成功！')
-        return
+    # 去除判断，订阅链接不再唯一，可不同名同链接
+    # # 判断当前订阅地址存在否
+    # if rss.findURL(url=url):
+    #     rss = rss.findURL(url=url)
+    #     if group_id:
+    #         rss.addGroup(group=group_id)
+    #         await TR.addJob(rss)
+    #         await RssAdd.send('当前订阅地址已存在，将 {} 订阅到当前群组成功！'.format(rss.name))
+    #     else:
+    #         rss.addUser(user=user_id)
+    #         await TR.addJob(rss)
+    #         await RssAdd.send('当前订阅地址已存在，将 {} 订阅到当前账号成功！'.format(rss.name))
+    #     return
 
     # 当前名称、url都不存在
     rss.name=name
     rss.url=url
-    print(rss.geturl())
     if group_id:
         rss.addGroup(group=group_id)
         await TR.addJob(rss)
