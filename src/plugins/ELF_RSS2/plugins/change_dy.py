@@ -24,7 +24,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         '\n如:'\
         '\ntest qq=,123,234 qun=-1'\
         '\n对应参数:'\
-        '\n订阅链接-url QQ-q 群-qun 更新频率-time'\
+        '\n订阅链接-url QQ-qq 群-qun 更新频率-time'\
         '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op'\
         '\n注：'\
         '\nproxy、tl、ot、op 值为 1/0'\
