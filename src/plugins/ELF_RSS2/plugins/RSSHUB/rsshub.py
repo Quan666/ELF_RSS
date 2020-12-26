@@ -59,19 +59,20 @@ async def getRSS(rss: RSS_class.rss) -> list:  # 链接，订阅名
                     r = await client.get(rss.geturl(), timeout=30)
                     d = feedparser.parse(r.content)
                 except BaseException as e:
-                    logger.error(e)
-                    if not rss.notrsshub and config.rsshub_backup:
+                    logger.error("抓取订阅 {} 的 RSS 失败，E：{}".format(rss.name,e))
+                    if not re.match(u'[hH][tT]{2}[pP][sS]{0,}://', rss.url, flags=0) and config.rsshub_backup:
                         logger.error('RSSHub :' + config.rsshub + ' 访问失败 ！使用备用RSSHub 地址！')
-                        for rsshub_url in config.rsshub_backup:
+                        for rsshub_url in list(config.rsshub_backup):
                             async with httpx.AsyncClient(proxies=Proxy) as client:
                                 try:
-                                    r = await client.get(rsshub_url + rss.url)
+                                    rss.url=rsshub_url
+                                    r = await client.get(rss.geturl())
                                 except Exception as e:
-                                    logger.error('RSSHub :' + rsshub_url + ' 访问失败 ！使用备用RSSHub 地址！')
+                                    logger.error('RSSHub :' + rss.geturl() + ' 访问失败 ！使用备用RSSHub 地址！')
                                     continue
                                 if r.status_code in status_code:
                                     d = feedparser.parse(r.content)
-                                    logger.info(rsshub_url + ' 抓取成功！')
+                                    logger.info(rss.geturl() + ' 抓取成功！')
                                     break
 
                 change = checkUpdate(d, readRss(rss.name))  # 检查更新
