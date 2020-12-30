@@ -28,7 +28,7 @@
 
 ### Wiki 目录
 
-> **注意： 需要 Python 3.7+**
+> **注意： 需要 Python 3.7+ 不建议3.9**
 >
 > * [Home](https://github.com/Quan666/ELF_RSS/wiki)
 > * [更新日志](https://github.com/Quan666/ELF_RSS/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97)
