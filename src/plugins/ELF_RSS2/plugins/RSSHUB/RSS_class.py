@@ -146,10 +146,9 @@ class rss:
         rss_old = self.readRss()
         rss_json=[]
         for rss_one in rss_old:
-            if rss_one.name == delrss.name:
-                rss_old.remove(rss_one)
-                continue
-            rss_json.append(json.dumps(rss_one.__dict__,ensure_ascii=False))
+            if rss_one.name != delrss.name:
+                rss_json.append(json.dumps(rss_one.__dict__,ensure_ascii=False))
+
         if not os.path.isdir(file_path):
             os.makedirs(file_path)
         with codecs.open(str(file_path + "rss.json"), "w", 'utf-8') as dump_f:
