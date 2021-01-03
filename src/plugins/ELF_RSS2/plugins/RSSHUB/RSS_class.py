@@ -42,15 +42,15 @@ class rss:
         self.only_pic = only_pic
 
     # 返回订阅链接
-    def geturl(self) -> str:
+    def geturl(self,rsshub:str=config.rsshub) -> str:
         if re.match(u'[hH][tT]{2}[pP][sS]{0,}://', self.url, flags=0):
             return self.url
         else:
             # 先判断地址是否 / 开头
             if re.match(u'/', self.url):
-                return config.rsshub + self.url
+                return rsshub + self.url
             else:
-                return config.rsshub +'/'+ self.url
+                return rsshub +'/'+ self.url
 
     # 读取记录
     def readRss(self) -> list:

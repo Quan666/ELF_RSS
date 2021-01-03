@@ -52,9 +52,9 @@ async def getRSS(rss: RSS_class.rss) -> list:  # 链接，订阅名
     try:
         # 检查是否存在rss记录
         if os.path.isfile(file_path + (rss.name + '.json')):
+            d = ""
             # 异步获取 xml
             async with httpx.AsyncClient(proxies=Proxy) as client:
-                d = ""
                 try:
                     r = await client.get(rss.geturl(), timeout=30)
                     d = feedparser.parse(r.content)
@@ -65,16 +65,18 @@ async def getRSS(rss: RSS_class.rss) -> list:  # 链接，订阅名
                         for rsshub_url in list(config.rsshub_backup):
                             async with httpx.AsyncClient(proxies=Proxy) as client:
                                 try:
-                                    rss.url=rsshub_url
-                                    r = await client.get(rss.geturl())
+                                    r = await client.get(rss.geturl(rsshub=rsshub_url))
                                 except Exception as e:
-                                    logger.error('RSSHub :' + rss.geturl() + ' 访问失败 ！使用备用RSSHub 地址！')
+                                    logger.error('RSSHub :' + rss.geturl(rsshub=rsshub_url) + ' 访问失败 ！使用备用RSSHub 地址！')
                                     continue
                                 if r.status_code in status_code:
                                     d = feedparser.parse(r.content)
-                                    logger.info(rss.geturl() + ' 抓取成功！')
-                                    break
-
+                                    if d.entries :
+                                        logger.info(rss.geturl(rsshub=rsshub_url) + ' 抓取成功！')
+                                        break
+                if not d.entries :
+                    logger.error(rss.name + ' 抓取失败！')
+                    return []
                 change = checkUpdate(d, readRss(rss.name))  # 检查更新
                 if len(change) > 0:
                     writeRss(d, rss.name)  # 写入文件

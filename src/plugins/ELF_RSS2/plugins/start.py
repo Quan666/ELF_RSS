@@ -24,11 +24,11 @@ async def start():
         for rss_tmp in rss_list:
             await RT.addJob(rss_tmp)  # 创建检查更新任务
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]),
-                           message='ELF_RSS 订阅器启动成功！\nversion: {}\nAuthor：Quan666\nhttps://myelf.club'.format(config.version))
+                           message='ELF_RSS 订阅器启动成功！\nversion: {}\nAuthor：Quan666\nhttps://github.com/Quan666/ELF_RSS'.format(config.version))
         logger.info('ELF_RSS 订阅器启动成功！')
     except Exception as e:
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]),
-                           message='第一次启动，你还没有订阅，记得添加哟！\nversion: {}\nAuthor：Quan666\nhttps://myelf.club'.format(config.version))
+                           message='第一次启动，你还没有订阅，记得添加哟！\nversion: {}\nAuthor：Quan666\nhttps://github.com/Quan666/ELF_RSS'.format(config.version))
         logger.info('第一次启动，你还没有订阅，记得添加哟！')
         # logger.debug(e)
 
