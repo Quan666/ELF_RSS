@@ -208,6 +208,7 @@ async def dowimg(url: str, img_proxy: bool) -> str:
                     if len(imgs_name) > 0:
                         # imgs_name = os.getcwd() + re.sub(r'\./|\\', r'/', imgs_name)
                         imgs_name = re.sub(r'\./|\\', r'/', imgs_name)
+                        imgs_name = imgs_name[1:]
                     return imgs_name
                 else:
                     imgs_name = img_path + filename
