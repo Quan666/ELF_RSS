@@ -152,7 +152,7 @@ async def sendMsg(rss, msg, bot):
 
 
 # 下载图片
-@retry
+@retry(stop_max_attempt_number=5,stop_max_delay=30*1000)
 async def dowimg(url: str, img_proxy: bool) -> str:
     try:
         img_path = file_path + 'imgs' + os.sep
@@ -218,11 +218,13 @@ async def dowimg(url: str, img_proxy: bool) -> str:
                         imgs_name = re.sub(r'/', r'\\\\', imgs_name)
                     return imgs_name
             except BaseException as e:
-                logger.error('图片下载失败 2 E:' + str(e))
-                return ''
+                logger.error('图片下载失败,将重试 2E:' + str(e))
+                raise BaseException
+                # return ''
     except BaseException as e:
-        logger.error('图片下载失败 1 E:' + str(e))
-        return ''
+        logger.error('图片下载失败,将重试 1E:' + str(e))
+        raise BaseException
+        # return ''
 
 
 async def zipPic(content, name):
@@ -302,7 +304,7 @@ async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: b
     for img in doc_img.items():
         rss_str_tl = re.sub(re.escape(str(img)), '', rss_str_tl)
         img_path = await dowimg(img.attr("src"), img_proxy)
-        if len(img_path) > 0:
+        if img_path==None or len(img_path) > 0:
             rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
         else:
             rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
@@ -312,7 +314,7 @@ async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: b
     for video in doc_video.items():
         rss_str_tl = re.sub(re.escape(str(video)), '', rss_str_tl)
         img_path = await dowimg(video.attr("poster"), img_proxy)
-        if len(img_path) > 0:
+        if img_path==None or len(img_path) > 0:
             rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
                              rss_str)
         else:
