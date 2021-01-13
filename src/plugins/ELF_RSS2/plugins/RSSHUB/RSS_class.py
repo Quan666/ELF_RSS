@@ -17,13 +17,13 @@ class rss:
     group_id = []  # 订阅群组
     img_proxy = False
     sum = 20  # 加载条数
-    time = 5  # 更新频率 分钟/次
+    time = '5'  # 更新频率 分钟/次
     translation = False  # 翻译
     only_title = False  # 仅标题
     only_pic = False  # 仅图片
 
     # 定义构造方法
-    def __init__(self, name: str, url: str, user_id: str, group_id: str, time=5, img_proxy=False,
+    def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
                  translation=False, only_title=False, only_pic=False):
         self.name = name
         self.url = url
@@ -175,6 +175,6 @@ class rss:
         return re
 
     def toString(self)->str:
-        ret = '名称：{}\n订阅地址：{}\n订阅QQ：{}\n订阅群：{}\n更新频率：{}分钟/次\n代理：{}\n翻译：{}\n仅标题：{}\n仅图片：{}'.format(self.name,self.url,str(self.user_id),str(
+        ret = '名称：{}\n订阅地址：{}\n订阅QQ：{}\n订阅群：{}\n更新时间：{}\n代理：{}\n翻译：{}\n仅标题：{}\n仅图片：{}'.format(self.name,self.url,str(self.user_id),str(
             self.group_id),str(self.time),str(self.img_proxy),str(self.translation),str(self.only_title),str(self.only_pic) )
         return ret

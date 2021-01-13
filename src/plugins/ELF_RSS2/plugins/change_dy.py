@@ -1,3 +1,5 @@
+import re
+
 from RSSHUB import rsstrigger as TR, RWlist,RSS_class
 from nonebot import on_command, permission, require
 from nonebot.adapters.cqhttp import Bot, Event
@@ -89,11 +91,13 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
             elif one_info_list[0]=='url':
                 rss.url = one_info_list[1]
             elif one_info_list[0]=='time':
-                time = int(one_info_list[1])
-                if time < 1:
-                    rss.time = 1
+                if re.search('_|\*|/|,|-',one_info_list[1]):
+                    rss.time = one_info_list[1]
                 else:
-                    rss.time = time
+                    if int(one_info_list[1]) < 1:
+                        rss.time = '1'
+                    else:
+                        rss.time = one_info_list[1]
             elif one_info_list[0]=='proxy':
                 rss.img_proxy = bool(int(one_info_list[1]))
             elif one_info_list[0]=='tl':
