@@ -32,12 +32,12 @@ def baidu_translate(content):
     httpClient = None
     myurl = '/api/trans/vip/translate'
     q = content
-    fromLang = 'jp'  # 源语言
+    fromLang = 'auto'  # 源语言
     toLang = 'zh'  # 翻译后的语言
     salt = random.randint(32768, 65536)
-    sign = appid + q + str(salt) + secretKey
+    sign = str(appid) + str(q) + str(salt) + str(secretKey)
     sign = hashlib.md5(sign.encode()).hexdigest()
-    myurl = myurl + '?appid=' + appid + '&q=' + urllib.parse.quote(
+    myurl = myurl + '?appid=' + str(appid) + '&q=' + urllib.parse.quote(
         q) + '&from=' + fromLang + '&to=' + toLang + '&salt=' + str(
         salt) + '&sign=' + sign
 
@@ -52,6 +52,7 @@ def baidu_translate(content):
         return dst  # 打印结果
     except Exception as e:
         logger.error(e)
+        return '翻译失败：{}'.format(e)
     finally:
         if httpClient:
             httpClient.close()

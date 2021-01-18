@@ -2,6 +2,7 @@ import re
 import time
 
 from apscheduler.triggers.cron import CronTrigger
+from google_trans_new import google_translator
 from retrying import retry
 from apscheduler.triggers.interval import IntervalTrigger # 间隔触发器
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -68,8 +69,13 @@ def test2():
     start(scheduler)
     time.sleep(10000)
 
+def testtranslator():
+    translator = google_translator()
+    print(type(translator.translate(re.escape('hello'), lang_tgt='zh')))
+
 if __name__ == '__main__':
     # testRetry()
     # if None==None or len(None):
     #     pass
-    test2()
+    # test2()
+    testtranslator()

@@ -29,6 +29,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
     if rss_name:
         rss = rss.findName(str(rss_name))
+        if not rss:
+            await RssShow.send('订阅 {} 不存在！'.format(rss_name))
+            return
         if group_id:
             # 隐私考虑，群组下不展示除当前群组外的群号和QQ
             rss.group_id=[str(group_id),'*']

@@ -18,7 +18,7 @@ import nonebot
 import requests
 import unicodedata
 from PIL import Image
-from googletrans import Translator
+from google_trans_new import google_translator
 from nonebot.log import logger
 from pyquery import PyQuery as pq
 from retrying import retry
@@ -323,7 +323,7 @@ async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: b
     # 翻译
     text = ''
     if translation:
-        translator = Translator()
+        translator = google_translator()
         # rss_str_tl = re.sub(r'\n', ' ', rss_str_tl)
         try:
             text = emoji.demojize(rss_str_tl)
@@ -335,7 +335,7 @@ async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: b
                 text = re.sub(r':[A-Za-z_]*:', ' ', text)
                 text = '\n翻译(BaiduAPI)：\n' + str(rss_baidutrans.baidu_translate(re.escape(text)))
             else:
-                text = '\n翻译：\n' + str(translator.translate(re.escape(text), dest='zh-CN').text)
+                text = '\n翻译：\n' + str(translator.translate(re.escape(text), lang_tgt='zh'))
             text = re.sub(r'\\', '', text)
             text = re.sub(r'百度翻译', '\n', text)
         except Exception as e:
