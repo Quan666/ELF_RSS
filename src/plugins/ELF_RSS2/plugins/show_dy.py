@@ -34,6 +34,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             return
         if group_id:
             # 隐私考虑，群组下不展示除当前群组外的群号和QQ
+            if not str(group_id) in rss.group_id:
+                await RssShow.send('当前群组未订阅 {} '.format(rss_name))
+                return
             rss.group_id=[str(group_id),'*']
             rss.user_id=['*']
         await RssShow.send(rss.toString())
