@@ -3,12 +3,13 @@ from pathlib import Path
 
 from RSSHUB import RWlist,RSS_class
 from nonebot import on_command
-from nonebot import permission
+from nonebot.adapters.cqhttp import permission
+from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.rule import to_me
 
 
-RssShow = on_command('show', aliases={'查看订阅'}, rule=to_me(), priority=5, permission=permission.SUPERUSER|permission.GROUP_ADMIN)
+RssShow = on_command('show', aliases={'查看订阅'}, rule=to_me(), priority=5, permission=SUPERUSER.SUPERUSER|permission.GROUP_ADMIN)
 
 # 不带订阅名称默认展示当前群组或账号的订阅
 # 带订阅名称就显示该订阅的

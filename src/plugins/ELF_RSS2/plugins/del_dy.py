@@ -3,7 +3,9 @@ import re
 from pathlib import Path
 from RSSHUB import RSS_class, rsstrigger as TR
 from RSSHUB import RWlist
-from nonebot import on_command, require, permission
+from nonebot import on_command, require
+from nonebot.adapters.cqhttp import permission
+from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
 from nonebot.rule import to_me
@@ -12,7 +14,7 @@ scheduler = require("nonebot_plugin_apscheduler").scheduler
 # 存储目录
 file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 
-Rssdel = on_command('deldy', aliases={'drop', '删除订阅'}, rule=to_me(), priority=5, permission=permission.SUPERUSER|permission.GROUP_ADMIN)
+Rssdel = on_command('deldy', aliases={'drop', '删除订阅'}, rule=to_me(), priority=5, permission=SUPERUSER.SUPERUSER|permission.GROUP_ADMIN)
 
 
 @Rssdel.handle()

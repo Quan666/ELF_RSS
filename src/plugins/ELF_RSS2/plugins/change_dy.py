@@ -1,7 +1,9 @@
 import re
 
 from RSSHUB import rsstrigger as TR, RWlist,RSS_class
-from nonebot import on_command, permission, require
+from nonebot import on_command, require
+from nonebot.adapters.cqhttp import permission
+from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
 from nonebot.rule import to_me
@@ -12,7 +14,7 @@ scheduler = require("nonebot_plugin_apscheduler").scheduler
 # file_path = './data/'
 
 RssChange = on_command('change', aliases={'修改订阅', 'moddy'}, rule=to_me(), priority=5,
-                       permission=permission.SUPERUSER|permission.GROUP_ADMIN)
+                       permission=SUPERUSER.SUPERUSER|permission.GROUP_ADMIN)
 
 
 @RssChange.handle()

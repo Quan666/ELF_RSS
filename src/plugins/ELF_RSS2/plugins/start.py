@@ -25,11 +25,11 @@ async def start():
             await RT.addJob(rss_tmp)  # 创建检查更新任务
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]),
                            message='ELF_RSS 订阅器启动成功！\nVersion: {}\nAuthor：Quan666\nhttps://github.com/Quan666/ELF_RSS'.format(config.version))
-        logger.info('ELF_RSS 订阅器启动成功！')
+        logger.info('ELF_RSS 订阅器启动成功！\nVersion: {}\nAuthor：Quan666\nhttps://github.com/Quan666/ELF_RSS'.format(config.version))
     except Exception as e:
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]),
                            message='第一次启动，你还没有订阅，记得添加哟！\nVersion: {}\nAuthor：Quan666\nhttps://github.com/Quan666/ELF_RSS'.format(config.version))
-        logger.info('第一次启动，你还没有订阅，记得添加哟！')
+        logger.info('第一次启动，你还没有订阅，记得添加哟！\nVersion: {}\nAuthor：Quan666\nhttps://github.com/Quan666/ELF_RSS'.format(config.version))
         # logger.debug(e)
 
 
@@ -40,7 +40,7 @@ def startfun():
 
 # region 启动问好
 def check_first_connect(bot: Bot, event: Event, state: dict) -> bool:
-    if event.sub_type == 'connect':
+    if event.meta_event_type == 'lifecycle':
         return True
     return False
 

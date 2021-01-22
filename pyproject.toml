@@ -12,7 +12,7 @@ keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-nonebot2 = "^2.0.0.a7"
+nonebot2 = "^2.0.0a8.post2"
 nb-cli = "^0.3.1"
 nonebot-plugin-apscheduler = "^0.1.0"
 

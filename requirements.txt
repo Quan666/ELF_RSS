@@ -9,7 +9,7 @@ emoji~=0.5.4
 google-trans-new~=1.1.9
 APScheduler~=3.6.3
 Pillow~=8.0.1
-nonebot2==2.0.0a7
+nonebot2==2.0.0a8.post2
 nb-cli~=0.3.1
 nonebot-test~=0.1.0
 nonebot-plugin-apscheduler~=0.1.0

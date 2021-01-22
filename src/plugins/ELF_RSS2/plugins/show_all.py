@@ -1,10 +1,12 @@
 from RSSHUB import RWlist,RSS_class
-from nonebot import on_command, permission
+from nonebot import on_command
+from nonebot.adapters.cqhttp import permission
+from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.rule import to_me
 
 RssShowAll = on_command('showall', aliases={'selectall', '所有订阅'}, rule=to_me(), priority=5,
-                        permission=permission.SUPERUSER|permission.GROUP_ADMIN)
+                        permission=SUPERUSER.SUPERUSER|permission.GROUP_ADMIN)
 
 
 @RssShowAll.handle()

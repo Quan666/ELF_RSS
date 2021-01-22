@@ -1,14 +1,16 @@
 import re
 
 from RSSHUB import RSS_class, RWlist, rsstrigger as TR
-from nonebot import on_command, permission
+from nonebot import on_command
+from nonebot.adapters.cqhttp import permission
+from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
 from nonebot.rule import to_me
 
 from bot import config
 
-RssAdd = on_command('add', aliases={'添加订阅', 'sub'}, rule=to_me(), priority=5, permission=permission.SUPERUSER|permission.GROUP_ADMIN)
+RssAdd = on_command('add', aliases={'添加订阅', 'sub'}, rule=to_me(), priority=5, permission=SUPERUSER.SUPERUSER|permission.GROUP_ADMIN)
 
 
 @RssAdd.handle()
