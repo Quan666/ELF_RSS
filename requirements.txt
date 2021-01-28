@@ -1,4 +1,4 @@
-feedparser~=5.2.1
+feedparser~=6.0.0
 pyquery~=1.4.3
 aiofiles~=0.5.0
 pydantic~=1.7.3
