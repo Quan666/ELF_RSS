@@ -353,11 +353,6 @@ def checkUpdate(new, old) -> list:
     b = old['entries']
 
     c = []
-    # 防止 rss 超过设置的缓存条数
-    if len(a) >= config.limt:
-        LIMT = len(a) + config.limt
-    else:
-        LIMT = config.limt
 
     for i in a:
         count = 0
@@ -370,7 +365,8 @@ def checkUpdate(new, old) -> list:
                     count = 1
         if count == 0:
             c.insert(0, i)
-    for i in c:
+
+    for i in c.copy():
         count = 0
         for j in b:
             try:
@@ -404,11 +400,8 @@ def writeRss(new, name):
 
         for tmp in change:
             old['entries'].insert(0, tmp)
-        count = 0
-        for i in old['entries']:
-            count = count + 1
-            if count > LIMT:
-                old['entries'].remove(i)
+
+        old['entries']=old['entries'][0:LIMT]
     except:
         old = new
 
