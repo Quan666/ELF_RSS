@@ -62,7 +62,7 @@ class rss:
             rss_list_json = json.load(load_f)
             for rss_one in rss_list_json:
                 tmp_rss = rss('', '', '-1', '-1')
-                if type(rss_one) =='str':
+                if type(rss_one) is not str:
                     rss_one=json.dumps(rss_one)
                 tmp_rss.__dict__ = json.loads(rss_one)
                 rss_list.append(tmp_rss)
