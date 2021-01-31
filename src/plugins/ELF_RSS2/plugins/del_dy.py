@@ -4,7 +4,7 @@ from pathlib import Path
 from RSSHUB import RSS_class, rsstrigger as TR
 from RSSHUB import RWlist
 from nonebot import on_command, require
-from nonebot.adapters.cqhttp import permission
+from nonebot.adapters.cqhttp import permission, unescape
 from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
@@ -21,7 +21,7 @@ Rssdel = on_command('deldy', aliases={'drop', '删除订阅'}, rule=to_me(), pri
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.message).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
-        state["Rssdel"] = args  # 如果用户发送了参数则直接赋值
+        state["Rssdel"] = unescape(args)  # 如果用户发送了参数则直接赋值
 
 
 @Rssdel.got("Rssdel", prompt="输入要删除的订阅名")

@@ -62,6 +62,8 @@ class rss:
             rss_list_json = json.load(load_f)
             for rss_one in rss_list_json:
                 tmp_rss = rss('', '', '-1', '-1')
+                if type(rss_one) =='str':
+                    rss_one=json.dumps(rss_one)
                 tmp_rss.__dict__ = json.loads(rss_one)
                 rss_list.append(tmp_rss)
         return rss_list
@@ -86,7 +88,9 @@ class rss:
                 rss_old.append(tmp_new)
         rss_json=[]
         for rss_one in rss_old:
-            rss_json.append(json.dumps(rss_one.__dict__,ensure_ascii=False))
+            tmp={}
+            tmp.update(rss_one.__dict__)
+            rss_json.append(tmp)
         if not os.path.isdir(file_path):
             os.makedirs(file_path)
         with codecs.open(str(file_path + "rss.json"), "w", 'utf-8') as dump_f:

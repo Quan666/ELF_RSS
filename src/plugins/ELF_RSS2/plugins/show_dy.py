@@ -3,7 +3,7 @@ from pathlib import Path
 
 from RSSHUB import RWlist,RSS_class
 from nonebot import on_command
-from nonebot.adapters.cqhttp import permission
+from nonebot.adapters.cqhttp import permission, unescape
 from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.rule import to_me
@@ -17,7 +17,7 @@ RssShow = on_command('show', aliases={'查看订阅'}, rule=to_me(), priority=5,
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.message).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
-        rss_name = args  # 如果用户发送了参数则直接赋值
+        rss_name = unescape(args)  # 如果用户发送了参数则直接赋值
     else:
         rss_name = None
     user_id = event.user_id

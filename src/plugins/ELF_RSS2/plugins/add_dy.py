@@ -2,7 +2,7 @@ import re
 
 from RSSHUB import RSS_class, RWlist, rsstrigger as TR
 from nonebot import on_command
-from nonebot.adapters.cqhttp import permission
+from nonebot.adapters.cqhttp import permission, unescape
 from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
@@ -17,7 +17,7 @@ RssAdd = on_command('add', aliases={'添加订阅', 'sub'}, rule=to_me(), priori
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.message).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
-        state["RssAdd"] = args  # 如果用户发送了参数则直接赋值
+        state["RssAdd"] = unescape(args)  # 如果用户发送了参数则直接赋值
 
 # 如果只有名称就把该 名称订阅 订阅到当前账号或群组
 @RssAdd.got("RssAdd",

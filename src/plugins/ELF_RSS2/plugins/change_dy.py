@@ -2,7 +2,7 @@ import re
 
 from RSSHUB import rsstrigger as TR, RWlist,RSS_class
 from nonebot import on_command, require
-from nonebot.adapters.cqhttp import permission
+from nonebot.adapters.cqhttp import permission, unescape
 from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.log import logger
@@ -21,7 +21,7 @@ RssChange = on_command('change', aliases={'修改订阅', 'moddy'}, rule=to_me()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.message).strip()
     if args:
-        state["RssChange"] = args  # 如果用户发送了参数则直接赋值
+        state["RssChange"] = unescape(args)  # 如果用户发送了参数则直接赋值
     else:
         await RssChange.send('请输入要修改的订阅'\
         '\n订阅名 属性=,值'\
