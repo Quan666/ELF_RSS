@@ -33,7 +33,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         '\n注：'\
         '\nproxy、tl、ot、op 值为 1/0'\
         '\nQQ、群号前加英文逗号表示追加,-1设为空'\
-        '\n各个属性空格分割'.strip())
+        '\n各个属性空格分割'\
+        '\n详细：http://ii1.fun/nmEFn2'.strip())
 
 
 @RssChange.got("RssChange",prompt='')
