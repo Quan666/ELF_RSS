@@ -67,11 +67,6 @@ def my_trigger_cron(rss: RSS_class.rss):
         if tmp_list[i]!=None and tmp_list[i]!='':
             times_list[i]=tmp_list[i]
     try:
-        if times_list[4]!='*':
-            if times_list[4]=='0':
-                times_list[4]='6'
-            else:
-                times_list[4]=str(int(times_list[4])-1)
         # 制作一个触发器
         trigger = CronTrigger(
             minute=times_list[0],
