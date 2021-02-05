@@ -7,7 +7,7 @@ retrying~=1.3.3
 httpx~=0.16.1
 emoji~=0.5.4
 google-trans-new~=1.1.9
-APScheduler~=3.6.3
+APScheduler~=3.7.0
 Pillow~=8.0.1
 nonebot2==2.0.0a8.post2
 nb-cli~=0.3.1
