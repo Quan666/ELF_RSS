@@ -3,7 +3,7 @@ import re
 from apscheduler.triggers.cron import CronTrigger
 
 from bot import config
-from . import RSS_class, rsshub
+from . import RSS_class, rsshub,RSS_Parsing
 from nonebot import require
 
 
@@ -16,7 +16,7 @@ from apscheduler.triggers.interval import IntervalTrigger  # 间隔触发器
 # 检测某个rss更新 #任务体
 async def check_update(rss: RSS_class.rss):
     logger.info('检查 ' + rss.name + ' 更新')
-    await rsshub.getRSS(rss)
+    await RSS_Parsing.start(rss)
 
 
 async def delJob(rss: RSS_class.rss):
