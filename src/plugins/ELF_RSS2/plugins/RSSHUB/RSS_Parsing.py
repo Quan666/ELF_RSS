@@ -28,6 +28,8 @@ from . import RSS_class
 from . import rss_baidutrans
 
 # 存储目录
+from .qbittorrent_download import start_down
+
 file_path = str(str(Path.cwd()) + os.sep + 'data' + os.sep)
 
 
@@ -53,6 +55,7 @@ headers = {
     'Connection': 'keep-alive',
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
 }
+
 
 # 入口
 async def start(rss: RSS_class.rss) -> None:
@@ -111,6 +114,12 @@ async def start(rss: RSS_class.rss) -> None:
         except:
             item_msg += await handle_date()
 
+        # 处理种子 暂时只支持 蜜柑计划 https://mikanani.me/
+        for tmp in item['links']:
+            if tmp['type'] == 'application/x-bittorrent':
+                await start_down(url=tmp['href'], group_ids=rss.group_id, name='订阅：{}\n{}'.format(rss.name,item['summary']),
+                           path=file_path + os.sep + 'torrent' + os.sep)
+
         # 发送消息并写入文件
         if await sendMsg(rss=rss, msg=item_msg):
             tmp = []
@@ -125,13 +134,14 @@ async def get_rss(rss: RSS_class.rss) -> dict:
     if rss.cookies:
         cookies = rss.cookies
     else:
-        cookies=None
+        cookies = None
 
     # 获取 xml
-    async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=rss.img_proxy),cookies=cookies,headers=headers) as client:
+    async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=rss.img_proxy), cookies=cookies,
+                                 headers=headers) as client:
         try:
             r = await client.get(rss.geturl(), timeout=60)
-            if rss.name=='cookies':
+            if rss.name == 'cookies':
                 logger.debug(r.content)
             # 解析为 JSON
             d = feedparser.parse(r.content)
@@ -155,7 +165,8 @@ async def get_rss(rss: RSS_class.rss) -> dict:
             if d.entries:
                 pass
         except:
-            logger.error(rss.name + ' 抓取失败！将重试 5 次！多次失败请检查订阅地址 {} ！\n如果设置了 cookies 请检查 cookies 正确性'.format(rss.geturl()))
+            logger.error(
+                rss.name + ' 抓取失败！将重试 5 次！多次失败请检查订阅地址 {} ！\n如果设置了 cookies 请检查 cookies 正确性'.format(rss.geturl()))
             raise BaseException
         return d
 
@@ -173,7 +184,7 @@ async def handle_summary(summary: str, rss: RSS_class.rss) -> str:
     try:
         summary_html = pq(summary)
     except:
-        logger.info('{} 没有正文内容！',rss.name)
+        logger.info('{} 没有正文内容！', rss.name)
         return ''
     # 最终消息初始化
     res_msg = ''
