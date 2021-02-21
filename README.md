@@ -22,13 +22,14 @@
 
 - [x] 1. 订阅信息保护，不在群组中输出订阅QQ、群组
 - [x] 2. 更为强大的检查更新时间设置
-- [ ] 3. 暂停检查订阅更新
-- [ ] 4. 模糊匹配订阅名
-- [ ] 5. 性能优化，全部替换为异步操作
+- [x] 3. RSS 源中 torrent 自动下载并上传至订阅群（适合番剧订阅）
+- [ ] 4. 暂停检查订阅更新
+- [ ] 5. 模糊匹配订阅名
+- [ ] 6. 性能优化，全部替换为异步操作
 
 ### Wiki 目录
 
-> **注意： 需要 Python 3.7+ 不建议3.9**
+> 注意：推荐 Python 3.8.3+ 版本 Windows版安装包下载地址：[https://www.python.org/ftp/python/3.8.3/python-3.8.3-amd64.exe](https://www.python.org/ftp/python/3.8.3/python-3.8.3-amd64.exe)
 >
 > * [Home](https://github.com/Quan666/ELF_RSS/wiki)
 > * [更新日志](https://github.com/Quan666/ELF_RSS/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97)
