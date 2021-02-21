@@ -72,10 +72,16 @@ def test2():
 def testtranslator():
     translator = google_translator()
     print(type(translator.translate(re.escape('hello'), lang_tgt='zh')))
+def ttt(sss:str=None):
+    return
 
 if __name__ == '__main__':
     # testRetry()
     # if None==None or len(None):
     #     pass
     # test2()
-    testtranslator()
+    # testtranslator()
+
+    # ttt(sss=None)
+    print(time.localtime())
+    print(time.time())

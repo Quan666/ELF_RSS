@@ -365,7 +365,6 @@ def checkUpdate(new, old) -> list:
                     count = 1
         if count == 0:
             c.insert(0, i)
-
     for i in c.copy():
         count = 0
         for j in b:

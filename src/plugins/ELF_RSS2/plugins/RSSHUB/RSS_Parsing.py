@@ -45,7 +45,14 @@ def get_Proxy(open_proxy: bool) -> dict:
 status_code = [200, 301, 302]
 # 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告
 asyncio.log.logger.setLevel(40)
-
+headers = {
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Cache-Control': 'max-age=0',
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
+    'Connection': 'keep-alive',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+}
 
 # 入口
 async def start(rss: RSS_class.rss) -> None:
@@ -114,10 +121,18 @@ async def start(rss: RSS_class.rss) -> None:
 # 获取 RSS 并解析为 json ，失败重试
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
 async def get_rss(rss: RSS_class.rss) -> dict:
+    # 判断是否使用cookies
+    if rss.cookies:
+        cookies = rss.cookies
+    else:
+        cookies=None
+
     # 获取 xml
-    async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=rss.img_proxy)) as client:
+    async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=rss.img_proxy),cookies=cookies,headers=headers) as client:
         try:
-            r = await client.get(rss.geturl(), timeout=30)
+            r = await client.get(rss.geturl(), timeout=60)
+            if rss.name=='cookies':
+                logger.debug(r.content)
             # 解析为 JSON
             d = feedparser.parse(r.content)
         except BaseException as e:
@@ -140,7 +155,7 @@ async def get_rss(rss: RSS_class.rss) -> dict:
             if d.entries:
                 pass
         except:
-            logger.error(rss.name + ' 抓取失败！将重试 5 次！多次失败请检查订阅地址 {} ！'.format(rss.geturl()))
+            logger.error(rss.name + ' 抓取失败！将重试 5 次！多次失败请检查订阅地址 {} ！\n如果设置了 cookies 请检查 cookies 正确性'.format(rss.geturl()))
             raise BaseException
         return d
 
@@ -155,8 +170,11 @@ async def handle_summary(summary: str, rss: RSS_class.rss) -> str:
     # 去掉换行
     # summary = re.sub('\n', '', summary)
     # 处理 summary 使其 HTML标签统一，方便处理
-    summary_html = pq(summary)
-
+    try:
+        summary_html = pq(summary)
+    except:
+        logger.info('{} 没有正文内容！',rss.name)
+        return ''
     # 最终消息初始化
     res_msg = ''
 
@@ -175,7 +193,7 @@ async def handle_summary(summary: str, rss: RSS_class.rss) -> str:
 async def handle_source(source: str) -> str:
     # 缩短 pixiv 链接
     str_link = re.sub('https://www.pixiv.net/artworks/', 'https://pixiv.net/i/', source)
-    return '原链接：' + str_link + '\n'
+    return '链接：' + str_link + '\n'
 
 
 # 处理日期
