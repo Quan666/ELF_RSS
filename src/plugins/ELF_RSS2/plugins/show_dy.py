@@ -31,12 +31,12 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     if rss_name:
         rss = rss.findName(str(rss_name))
         if not rss:
-            await RssShow.send('订阅 {} 不存在！'.format(rss_name))
+            await RssShow.send('❌ 订阅 {} 不存在！'.format(rss_name))
             return
         if group_id:
             # 隐私考虑，群组下不展示除当前群组外的群号和QQ
             if not str(group_id) in rss.group_id:
-                await RssShow.send('当前群组未订阅 {} '.format(rss_name))
+                await RssShow.send('❌ 当前群组未订阅 {} '.format(rss_name))
                 return
             rss.group_id=[str(group_id),'*']
             rss.user_id=['*']
@@ -46,7 +46,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     if group_id:
         rss_list = rss.findGroup(group=str(group_id))
         if not rss_list:
-            await RssShow.send('当前群组没有任何订阅！')
+            await RssShow.send('❌ 当前群组没有任何订阅！')
             return
     else:
         rss_list = rss.findUser(user=str(user_id))
@@ -65,7 +65,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             await RssShow.send(info+'共 {} 条订阅'.format(flag))
 
     else:
-        await RssShow.send('当前没有任何订阅！')
+        await RssShow.send('❌ 当前没有任何订阅！')
         return
 
 # @RssShow.got("RssShow", prompt="")

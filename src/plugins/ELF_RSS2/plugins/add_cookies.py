@@ -32,22 +32,22 @@ async def handle_Addcookies(bot: Bot, event: Event, state: dict):
     try:
         name = dy[0]
     except:
-        await Addcookies.send('输入的订阅名为空！')
+        await Addcookies.send('❌ 输入的订阅名为空！')
         return
 
     if not rss.findName(name=name):
-        await Addcookies.send('不存在该订阅: {}'.format(name))
+        await Addcookies.send('❌ 不存在该订阅: {}'.format(name))
         return
     rss = rss.findName(name=name)
 
     try:
         cookies = dy[1]
     except:
-        await Addcookies.send('输入的cookies为空！')
+        await Addcookies.send('❌ 输入的cookies为空！')
         return
 
     rss.name=name
     if rss.setCookies(cookies):
-        await Addcookies.send('{}的Cookies添加成功！\nCookies:{}\n'.format(rss.name,rss.cookies))
+        await Addcookies.send('👏 {}的Cookies添加成功！\nCookies:{}\n'.format(rss.name,rss.cookies))
     else:
-        await Addcookies.send('{}的Cookies添加失败！\nCookies:{}\n'.format(rss.name,rss.cookies))
+        await Addcookies.send('👏 {}的Cookies添加失败！\nCookies:{}\n'.format(rss.name,rss.cookies))

@@ -37,7 +37,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     try:
         name = dy[0]
     except:
-        await RssAdd.send('输入的订阅名为空！')
+        await RssAdd.send('❌ 输入的订阅名为空！')
         return
 
     if rss.findName(name=name):
@@ -45,17 +45,17 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         if group_id:
             rss.addGroup(group=group_id)
             await TR.addJob(rss)
-            await RssAdd.send('订阅到当前群组成功！')
+            await RssAdd.send('👏 订阅到当前群组成功！')
         else:
             rss.addUser(user=user_id)
             await TR.addJob(rss)
-            await RssAdd.send('订阅到当前账号成功！')
+            await RssAdd.send('👏 订阅到当前账号成功！')
         return
 
     try:
         url = dy[1]
     except:
-        await RssAdd.send('输入的订阅地址为空！')
+        await RssAdd.send('❌ 输入的订阅地址为空！')
         return
 
     # 去除判断，订阅链接不再唯一，可不同名同链接
@@ -78,8 +78,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     if group_id:
         rss.addGroup(group=group_id)
         await TR.addJob(rss)
-        await RssAdd.send('订阅到当前群组成功！')
+        await RssAdd.send('👏 订阅到当前群组成功！')
     else:
         rss.addUser(user=user_id)
         await TR.addJob(rss)
-        await RssAdd.send('订阅到当前账号成功！')
+        await RssAdd.send('👏 订阅到当前账号成功！')

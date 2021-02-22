@@ -106,8 +106,10 @@ async def start(rss: RSS_class.rss) -> None:
             item_msg += await handle_summary(summary=item['summary'], rss=rss)
         else:
             item_msg += await handle_title(title=item['title'])
+
         # 处理来源
         item_msg += await handle_source(source=item['link'])
+
         # 处理时间
         try:
             item_msg += await handle_date(date=item['published_parsed'])
@@ -115,10 +117,8 @@ async def start(rss: RSS_class.rss) -> None:
             item_msg += await handle_date()
 
         # 处理种子 暂时只支持 蜜柑计划 https://mikanani.me/
-        for tmp in item['links']:
-            if tmp['type'] == 'application/x-bittorrent':
-                await start_down(url=tmp['href'], group_ids=rss.group_id, name='订阅：{}\n{}'.format(rss.name,item['summary']),
-                           path=file_path + os.sep + 'torrent' + os.sep)
+        await handle_down_torrent(rss=rss,item=item)
+
 
         # 发送消息并写入文件
         if await sendMsg(rss=rss, msg=item_msg):
@@ -126,6 +126,20 @@ async def start(rss: RSS_class.rss) -> None:
             tmp.append(item)
             writeRss(name=rss.name, new_rss=new_rss, new_item=tmp)
 
+# 下载种子判断
+async def handle_down_torrent(rss:RSS_class,item:dict):
+    if config.is_open_auto_down_torrent and rss.down_torrent:
+        if rss.down_torrent_keyword:
+            if re.search(rss.down_torrent_keyword,item['summary']):
+                await down_torrent(rss=rss,item=item)
+        else:
+            await down_torrent(rss=rss,item=item)
+# 创建下载种子任务
+async def down_torrent(rss:RSS_class,item:dict):
+    for tmp in item['links']:
+        if tmp['type'] == 'application/x-bittorrent':
+            await start_down(url=tmp['href'], group_ids=rss.group_id, name='订阅：{}\n{}'.format(rss.name,item['summary']),
+                             path=file_path + os.sep + 'torrent' + os.sep)
 
 # 获取 RSS 并解析为 json ，失败重试
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
@@ -322,7 +336,7 @@ async def handle_img(html: str, img_proxy: bool) -> str:
     doc_img = html('img')
     for img in doc_img.items():
         img_path = await dowimg(img.attr("src"), img_proxy)
-        if img_path == None or len(img_path) > 0:
+        if img_path != None or len(img_path) > 0:
             img_str += '[CQ:image,file=file:///' + str(img_path) + ']'
         else:
             img_str += '\n图片走丢啦: {} \n'.format(img.attr("src"))
@@ -333,21 +347,36 @@ async def handle_img(html: str, img_proxy: bool) -> str:
         img_str += '视频封面：'
         for video in doc_video.items():
             img_path = await dowimg(video.attr("poster"), img_proxy)
-            if img_path == None or len(img_path) > 0:
+            if img_path != None or len(img_path) > 0:
                 img_str += '[CQ:image,file=file:///' + str(img_path) + ']'
             else:
                 img_str += '\n图片走丢啦: {} \n'.format(video.attr("poster"))
+
+    # 解决 issue36
+    img_list = re.findall('(?:\[img])([hH][tT]{2}[pP][sS]{0,}://.*?)(?:\[/img])',str(html))
+    for img_tmp in img_list:
+        img_path = await dowimg(img_tmp, img_proxy)
+        if img_path != None or len(img_path) > 0:
+            img_str += '[CQ:image,file=file:///' + str(img_path) + ']'
+        else:
+            img_str += '\n图片走丢啦: {} \n'.format(img_tmp)
 
     return img_str
 
 
 # HTML标签等处理
 async def handle_html_tag(html, translation: bool) -> str:
-    # 处理一些标签
+
+    # issue36 处理md标签
+    rss_str=re.sub('\[img][hH][tT]{2}[pP][sS]{0,}://.*?\[/img]','',str(html))
+    rss_str=re.sub('(\[.*?])|(\[/.*?])','',str(rss_str))
+
+
+    # 处理一些 HTML 标签
     if config.blockquote == True:
-        rss_str = re.sub('<blockquote>|</blockquote>', '', str(html))
+        rss_str = re.sub('<blockquote>|</blockquote>', '', str(rss_str))
     else:
-        rss_str = re.sub('<blockquote.*>', '', str(html))
+        rss_str = re.sub('<blockquote.*>', '', str(rss_str))
     rss_str = re.sub('<br/><br/>|<br><br>|<br>|<br/>', '\n', rss_str)
     rss_str = re.sub('<span>|<span.+?\">|</span>', '', rss_str)
     rss_str = re.sub('<pre.+?\">|</pre>', '', rss_str)
@@ -378,7 +407,9 @@ async def handle_html_tag(html, translation: bool) -> str:
     # 删除未解析成功的 a 标签
     rss_str = re.sub('<a.+?\">|<a>|</a>', '', rss_str)
     rss_str_tl = re.sub('<a.+?\">|<a>|</a>', '', rss_str_tl)
-
+    # 去掉换行
+    rss_str = re.sub('\n\n|\n\n\n', '', rss_str)
+    rss_str_tl = re.sub('\n\n|\n\n\n', '', rss_str_tl)
     # 翻译
     if translation:
         return rss_str + await handle_translation(rss_str_tl=rss_str_tl)

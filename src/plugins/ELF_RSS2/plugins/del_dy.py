@@ -36,16 +36,16 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     if rss.findName(name=rss_name):
         rss = rss.findName(name=rss_name)
     else:
-        await Rssdel.send('删除失败！不存在该订阅！')
+        await Rssdel.send('❌ 删除失败！不存在该订阅！')
         return
 
     if group_id:
         if rss.delGroup(group=group_id):
             await TR.addJob(rss)
-            await Rssdel.send('当前群组取消订阅 {} 成功！'.format(rss.name))
+            await Rssdel.send('👏 当前群组取消订阅 {} 成功！'.format(rss.name))
         else:
-            await Rssdel.send('当前群组没有订阅： {} ！'.format(rss.name))
+            await Rssdel.send('❌ 当前群组没有订阅： {} ！'.format(rss.name))
     else:
         rss.delRss(rss)
         await TR.delJob(rss)
-        await Rssdel.send('订阅 {} 删除成功！'.format(rss.name))
+        await Rssdel.send('👏 订阅 {} 删除成功！'.format(rss.name))

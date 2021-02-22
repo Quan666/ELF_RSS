@@ -30,8 +30,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
                              '\n对应参数:' \
                              '\n订阅链接-url QQ-qq 群-qun 更新频率-time' \
                              '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op' \
+                             '\n下载种子-downopen 下载关键词-downkey' \
                              '\n注：' \
-                             '\nproxy、tl、ot、op 值为 1/0' \
+                             '\nproxy、tl、ot、op、downopen 值为 1/0' \
+                             '\n下载关键词支持正则表达式，匹配时下载' \
                              '\nQQ、群号前加英文逗号表示追加,-1设为空' \
                              '\n各个属性空格分割' \
                              '\n详细：http://ii1.fun/nmEFn2'.strip())
@@ -49,18 +51,18 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         name = change_list[0]
         change_list.remove(name)
     except:
-        await RssChange.send('订阅名称参数错误！')
+        await RssChange.send('❌ 订阅名称参数错误！')
         return
 
     rss = RSS_class.rss(name, '', '-1', '-1')
     if not rss.findName(name=name):
-        await RssChange.send('订阅 {} 不存在！'.format(name))
+        await RssChange.send('❌ 订阅 {} 不存在！'.format(name))
         return
 
     rss = rss.findName(name=name)
     if group_id:
         if not str(group_id) in rss.group_id:
-            await RssChange.send('修改失败，当前群组无权操作订阅：{}'.format(rss.name))
+            await RssChange.send('❌ 修改失败，当前群组无权操作订阅：{}'.format(rss.name))
             return
     try:
         for change_tmp in change_list:
@@ -109,8 +111,13 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 rss.only_title = bool(int(one_info_list[1]))
             elif one_info_list[0] == 'op':
                 rss.only_pic = bool(int(one_info_list[1]))
+            elif one_info_list[0] == 'downopen':
+                rss.down_torrent = bool(int(one_info_list[1]))
+            elif one_info_list[0] == 'downkey':
+                if len(one_info_list[1]) > 0:
+                    rss.down_torrent_keyword = one_info_list[1]
             else:
-                await RssChange.send('参数错误或无权修改！\n{}'.format(change_tmp))
+                await RssChange.send('❌ 参数错误或无权修改！\n{}'.format(change_tmp))
                 return
         # 参数解析完毕，写入
         rss.writeRss()
@@ -121,8 +128,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
             # 奇怪的逻辑，群管理能修改订阅消息，这对其他订阅者不公平。
             rss.group_id = [str(group_id), '*']
             rss.user_id = ['*']
-        await RssChange.send('修改成功\n{}'.format(rss.toString()))
-        logger.info('修改成功\n{}'.format(rss.toString()))
+        await RssChange.send('👏 修改成功\n{}'.format(rss.toString()))
+        logger.info('👏 修改成功\n{}'.format(rss.toString()))
     except BaseException as e:
-        await RssChange.send('参数解析出现错误！\nE: {}'.format(str(e)))
-        logger.error('参数解析出现错误！\nE: {}'.format(str(e)))
+        await RssChange.send('❌ 参数解析出现错误！\nE: {}'.format(str(e)))
+        logger.error('❌ 参数解析出现错误！\nE: {}'.format(str(e)))

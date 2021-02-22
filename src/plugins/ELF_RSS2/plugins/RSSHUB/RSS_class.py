@@ -6,6 +6,7 @@ from pathlib import Path
 
 from bot import config
 from nonebot.log import logger
+
 # 存储目录
 file_path = str(str(Path.cwd()) + os.sep + 'data' + os.sep)
 
@@ -23,10 +24,13 @@ class rss:
     only_title = False  # 仅标题
     only_pic = False  # 仅图片
     cookies = ''
+    down_torrent: bool = False # 是否下载种子
+    down_torrent_keyword: str = None # 过滤关键字，支持正则
 
     # 定义构造方法
     def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
-                 translation=False, only_title=False, only_pic=False, cookies: str = ''):
+                 translation=False, only_title=False, only_pic=False, cookies: str = '', down_torrent: bool = False,
+                 down_torrent_keyword: str = None):
         self.name = name
         self.url = url
         if user_id != '-1':
@@ -46,6 +50,8 @@ class rss:
             self.cookies = None
         else:
             self.cookies = cookies
+        self.down_torrent = down_torrent
+        self.down_torrent_keyword = down_torrent_keyword
 
     # 返回订阅链接
     def geturl(self, rsshub: str = config.rsshub) -> str:
@@ -186,13 +192,14 @@ class rss:
                 if group_tmp == str(user):
                     re.append(rss_tmp)
         return re
-    def setCookies(self,cookies_str:str)->bool:
+
+    def setCookies(self, cookies_str: str) -> bool:
         try:
             if len(cookies_str) >= 10:
                 cookies = {}
                 for line in cookies_str.split(";"):
                     if line.find("=") != -1:
-                        name,value = line.strip().split("=")
+                        name, value = line.strip().split("=")
                         cookies[name] = value
                 self.cookies = cookies
                 return True
@@ -200,7 +207,7 @@ class rss:
                 self.cookies = None
                 return False
         except Exception as e:
-            logger.error('{} 的 Cookies 设置时出错！E: {}'.format(self.name,e))
+            logger.error('{} 的 Cookies 设置时出错！E: {}'.format(self.name, e))
             return False
 
     def toString(self) -> str:
@@ -208,10 +215,15 @@ class rss:
             cookies_str = '\ncookies:True'
         else:
             cookies_str = ''
-
-        ret = '名称：{}\n订阅地址：{}\n订阅QQ：{}\n订阅群：{}\n更新时间：{}\n代理：{}\n翻译：{}\n仅标题：{}\n仅图片：{}{}'.format(self.name, self.url,
+        if not config.is_open_auto_down_torrent:
+            down_msg='\n种子自动下载功能未打开'
+        else:
+            down_msg=''
+        ret = '名称：{}\n订阅地址：{}\n订阅QQ：{}\n订阅群：{}\n更新时间：{}\n代理：{}\n翻译：{}\n仅标题：{}\n仅图片：{}\n下载种子：{}\n下载关键词：{}{}{}'.format(self.name, self.url,
                                                                                                 str(self.user_id), str(
                 self.group_id), str(self.time), str(self.img_proxy), str(self.translation), str(self.only_title),
                                                                                                 str(self.only_pic),
-                                                                                                str(cookies_str))
+                                                                                                str(self.down_torrent),
+                                                                                                str(self.down_torrent_keyword),
+                                                                                                str(cookies_str),down_msg)
         return ret

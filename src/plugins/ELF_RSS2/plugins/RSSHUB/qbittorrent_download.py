@@ -12,6 +12,8 @@ from bot import config
 # 群文件上传成功回调
 # 文件三种状态1.下载中2。上传中3.上传完成
 # 文件信息持久化存储
+# 关键词正则表达式
+# 下载开关pip install cx_Freeze
 
 
 
@@ -21,7 +23,7 @@ async def start_down(url:str,path:str,group_ids:list,name:str):
         qb = Client(config.qb_web_url)
     except BaseException as e:
         bot, = nonebot.get_bots().values()
-        msg='无法连接到 qbittorrent ,请检查：\n1.是否启动程序\n2.是否勾选了“Web用户界面（远程控制）”\n3.连接地址、端口是否正确\nE: {}'.format(e)
+        msg='❌ 无法连接到 qbittorrent ,请检查：\n1.是否启动程序\n2.是否勾选了“Web用户界面（远程控制）”\n3.连接地址、端口是否正确\nE: {}'.format(e)
         logger.error(msg)
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]), message=msg)
         return
@@ -30,7 +32,7 @@ async def start_down(url:str,path:str,group_ids:list,name:str):
         qb.download_from_link(link=url,path=path)
     except BaseException as e:
         bot, = nonebot.get_bots().values()
-        msg='无法连登录到 qbittorrent ,请检查是否勾选 “对本地主机上的客户端跳过身份验证”。\nE: {}'.format(e)
+        msg='❌ 无法连登录到 qbittorrent ,请检查是否勾选 “对本地主机上的客户端跳过身份验证”。\nE: {}'.format(e)
         logger.error(msg)
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]), message=msg)
         return
@@ -46,7 +48,7 @@ async def check_down_status(hash:str,group_ids:list,name:str):
     bot, = nonebot.get_bots().values()
     if info['total_downloaded']/info['total_size'] >= 1.000000:
         for id in config.down_status_msg_group:
-            await bot.send_msg(message_type='group', group_id=int(id), message=str('{}\nHash: {} \n下载完成！'.format(name,hash)))
+            await bot.send_msg(message_type='group', group_id=int(id), message=str('👏 {}\nHash: {} \n下载完成！'.format(name,hash)))
         for group_id in group_ids:
             for tmp in files:
                 # 异常包起来防止超时报错导致后续不执行
@@ -87,4 +89,4 @@ async def rss_trigger(hash:str,group_ids:list,name:str):
     logger.info('{}\nHash: {} \n下载任务添加成功！'.format(name,hash))
     bot, = nonebot.get_bots().values()
     for id in config.down_status_msg_group:
-        await bot.send_msg(message_type='group', group_id=int(id), message=str('{}\nHash: {} \n下载任务添加成功！'.format(name,hash)))
+        await bot.send_msg(message_type='group', group_id=int(id), message=str('👏 {}\nHash: {} \n下载任务添加成功！'.format(name,hash)))
