@@ -1,9 +1,9 @@
 import json
 
+from httpx import AsyncClient
 from nonebot import on_command
-from nonebot.rule import to_me
 from nonebot.adapters.cqhttp import Bot, Event
-import requests
+from nonebot.rule import to_me
 
 miyu = on_command("密语", rule=to_me(), priority=5)
 
@@ -19,16 +19,17 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 async def handle_city(bot: Bot, event: Event, state: dict):
     txt = state["miyu"]
     miyu_list = txt.split(' ')
-    if len(miyu_list)<2:
+    if len(miyu_list) < 2:
         await miyu.reject("发送“密语”信息，及密码，空格分割")
 
-    re = await get_miyu(miyu_list[0],miyu_list[1])
+    re = await get_miyu(miyu_list[0], miyu_list[1])
     await miyu.finish(re)
 
 
-async def get_miyu(message: str,passwd:str) -> str:
+async def get_miyu(message: str, passwd: str) -> str:
     www = 'https://ii1.fun/cipher/insert'
-    data = {"message": message,"passwd":passwd}
+    data = {"message": message, "passwd": passwd}
     headers = {'Content-Type': 'application/json'}
-    data_json = requests.get(www, headers=headers, data=json.dumps(data)).json()
+    async with AsyncClient(headers=headers) as client:
+        data_json = await client.get(www,  data=json.dumps(data)).json()
     return ''+data_json['data']['shortUrl']

@@ -7,6 +7,7 @@ import json
 import os.path
 import re
 import time
+import unicodedata
 import uuid
 from io import BytesIO
 from pathlib import Path
@@ -15,20 +16,17 @@ import emoji
 import feedparser
 import httpx
 import nonebot
-import requests
-import unicodedata
-from PIL import Image
 from google_trans_new import google_translator
 from nonebot.log import logger
+from PIL import Image
 from pyquery import PyQuery as pq
 from retrying import retry
 
-from bot import config
-from . import RSS_class
-from . import rss_baidutrans
-
+from . import RSS_class, rss_baidutrans
 # 存储目录
 from .qbittorrent_download import start_down
+
+config = nonebot.get_driver().config
 
 file_path = str(str(Path.cwd()) + os.sep + 'data' + os.sep)
 
@@ -40,7 +38,8 @@ def get_Proxy(open_proxy: bool) -> dict:
     proxy = config.rss_proxy
     return httpx.Proxy(
         url="http://" + proxy,
-        mode="TUNNEL_ONLY"  # May be "TUNNEL_ONLY" or "FORWARD_ONLY". Defaults to "DEFAULT".
+        # May be "TUNNEL_ONLY" or "FORWARD_ONLY". Defaults to "DEFAULT".
+        mode="TUNNEL_ONLY"
     )
 
 
@@ -117,8 +116,7 @@ async def start(rss: RSS_class.rss) -> None:
             item_msg += await handle_date()
 
         # 处理种子 暂时只支持 蜜柑计划 https://mikanani.me/
-        await handle_down_torrent(rss=rss,item=item)
-
+        await handle_down_torrent(rss=rss, item=item)
 
         # 发送消息并写入文件
         if await sendMsg(rss=rss, msg=item_msg):
@@ -127,21 +125,27 @@ async def start(rss: RSS_class.rss) -> None:
             writeRss(name=rss.name, new_rss=new_rss, new_item=tmp)
 
 # 下载种子判断
-async def handle_down_torrent(rss:RSS_class,item:dict):
+
+
+async def handle_down_torrent(rss: RSS_class, item: dict):
     if config.is_open_auto_down_torrent and rss.down_torrent:
         if rss.down_torrent_keyword:
-            if re.search(rss.down_torrent_keyword,item['summary']):
-                await down_torrent(rss=rss,item=item)
+            if re.search(rss.down_torrent_keyword, item['summary']):
+                await down_torrent(rss=rss, item=item)
         else:
-            await down_torrent(rss=rss,item=item)
+            await down_torrent(rss=rss, item=item)
 # 创建下载种子任务
-async def down_torrent(rss:RSS_class,item:dict):
+
+
+async def down_torrent(rss: RSS_class, item: dict):
     for tmp in item['links']:
         if tmp['type'] == 'application/x-bittorrent':
-            await start_down(url=tmp['href'], group_ids=rss.group_id, name='订阅：{}\n{}'.format(rss.name,item['summary']),
+            await start_down(url=tmp['href'], group_ids=rss.group_id, name='订阅：{}\n{}'.format(rss.name, item['summary']),
                              path=file_path + os.sep + 'torrent' + os.sep)
 
 # 获取 RSS 并解析为 json ，失败重试
+
+
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
 async def get_rss(rss: RSS_class.rss) -> dict:
     # 判断是否使用cookies
@@ -162,18 +166,21 @@ async def get_rss(rss: RSS_class.rss) -> dict:
         except BaseException as e:
             # logger.error("抓取订阅 {} 的 RSS 失败，将重试 ！ E：{}".format(rss.name, e))
             if not re.match(u'[hH][tT]{2}[pP][sS]{0,}://', rss.url, flags=0) and config.rsshub_backup:
-                logger.error('RSSHub :' + config.rsshub + ' 访问失败 ！使用备用RSSHub 地址！')
+                logger.error('RSSHub :' + config.rsshub +
+                             ' 访问失败 ！使用备用RSSHub 地址！')
                 for rsshub_url in list(config.rsshub_backup):
                     async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=rss.img_proxy)) as client:
                         try:
                             r = await client.get(rss.geturl(rsshub=rsshub_url))
                         except Exception as e:
-                            logger.error('RSSHub :' + rss.geturl(rsshub=rsshub_url) + ' 访问失败 ！使用备用 RSSHub 地址！')
+                            logger.error(
+                                'RSSHub :' + rss.geturl(rsshub=rsshub_url) + ' 访问失败 ！使用备用 RSSHub 地址！')
                             continue
                         if r.status_code in status_code:
                             d = feedparser.parse(r.content)
                             if d.entries:
-                                logger.info(rss.geturl(rsshub=rsshub_url) + ' 抓取成功！')
+                                logger.info(rss.geturl(
+                                    rsshub=rsshub_url) + ' 抓取成功！')
                                 break
         try:
             if d.entries:
@@ -217,7 +224,8 @@ async def handle_summary(summary: str, rss: RSS_class.rss) -> str:
 # 处理来源
 async def handle_source(source: str) -> str:
     # 缩短 pixiv 链接
-    str_link = re.sub('https://www.pixiv.net/artworks/', 'https://pixiv.net/i/', source)
+    str_link = re.sub('https://www.pixiv.net/artworks/',
+                      'https://pixiv.net/i/', source)
     return '链接：' + str_link + '\n'
 
 
@@ -353,7 +361,8 @@ async def handle_img(html: str, img_proxy: bool) -> str:
                 img_str += '\n图片走丢啦: {} \n'.format(video.attr("poster"))
 
     # 解决 issue36
-    img_list = re.findall('(?:\[img])([hH][tT]{2}[pP][sS]{0,}://.*?)(?:\[/img])',str(html))
+    img_list = re.findall(
+        '(?:\[img])([hH][tT]{2}[pP][sS]{0,}://.*?)(?:\[/img])', str(html))
     for img_tmp in img_list:
         img_path = await dowimg(img_tmp, img_proxy)
         if img_path != None or len(img_path) > 0:
@@ -368,9 +377,9 @@ async def handle_img(html: str, img_proxy: bool) -> str:
 async def handle_html_tag(html, translation: bool) -> str:
 
     # issue36 处理md标签
-    rss_str=re.sub('\[img][hH][tT]{2}[pP][sS]{0,}://.*?\[/img]','',str(html))
-    rss_str=re.sub('(\[.*?])|(\[/.*?])','',str(rss_str))
-
+    rss_str = re.sub(
+        '\[img][hH][tT]{2}[pP][sS]{0,}://.*?\[/img]', '', str(html))
+    rss_str = re.sub('(\[.*?])|(\[/.*?])', '', str(rss_str))
 
     # 处理一些 HTML 标签
     if config.blockquote == True:
@@ -399,9 +408,11 @@ async def handle_html_tag(html, translation: bool) -> str:
     doc_a = html('a')
     for a in doc_a.items():
         if str(a.text()) != a.attr("href"):
-            rss_str = re.sub(re.escape(str(a)), str(a.text()) + ':' + (a.attr("href")) + '\n', rss_str)
+            rss_str = re.sub(re.escape(str(a)), str(
+                a.text()) + ':' + (a.attr("href")) + '\n', rss_str)
         else:
-            rss_str = re.sub(re.escape(str(a)), (a.attr("href")) + '\n', rss_str)
+            rss_str = re.sub(re.escape(str(a)),
+                             (a.attr("href")) + '\n', rss_str)
         rss_str_tl = re.sub(re.escape(str(a)), '', rss_str_tl)
 
     # 删除未解析成功的 a 标签
@@ -429,9 +440,11 @@ async def handle_translation(rss_str_tl: str) -> str:
             rss_str_tl = unicodedata.normalize('NFC', rss_str_tl)
             text = emoji.demojize(rss_str_tl)
             text = re.sub(r':[A-Za-z_]*:', ' ', text)
-            text = '\n翻译(BaiduAPI)：\n' + str(rss_baidutrans.baidu_translate(re.escape(text)))
+            text = '\n翻译(BaiduAPI)：\n' + \
+                str(rss_baidutrans.baidu_translate(re.escape(text)))
         else:
-            text = '\n翻译：\n' + str(translator.translate(re.escape(text), lang_tgt='zh'))
+            text = '\n翻译：\n' + \
+                str(translator.translate(re.escape(text), lang_tgt='zh'))
         text = re.sub(r'\\', '', text)
         text = re.sub(r'百度翻译', '\n', text)
     except Exception as e:
@@ -499,7 +512,8 @@ def writeRss(name: str, new_rss: dict, new_item: list = None):
     if not os.path.isdir(file_path):
         os.makedirs(file_path)
     with codecs.open(file_path + (name + ".json"), "w", 'utf-8') as dump_f:
-        dump_f.write(json.dumps(old, sort_keys=True, indent=4, ensure_ascii=False))
+        dump_f.write(json.dumps(old, sort_keys=True,
+                                indent=4, ensure_ascii=False))
 
 
 # 发送消息

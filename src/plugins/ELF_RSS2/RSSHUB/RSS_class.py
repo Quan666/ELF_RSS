@@ -4,8 +4,10 @@ import os
 import re
 from pathlib import Path
 
-from bot import config
+import nonebot
 from nonebot.log import logger
+
+config = nonebot.get_driver().config
 
 # 存储目录
 file_path = str(str(Path.cwd()) + os.sep + 'data' + os.sep)
@@ -24,8 +26,8 @@ class rss:
     only_title = False  # 仅标题
     only_pic = False  # 仅图片
     cookies = ''
-    down_torrent: bool = False # 是否下载种子
-    down_torrent_keyword: str = None # 过滤关键字，支持正则
+    down_torrent: bool = False  # 是否下载种子
+    down_torrent_keyword: str = None  # 过滤关键字，支持正则
 
     # 定义构造方法
     def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
@@ -107,7 +109,8 @@ class rss:
         if not os.path.isdir(file_path):
             os.makedirs(file_path)
         with codecs.open(str(file_path + "rss.json"), "w", 'utf-8') as dump_f:
-            dump_f.write(json.dumps(rss_json, sort_keys=True, indent=4, ensure_ascii=False))
+            dump_f.write(json.dumps(rss_json, sort_keys=True,
+                                    indent=4, ensure_ascii=False))
 
     # 查找是否存在当前订阅名 rss 要转换为 rss_
     def findName(self, name: str):
@@ -165,12 +168,14 @@ class rss:
         rss_json = []
         for rss_one in rss_old:
             if rss_one.name != delrss.name:
-                rss_json.append(json.dumps(rss_one.__dict__, ensure_ascii=False))
+                rss_json.append(json.dumps(
+                    rss_one.__dict__, ensure_ascii=False))
 
         if not os.path.isdir(file_path):
             os.makedirs(file_path)
         with codecs.open(str(file_path + "rss.json"), "w", 'utf-8') as dump_f:
-            dump_f.write(json.dumps(rss_json, sort_keys=True, indent=4, ensure_ascii=False))
+            dump_f.write(json.dumps(rss_json, sort_keys=True,
+                                    indent=4, ensure_ascii=False))
 
     def findGroup(self, group: str) -> list:
         rss_old = self.readRss()
@@ -216,14 +221,17 @@ class rss:
         else:
             cookies_str = ''
         if not config.is_open_auto_down_torrent:
-            down_msg='\n种子自动下载功能未打开'
+            down_msg = '\n种子自动下载功能未打开'
         else:
-            down_msg=''
+            down_msg = ''
         ret = '名称：{}\n订阅地址：{}\n订阅QQ：{}\n订阅群：{}\n更新时间：{}\n代理：{}\n翻译：{}\n仅标题：{}\n仅图片：{}\n下载种子：{}\n下载关键词：{}{}{}'.format(self.name, self.url,
-                                                                                                str(self.user_id), str(
-                self.group_id), str(self.time), str(self.img_proxy), str(self.translation), str(self.only_title),
-                                                                                                str(self.only_pic),
-                                                                                                str(self.down_torrent),
-                                                                                                str(self.down_torrent_keyword),
-                                                                                                str(cookies_str),down_msg)
+                                                                                                                     str(self.user_id), str(
+                                                                                                                         self.group_id), str(self.time), str(self.img_proxy), str(self.translation), str(self.only_title),
+                                                                                                                     str(
+                                                                                                                         self.only_pic),
+                                                                                                                     str(
+                                                                                                                         self.down_torrent),
+                                                                                                                     str(
+                                                                                                                         self.down_torrent_keyword),
+                                                                                                                     str(cookies_str), down_msg)
         return ret

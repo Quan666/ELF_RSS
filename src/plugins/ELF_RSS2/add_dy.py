@@ -1,16 +1,13 @@
-import re
-
-from RSSHUB import RSS_class, RWlist, rsstrigger as TR
 from nonebot import on_command
-from nonebot.adapters.cqhttp import permission, unescape
 from nonebot import permission as SUPERUSER
-from nonebot.adapters.cqhttp import Bot, Event
-from nonebot.log import logger
+from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 from nonebot.rule import to_me
 
-from bot import config
+from .RSSHUB import RSS_class
+from .RSSHUB import rsstrigger as TR
 
-RssAdd = on_command('add', aliases={'添加订阅', 'sub'}, rule=to_me(), priority=5, permission=SUPERUSER.SUPERUSER|permission.GROUP_ADMIN)
+RssAdd = on_command('add', aliases={'添加订阅', 'sub'}, rule=to_me(
+), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
 
 
 @RssAdd.handle()
@@ -20,6 +17,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         state["RssAdd"] = unescape(args)  # 如果用户发送了参数则直接赋值
 
 # 如果只有名称就把该 名称订阅 订阅到当前账号或群组
+
+
 @RssAdd.got("RssAdd",
             prompt="请输入\n名称 [订阅地址]\n空格分割、[]表示可选\n私聊默认订阅到当前账号，群聊默认订阅到当前群组\n更多信息可通过 change 命令修改")
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
@@ -32,7 +31,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
 
     dy = rss_dy_link.split(' ')
 
-    rss = RSS_class.rss(name='',url='',user_id='-1',group_id='-1')
+    rss = RSS_class.rss(name='', url='', user_id='-1', group_id='-1')
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅
     try:
         name = dy[0]
@@ -73,8 +72,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     #     return
 
     # 当前名称、url都不存在
-    rss.name=name
-    rss.url=url
+    rss.name = name
+    rss.url = url
     if group_id:
         rss.addGroup(group=group_id)
         await TR.addJob(rss)

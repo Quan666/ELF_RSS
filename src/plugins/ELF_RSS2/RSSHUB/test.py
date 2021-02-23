@@ -1,11 +1,11 @@
 import re
 import time
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from google_trans_new import google_translator
 from retrying import retry
-from apscheduler.triggers.interval import IntervalTrigger # 间隔触发器
-from apscheduler.schedulers.background import BackgroundScheduler
+
 
 @retry(stop_max_attempt_number=5,stop_max_delay=30*1000)
 def testRetry():

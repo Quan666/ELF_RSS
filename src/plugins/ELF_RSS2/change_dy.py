@@ -1,12 +1,14 @@
 import re
 
-from RSSHUB import rsstrigger as TR, RWlist, RSS_class
-from nonebot import on_command, require
-from nonebot.adapters.cqhttp import permission, unescape
+from nonebot import on_command
 from nonebot import permission as SUPERUSER
-from nonebot.adapters.cqhttp import Bot, Event
+from nonebot import require
+from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 from nonebot.log import logger
 from nonebot.rule import to_me
+
+from .RSSHUB import RSS_class
+from .RSSHUB import rsstrigger as TR
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 
@@ -14,7 +16,7 @@ scheduler = require("nonebot_plugin_apscheduler").scheduler
 # file_path = './data/'
 
 RssChange = on_command('change', aliases={'修改订阅', 'moddy'}, rule=to_me(), priority=5,
-                       permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN)
+                       permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
 
 
 @RssChange.handle()
@@ -23,19 +25,19 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     if args:
         state["RssChange"] = unescape(args)  # 如果用户发送了参数则直接赋值
     else:
-        await RssChange.send('请输入要修改的订阅' \
-                             '\n订阅名 属性=,值' \
-                             '\n如:' \
-                             '\ntest qq=,123,234 qun=-1' \
-                             '\n对应参数:' \
-                             '\n订阅链接-url QQ-qq 群-qun 更新频率-time' \
-                             '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op' \
-                             '\n下载种子-downopen 下载关键词-downkey' \
-                             '\n注：' \
-                             '\nproxy、tl、ot、op、downopen 值为 1/0' \
-                             '\n下载关键词支持正则表达式，匹配时下载' \
-                             '\nQQ、群号前加英文逗号表示追加,-1设为空' \
-                             '\n各个属性空格分割' \
+        await RssChange.send('请输入要修改的订阅'
+                             '\n订阅名 属性=,值'
+                             '\n如:'
+                             '\ntest qq=,123,234 qun=-1'
+                             '\n对应参数:'
+                             '\n订阅链接-url QQ-qq 群-qun 更新频率-time'
+                             '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op'
+                             '\n下载种子-downopen 下载关键词-downkey'
+                             '\n注：'
+                             '\nproxy、tl、ot、op、downopen 值为 1/0'
+                             '\n下载关键词支持正则表达式，匹配时下载'
+                             '\nQQ、群号前加英文逗号表示追加,-1设为空'
+                             '\n各个属性空格分割'
                              '\n详细：http://ii1.fun/nmEFn2'.strip())
 
 
@@ -80,7 +82,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                             rss.user_id.append(str(qq_tmp))
                 else:
                     rss.user_id = qq_list
-            elif one_info_list[0] == 'qun' and not group_id:  # 暂时禁止群管理员修改群号，如要取消订阅可以使用 deldy 命令
+            # 暂时禁止群管理员修改群号，如要取消订阅可以使用 deldy 命令
+            elif one_info_list[0] == 'qun' and not group_id:
                 if one_info_list[1] == '-1':
                     rss.group_id = []
                     continue

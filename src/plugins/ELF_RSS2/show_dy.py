@@ -1,18 +1,17 @@
-import os
-from pathlib import Path
-
-from RSSHUB import RWlist,RSS_class
 from nonebot import on_command
-from nonebot.adapters.cqhttp import permission, unescape
 from nonebot import permission as SUPERUSER
-from nonebot.adapters.cqhttp import Bot, Event
+from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 from nonebot.rule import to_me
 
+from .RSSHUB import RSS_class
 
-RssShow = on_command('show', aliases={'查看订阅'}, rule=to_me(), priority=5, permission=SUPERUSER.SUPERUSER|permission.GROUP_ADMIN)
+RssShow = on_command('show', aliases={'查看订阅'}, rule=to_me(
+), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
 
 # 不带订阅名称默认展示当前群组或账号的订阅
 # 带订阅名称就显示该订阅的
+
+
 @RssShow.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.message).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
@@ -26,7 +25,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     except:
         group_id = None
 
-    rss = RSS_class.rss('','','-1','-1')
+    rss = RSS_class.rss('', '', '-1', '-1')
 
     if rss_name:
         rss = rss.findName(str(rss_name))
@@ -38,8 +37,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             if not str(group_id) in rss.group_id:
                 await RssShow.send('❌ 当前群组未订阅 {} '.format(rss_name))
                 return
-            rss.group_id=[str(group_id),'*']
-            rss.user_id=['*']
+            rss.group_id = [str(group_id), '*']
+            rss.user_id = ['*']
         await RssShow.send(rss.toString())
         return
 
@@ -51,17 +50,17 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     else:
         rss_list = rss.findUser(user=str(user_id))
     if rss_list:
-        if len(rss_list)==1:
+        if len(rss_list) == 1:
             await RssShow.send(rss_list[0].toString())
         else:
             flag = 0
             info = ''
             for rss_tmp in rss_list:
-                if flag%5 == 0 and flag!=0:
+                if flag % 5 == 0 and flag != 0:
                     await RssShow.send(str(info))
-                    info=''
-                info+='Name：{}\nURL：{}\n\n'.format(rss_tmp.name,rss_tmp.url)
-                flag+=1
+                    info = ''
+                info += 'Name：{}\nURL：{}\n\n'.format(rss_tmp.name, rss_tmp.url)
+                flag += 1
             await RssShow.send(info+'共 {} 条订阅'.format(flag))
 
     else:

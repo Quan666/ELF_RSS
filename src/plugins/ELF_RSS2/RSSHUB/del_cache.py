@@ -7,13 +7,15 @@ from apscheduler.triggers.interval import IntervalTrigger  # 间隔触发器
 from nonebot import logger
 from nonebot import require
 
-from bot import config
+config = nonebot.get_driver().config
+
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 # 图片存储目录
 file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep+'imgs')
 
 # file_path = './data/imgs'
+
 
 async def del_img(int):
     bot, = nonebot.get_bots().values()

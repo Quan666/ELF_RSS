@@ -1,11 +1,14 @@
 import asyncio
 
 import nonebot
-from RSSHUB import RSS_class,del_cache as DC, rsstrigger as RT, RWlist
-from nonebot import on_metaevent, logger
+from nonebot import logger, on_metaevent
 from nonebot.adapters.cqhttp import Bot, Event
 
-from bot import config
+from .RSSHUB import RSS_class
+from .RSSHUB import del_cache as DC
+from .RSSHUB import rsstrigger as RT
+
+config = nonebot.get_driver().config
 
 
 async def start():
@@ -17,7 +20,7 @@ async def start():
         pass
 
     try:
-        rss = RSS_class.rss('','','-1','-1')
+        rss = RSS_class.rss('', '', '-1', '-1')
         rss_list = rss.readRss()  # 读取list
         if not rss_list:
             raise Exception('第一次启动，你还没有订阅，记得添加哟！')
@@ -33,13 +36,8 @@ async def start():
         # logger.debug(e)
 
 
-def startfun():
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(start())
-
-
 # region 启动问好
-def check_first_connect(bot: Bot, event: Event, state: dict) -> bool:
+async def check_first_connect(bot: Bot, event: Event, state: dict) -> bool:
     if event.meta_event_type == 'lifecycle':
         return True
     return False
