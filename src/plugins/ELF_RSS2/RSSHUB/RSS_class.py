@@ -7,7 +7,7 @@ from pathlib import Path
 import nonebot
 from nonebot.log import logger
 
-config = nonebot.get_driver().config
+from ..config import config
 
 # 存储目录
 file_path = str(str(Path.cwd()) + os.sep + 'data' + os.sep)

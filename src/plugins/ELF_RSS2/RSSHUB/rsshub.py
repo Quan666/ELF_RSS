@@ -23,9 +23,9 @@ from PIL import Image
 from pyquery import PyQuery as pq
 from retrying import retry
 
+from ..config import config
 from . import RSS_class, rss_baidutrans
 
-config = nonebot.get_driver().config
 # 存储目录
 file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 # 代理

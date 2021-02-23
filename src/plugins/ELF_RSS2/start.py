@@ -1,14 +1,11 @@
-import asyncio
-
 import nonebot
 from nonebot import logger, on_metaevent
 from nonebot.adapters.cqhttp import Bot, Event
 
+from .config import config
 from .RSSHUB import RSS_class
 from .RSSHUB import del_cache as DC
 from .RSSHUB import rsstrigger as RT
-
-config = nonebot.get_driver().config
 
 
 async def start():

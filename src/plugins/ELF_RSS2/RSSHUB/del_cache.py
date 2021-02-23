@@ -4,11 +4,9 @@ from pathlib import Path
 
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger  # 间隔触发器
-from nonebot import logger
-from nonebot import require
+from nonebot import logger, require
 
-config = nonebot.get_driver().config
-
+from ..config import config
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 # 图片存储目录
