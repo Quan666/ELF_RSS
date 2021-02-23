@@ -27,6 +27,7 @@ async def get_oneread(oneread: str) -> str:
     www = 'https://ii1.fun/oneread/insert'
     data = {"message": oneread}
     headers = {'Content-Type': 'application/json'}
-    async with AsyncClient(headers=headers) as client:
-        data_json = await client.get(www, headers=headers, data=json.dumps(data)).json()
+    async with AsyncClient(proxies={}, headers=headers) as client:
+        data_json = await client.post(www, headers=headers, data=json.dumps(data))
+        data_json = data_json.json()
     return data_json['data']['shortUrl']
