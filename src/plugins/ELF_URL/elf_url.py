@@ -29,8 +29,9 @@ async def get_uri_of_url(url: str) -> str:
     data = {"url": url}
     headers = {'Content-Type': 'application/json'}
     try:
-        async with AsyncClient(headers=headers) as client:
-            data_json = await client.get(www,  data=json.dumps(data)).json()
+        async with AsyncClient(proxies={}, headers=headers) as client:
+            data_json = await client.post(www, data=json.dumps(data))
+            data_json = data_json.json()
         return data_json['data']['shortUrl']
     except:
         return '获取短链接出错'

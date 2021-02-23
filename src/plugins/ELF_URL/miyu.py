@@ -30,6 +30,7 @@ async def get_miyu(message: str, passwd: str) -> str:
     www = 'https://ii1.fun/cipher/insert'
     data = {"message": message, "passwd": passwd}
     headers = {'Content-Type': 'application/json'}
-    async with AsyncClient(headers=headers) as client:
-        data_json = await client.get(www,  data=json.dumps(data)).json()
-    return ''+data_json['data']['shortUrl']
+    async with AsyncClient(proxies={}, headers=headers) as client:
+        data_json = await client.post(www, data=json.dumps(data))
+        data_json = data_json.json()
+    return '' + data_json['data']['shortUrl']
