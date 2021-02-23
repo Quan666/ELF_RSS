@@ -1,14 +1,3 @@
-from pathlib import Path
+from nonebot.plugin import _tmp_matchers
+from . import add_cookies, add_dy, change_dy, del_dy, show_all, show_dy, start  # noqa
 
-import nonebot
-
-from .config import Config
-
-global_config = nonebot.get_driver().config
-plugin_config = Config(**global_config.dict())
-
-# store all subplugins
-_sub_plugins = set()
-# load sub plugins
-_sub_plugins |= nonebot.load_plugins(
-    str((Path(__file__).parent / "plugins").resolve()))

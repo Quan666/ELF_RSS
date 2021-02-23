@@ -49,3 +49,4 @@ async def handle_Addcookies(bot: Bot, event: Event, state: dict):
         await Addcookies.send('👏 {}的Cookies添加成功！\nCookies:{}\n'.format(rss.name, rss.cookies))
     else:
         await Addcookies.send('👏 {}的Cookies添加失败！\nCookies:{}\n'.format(rss.name, rss.cookies))
+

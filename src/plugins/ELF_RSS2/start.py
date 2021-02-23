@@ -36,11 +36,6 @@ async def start():
         # logger.debug(e)
 
 
-def startfun():
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(start())
-
-
 # region 启动问好
 async def check_first_connect(bot: Bot, event: Event, state: dict) -> bool:
     if event.meta_event_type == 'lifecycle':

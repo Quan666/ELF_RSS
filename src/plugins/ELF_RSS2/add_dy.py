@@ -7,7 +7,7 @@ from .RSSHUB import RSS_class
 from .RSSHUB import rsstrigger as TR
 
 RssAdd = on_command('add', aliases={'添加订阅', 'sub'}, rule=to_me(
-), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN)
+), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
 
 
 @RssAdd.handle()
