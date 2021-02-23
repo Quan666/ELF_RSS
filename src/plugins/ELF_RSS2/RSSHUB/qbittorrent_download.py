@@ -5,8 +5,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from nonebot import logger, require
 from qbittorrent import Client
 
-config = nonebot.get_driver().config
-
+from ..config import config
 
 # 计划
 # 创建一个全局定时器用来检测种子下载情况
