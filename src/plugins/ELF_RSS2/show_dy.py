@@ -6,7 +6,7 @@ from nonebot.rule import to_me
 from .RSSHUB import RSS_class
 
 RssShow = on_command('show', aliases={'查看订阅'}, rule=to_me(
-), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN)
+), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
 
 # 不带订阅名称默认展示当前群组或账号的订阅
 # 带订阅名称就显示该订阅的

@@ -6,7 +6,7 @@ from nonebot.rule import to_me
 from .RSSHUB import RSS_class
 
 RssShowAll = on_command('showall', aliases={'selectall', '所有订阅'}, rule=to_me(), priority=5,
-                        permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN)
+                        permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
 
 
 @RssShowAll.handle()

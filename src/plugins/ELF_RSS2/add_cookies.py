@@ -6,7 +6,7 @@ from nonebot.rule import to_me
 from .RSSHUB import RSS_class
 
 Addcookies = on_command('addcookies', aliases={'添加cookies'}, rule=to_me(
-), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN)
+), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
 
 
 @Addcookies.handle()
@@ -49,4 +49,3 @@ async def handle_Addcookies(bot: Bot, event: Event, state: dict):
         await Addcookies.send('👏 {}的Cookies添加成功！\nCookies:{}\n'.format(rss.name, rss.cookies))
     else:
         await Addcookies.send('👏 {}的Cookies添加失败！\nCookies:{}\n'.format(rss.name, rss.cookies))
-

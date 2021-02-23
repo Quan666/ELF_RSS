@@ -15,7 +15,7 @@ scheduler = require("nonebot_plugin_apscheduler").scheduler
 file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 
 Rssdel = on_command('deldy', aliases={'drop', '删除订阅'}, rule=to_me(
-), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN)
+), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
 
 
 @Rssdel.handle()
