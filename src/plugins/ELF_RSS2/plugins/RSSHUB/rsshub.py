@@ -7,6 +7,7 @@ import json
 import os.path
 import re
 import time
+import unicodedata
 import uuid
 from io import BytesIO
 from pathlib import Path
@@ -16,16 +17,15 @@ import feedparser
 import httpx
 import nonebot
 import requests
-import unicodedata
-from PIL import Image
 from google_trans_new import google_translator
 from nonebot.log import logger
+from PIL import Image
 from pyquery import PyQuery as pq
 from retrying import retry
 
-from bot import config
-from . import RSS_class
-from . import rss_baidutrans
+from . import RSS_class, rss_baidutrans
+
+config = nonebot.get_driver().config
 # 存储目录
 file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 # 代理
@@ -59,22 +59,25 @@ async def getRSS(rss: RSS_class.rss) -> list:  # 链接，订阅名
                     r = await client.get(rss.geturl(), timeout=30)
                     d = feedparser.parse(r.content)
                 except BaseException as e:
-                    logger.error("抓取订阅 {} 的 RSS 失败，E：{}".format(rss.name,e))
+                    logger.error("抓取订阅 {} 的 RSS 失败，E：{}".format(rss.name, e))
                     if not re.match(u'[hH][tT]{2}[pP][sS]{0,}://', rss.url, flags=0) and config.rsshub_backup:
-                        logger.error('RSSHub :' + config.rsshub + ' 访问失败 ！使用备用RSSHub 地址！')
+                        logger.error('RSSHub :' + config.rsshub +
+                                     ' 访问失败 ！使用备用RSSHub 地址！')
                         for rsshub_url in list(config.rsshub_backup):
                             async with httpx.AsyncClient(proxies=Proxy) as client:
                                 try:
                                     r = await client.get(rss.geturl(rsshub=rsshub_url))
                                 except Exception as e:
-                                    logger.error('RSSHub :' + rss.geturl(rsshub=rsshub_url) + ' 访问失败 ！使用备用RSSHub 地址！')
+                                    logger.error(
+                                        'RSSHub :' + rss.geturl(rsshub=rsshub_url) + ' 访问失败 ！使用备用RSSHub 地址！')
                                     continue
                                 if r.status_code in status_code:
                                     d = feedparser.parse(r.content)
-                                    if d.entries :
-                                        logger.info(rss.geturl(rsshub=rsshub_url) + ' 抓取成功！')
+                                    if d.entries:
+                                        logger.info(rss.geturl(
+                                            rsshub=rsshub_url) + ' 抓取成功！')
                                         break
-                if not d.entries :
+                if not d.entries:
                     logger.error(rss.name + ' 抓取失败！')
                     return []
                 change = checkUpdate(d, readRss(rss.name))  # 检查更新
@@ -87,16 +90,19 @@ async def getRSS(rss: RSS_class.rss) -> list:  # 链接，订阅名
 
                         if not rss.only_title:
                             # 处理item['summary']只有图片的情况
-                            text = re.sub('<video.+?><\/video>|<img.+?>', '', item['summary'])
+                            text = re.sub(
+                                '<video.+?><\/video>|<img.+?>', '', item['summary'])
                             text = re.sub('<br>', '', text)
-                            Similarity = difflib.SequenceMatcher(None, text, item['title'])
+                            Similarity = difflib.SequenceMatcher(
+                                None, text, item['title'])
                             if Similarity.quick_ratio() <= 0.1:  # 标题正文相似度
                                 msg = msg + '标题：' + item['title'] + '\n'
                             msg = msg + '内容：' + await checkstr(item['summary'], rss.img_proxy, rss.translation,
                                                                rss.only_pic) + '\n'
                         else:
                             msg = msg + '标题：' + item['title'] + '\n'
-                        str_link = re.sub('member_illust.php\?mode=medium&illust_id=', 'i/', item['link'])
+                        str_link = re.sub(
+                            'member_illust.php\?mode=medium&illust_id=', 'i/', item['link'])
                         msg = msg + '原链接：' + str_link + '\n'
                         # msg = msg + '原链接：' + item['link'] + '\n'
 
@@ -105,7 +111,9 @@ async def getRSS(rss: RSS_class.rss) -> list:  # 链接，订阅名
                             msg = msg + '日期：' + time.strftime("%m{}%d{} %H:%M:%S",
                                                               time.localtime(loc_time + 28800.0)).format('月', '日')
                         except BaseException:
-                            msg = msg + '日期：' + time.strftime("%m{}%d{} %H:%M:%S", time.localtime()).format('月', '日')
+                            msg = msg + '日期：' + \
+                                time.strftime("%m{}%d{} %H:%M:%S",
+                                              time.localtime()).format('月', '日')
                         await sendMsg(rss, msg, bot)
                         # msg_list.append(msg)
                     return msg_list
@@ -120,9 +128,11 @@ async def getRSS(rss: RSS_class.rss) -> list:  # 链接，订阅名
                     if r.status_code in status_code:
                         writeRss(d, rss.name)  # 写入文件
                     else:
-                        logger.error('获取 ' + rss.name + ' 订阅xml失败！！！请检查订阅地址是否可用！')
-                except  Exception as e:
-                    logger.error('出现异常，获取 ' + rss.name + ' 订阅xml失败！！！请检查订阅地址是否可用！  E:' + str(e))
+                        logger.error('获取 ' + rss.name +
+                                     ' 订阅xml失败！！！请检查订阅地址是否可用！')
+                except Exception as e:
+                    logger.error('出现异常，获取 ' + rss.name +
+                                 ' 订阅xml失败！！！请检查订阅地址是否可用！  E:' + str(e))
                 return []
     except BaseException as e:
         logger.error(rss.name + ' 抓取失败，请检查订阅地址是否正确！ E:' + str(e))
@@ -152,7 +162,7 @@ async def sendMsg(rss, msg, bot):
 
 
 # 下载图片
-@retry(stop_max_attempt_number=5,stop_max_delay=30*1000)
+@retry(stop_max_attempt_number=5, stop_max_delay=30*1000)
 async def dowimg(url: str, img_proxy: bool) -> str:
     try:
         img_path = file_path + 'imgs' + os.sep
@@ -164,7 +174,8 @@ async def dowimg(url: str, img_proxy: bool) -> str:
         if img_proxy:
             Proxy = httpx.Proxy(
                 url="http://" + proxy,
-                mode="TUNNEL_ONLY"  # May be "TUNNEL_ONLY" or "FORWARD_ONLY". Defaults to "DEFAULT".
+                # May be "TUNNEL_ONLY" or "FORWARD_ONLY". Defaults to "DEFAULT".
+                mode="TUNNEL_ONLY"
             )
         else:
             Proxy = {}
@@ -176,9 +187,11 @@ async def dowimg(url: str, img_proxy: bool) -> str:
                     img_id = re.sub('https://pixiv.cat/', '', url)
                     img_id = img_id[:-4]
                     info_list = img_id.split('-')
-                    req_json = requests.get('https://api.imjad.cn/pixiv/v1/?type=illust&id=' + info_list[0]).json()
+                    req_json = requests.get(
+                        'https://api.imjad.cn/pixiv/v1/?type=illust&id=' + info_list[0]).json()
                     if len(info_list) >= 2:
-                        url = req_json['response'][0]['metadata']['pages'][int(info_list[1]) - 1]['image_urls']['large']
+                        url = req_json['response'][0]['metadata']['pages'][int(
+                            info_list[1]) - 1]['image_urls']['large']
                     else:
                         url = req_json['response'][0]['image_urls']['large']
 
@@ -260,7 +273,8 @@ async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: b
     if config.showblockword == False:
         match = re.findall("|".join(config.blockword), rss_str)
         if match:
-            logger.info('内含屏蔽词，pass，可能会报"抓取失败，请检查订阅地址是否正确！E:can only concatenate str (not "NoneType") to str"错误，无视本条')
+            logger.info(
+                '内含屏蔽词，pass，可能会报"抓取失败，请检查订阅地址是否正确！E:can only concatenate str (not "NoneType") to str"错误，无视本条')
             return
 
     # 处理一些标签
@@ -287,9 +301,11 @@ async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: b
     doc_a = doc_rss('a')
     for a in doc_a.items():
         if str(a.text()) != a.attr("href"):
-            rss_str = re.sub(re.escape(str(a)), str(a.text()) + ':' + (a.attr("href")) + '\n', rss_str)
+            rss_str = re.sub(re.escape(str(a)), str(
+                a.text()) + ':' + (a.attr("href")) + '\n', rss_str)
         else:
-            rss_str = re.sub(re.escape(str(a)), (a.attr("href")) + '\n', rss_str)
+            rss_str = re.sub(re.escape(str(a)),
+                             (a.attr("href")) + '\n', rss_str)
         rss_str_tl = re.sub(re.escape(str(a)), '', rss_str_tl)
 
     # 删除未解析成功的 a 标签
@@ -304,8 +320,9 @@ async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: b
     for img in doc_img.items():
         rss_str_tl = re.sub(re.escape(str(img)), '', rss_str_tl)
         img_path = await dowimg(img.attr("src"), img_proxy)
-        if img_path==None or len(img_path) > 0:
-            rss_str = re.sub(re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
+        if img_path == None or len(img_path) > 0:
+            rss_str = re.sub(
+                re.escape(str(img)), r'[CQ:image,file=file:///' + str(img_path) + ']', rss_str)
         else:
             rss_str = re.sub(re.escape(str(img)), r'\n图片走丢啦！\n', rss_str, re.S)
 
@@ -314,11 +331,12 @@ async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: b
     for video in doc_video.items():
         rss_str_tl = re.sub(re.escape(str(video)), '', rss_str_tl)
         img_path = await dowimg(video.attr("poster"), img_proxy)
-        if img_path==None or len(img_path) > 0:
+        if img_path == None or len(img_path) > 0:
             rss_str = re.sub(re.escape(str(video)), r'视频封面：[CQ:image,file=file:///' + str(img_path) + ']',
                              rss_str)
         else:
-            rss_str = re.sub(re.escape(str(video)), r'视频封面：\n图片走丢啦！\n', rss_str)
+            rss_str = re.sub(re.escape(str(video)),
+                             r'视频封面：\n图片走丢啦！\n', rss_str)
 
     # 翻译
     text = ''
@@ -333,9 +351,11 @@ async def checkstr(rss_str: str, img_proxy: bool, translation: bool, only_pic: b
                 rss_str_tl = unicodedata.normalize('NFC', rss_str_tl)
                 text = emoji.demojize(rss_str_tl)
                 text = re.sub(r':[A-Za-z_]*:', ' ', text)
-                text = '\n翻译(BaiduAPI)：\n' + str(rss_baidutrans.baidu_translate(re.escape(text)))
+                text = '\n翻译(BaiduAPI)：\n' + \
+                    str(rss_baidutrans.baidu_translate(re.escape(text)))
             else:
-                text = '\n翻译：\n' + str(translator.translate(re.escape(text), lang_tgt='zh'))
+                text = '\n翻译：\n' + \
+                    str(translator.translate(re.escape(text), lang_tgt='zh'))
             text = re.sub(r'\\', '', text)
             text = re.sub(r'百度翻译', '\n', text)
         except Exception as e:
@@ -400,11 +420,12 @@ def writeRss(new, name):
         for tmp in change:
             old['entries'].insert(0, tmp)
 
-        old['entries']=old['entries'][0:LIMT]
+        old['entries'] = old['entries'][0:LIMT]
     except:
         old = new
 
     if not os.path.isdir(file_path):
         os.makedirs(file_path)
     with codecs.open(file_path + (name + ".json"), "w", 'utf-8') as dump_f:
-        dump_f.write(json.dumps(old, sort_keys=True, indent=4, ensure_ascii=False))
+        dump_f.write(json.dumps(old, sort_keys=True,
+                                indent=4, ensure_ascii=False))

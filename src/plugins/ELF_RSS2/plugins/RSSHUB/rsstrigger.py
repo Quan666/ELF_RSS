@@ -1,16 +1,11 @@
 import re
 
 from apscheduler.triggers.cron import CronTrigger
-
-from bot import config
-from . import RSS_class, rsshub,RSS_Parsing
+from apscheduler.triggers.interval import IntervalTrigger  # 间隔触发器
 from nonebot import require
-
-
 from nonebot.log import logger
 
-# from RSSHUB import rsshub,RSS_class
-from apscheduler.triggers.interval import IntervalTrigger  # 间隔触发器
+from . import RSS_class, RSS_Parsing
 
 
 # 检测某个rss更新 #任务体
@@ -26,15 +21,16 @@ async def delJob(rss: RSS_class.rss):
     except Exception as e:
         logger.debug(e)
 
+
 async def addJob(rss: RSS_class.rss):
     await delJob(rss)
     # 加入订阅任务队列,加入前判断是否存在群组或用户，二者不能同时为空
-    if len(rss.user_id)>0 or len(rss.group_id)>0:
+    if len(rss.user_id) > 0 or len(rss.group_id) > 0:
         rss_trigger(rss)
 
 
 def rss_trigger(rss: RSS_class.rss):
-    if re.search('_|\*|/|,|-',rss.time):
+    if re.search('_|\*|/|,|-', rss.time):
         my_trigger_cron(rss)
         return
     scheduler = require("nonebot_plugin_apscheduler").scheduler
@@ -59,13 +55,15 @@ def rss_trigger(rss: RSS_class.rss):
 
 # cron 表达式
 # 参考 https://www.runoob.com/linux/linux-comm-crontab.html
+
+
 def my_trigger_cron(rss: RSS_class.rss):
     # 解析参数
     tmp_list = rss.time.split('_')
-    times_list=['*/5','*','*','*','*']
-    for i in range(0,len(tmp_list)):
-        if tmp_list[i]!=None and tmp_list[i]!='':
-            times_list[i]=tmp_list[i]
+    times_list = ['*/5', '*', '*', '*', '*']
+    for i in range(0, len(tmp_list)):
+        if tmp_list[i] != None and tmp_list[i] != '':
+            times_list[i] = tmp_list[i]
     try:
         # 制作一个触发器
         trigger = CronTrigger(
@@ -77,7 +75,7 @@ def my_trigger_cron(rss: RSS_class.rss):
             timezone='Asia/Shanghai'
         )
     except Exception as e:
-        logger.error('创建定时器错误！cron:{} E：{}'.format(times_list,e))
+        logger.error('创建定时器错误！cron:{} E：{}'.format(times_list, e))
         return
 
     job_defaults = {'max_instances': 10}

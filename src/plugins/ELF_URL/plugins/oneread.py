@@ -1,12 +1,12 @@
 import json
 
+from httpx import AsyncClient
 from nonebot import on_command
-from nonebot.rule import to_me
 from nonebot.adapters.cqhttp import Bot, Event
-import requests
+from nonebot.rule import to_me
 
-
-oneread = on_command('阅后即焚',aliases={'阅后即焚','yhjf'}, rule=to_me(), priority=5)
+oneread = on_command(
+    '阅后即焚', aliases={'阅后即焚', 'yhjf'}, rule=to_me(), priority=5)
 
 
 @oneread.handle()
@@ -23,10 +23,10 @@ async def handle_city(bot: Bot, event: Event, state: dict):
     await oneread.finish(re)
 
 
-
 async def get_oneread(oneread: str) -> str:
     www = 'https://ii1.fun/oneread/insert'
     data = {"message": oneread}
     headers = {'Content-Type': 'application/json'}
-    data_json = requests.get(www, headers=headers, data=json.dumps(data)).json()
-    return ''+data_json['data']['shortUrl']
+    async with AsyncClient(headers=headers) as client:
+        data_json = await client.get(www, headers=headers, data=json.dumps(data)).json()
+    return data_json['data']['shortUrl']

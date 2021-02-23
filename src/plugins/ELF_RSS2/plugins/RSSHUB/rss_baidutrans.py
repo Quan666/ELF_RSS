@@ -21,9 +21,9 @@ import json
 import random
 import urllib
 
-from nonebot import logger
+from nonebot import logger, get_driver
 
-from bot import config
+config = get_driver().config
 
 
 def baidu_translate(content):

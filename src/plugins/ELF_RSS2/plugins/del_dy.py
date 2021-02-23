@@ -1,20 +1,21 @@
 import os
-import re
 from pathlib import Path
-from RSSHUB import RSS_class, rsstrigger as TR
-from RSSHUB import RWlist
-from nonebot import on_command, require
-from nonebot.adapters.cqhttp import permission, unescape
+
+from nonebot import on_command
 from nonebot import permission as SUPERUSER
-from nonebot.adapters.cqhttp import Bot, Event
-from nonebot.log import logger
+from nonebot import require
+from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 from nonebot.rule import to_me
+
+from .RSSHUB import RSS_class
+from .RSSHUB import rsstrigger as TR
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 # 存储目录
 file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 
-Rssdel = on_command('deldy', aliases={'drop', '删除订阅'}, rule=to_me(), priority=5, permission=SUPERUSER.SUPERUSER|permission.GROUP_ADMIN)
+Rssdel = on_command('deldy', aliases={'drop', '删除订阅'}, rule=to_me(
+), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN)
 
 
 @Rssdel.handle()
@@ -32,7 +33,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     except:
         group_id = None
 
-    rss = RSS_class.rss('','','-1','-1')
+    rss = RSS_class.rss('', '', '-1', '-1')
     if rss.findName(name=rss_name):
         rss = rss.findName(name=rss_name)
     else:

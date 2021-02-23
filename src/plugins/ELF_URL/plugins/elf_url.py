@@ -1,9 +1,9 @@
 import json
 
+from httpx import AsyncClient
 from nonebot import on_command
-from nonebot.rule import to_me
 from nonebot.adapters.cqhttp import Bot, Event
-import requests
+from nonebot.rule import to_me
 
 url = on_command("短链", rule=to_me(), priority=5)
 
@@ -29,7 +29,8 @@ async def get_uri_of_url(url: str) -> str:
     data = {"url": url}
     headers = {'Content-Type': 'application/json'}
     try:
-        data_json = requests.get(www, headers=headers, data=json.dumps(data)).json()
-        return f''+data_json['data']['shortUrl']
+        async with AsyncClient(headers=headers) as client:
+            data_json = await client.get(www,  data=json.dumps(data)).json()
+        return data_json['data']['shortUrl']
     except:
         return '获取短链接出错'
