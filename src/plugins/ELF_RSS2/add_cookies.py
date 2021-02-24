@@ -21,7 +21,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 @Addcookies.got("Addcookies",
                 prompt="请输入\n名称 cookies\n空格分割\n获取方式：\nPC端 chrome 浏览器按 F12\n找到Consle选项卡，输入:\ndocument.cookie\n输出的字符串就是了")
 async def handle_Addcookies(bot: Bot, event: Event, state: dict):
-    rss_cookies = state["Addcookies"]
+    rss_cookies = unescape(state["Addcookies"])
 
     dy = rss_cookies.split(' ', 1)
 

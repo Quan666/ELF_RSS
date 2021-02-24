@@ -43,7 +43,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
 @RssChange.got("RssChange", prompt='')
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
-    change_info = state["RssChange"]
+    change_info = unescape(state["RssChange"])
     try:
         group_id = event.group_id
     except:
