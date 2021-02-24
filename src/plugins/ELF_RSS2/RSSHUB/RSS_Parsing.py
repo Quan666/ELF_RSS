@@ -39,7 +39,7 @@ def get_Proxy(open_proxy: bool) -> dict:
         url="http://" + proxy,
         # May be "TUNNEL_ONLY" or "FORWARD_ONLY". Defaults to "DEFAULT".
         mode="TUNNEL_ONLY"
-    )
+    ) if proxy else {}
 
 
 status_code = [200, 301, 302]

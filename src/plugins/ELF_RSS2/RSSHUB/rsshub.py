@@ -32,8 +32,8 @@ file_path = str(str(Path.cwd()) + os.sep+'data' + os.sep)
 proxy = config.rss_proxy
 proxies = {
     'http': 'http://' + str(proxy),
-    'https': 'https://' + str(proxy),
-}
+    'https': 'https://' + str(proxy)
+} if proxy else {}
 status_code = [200, 301, 302]
 # 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告
 asyncio.log.logger.setLevel(40)

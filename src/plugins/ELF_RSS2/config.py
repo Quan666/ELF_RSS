@@ -1,40 +1,48 @@
 import os
-from typing import List
+from typing import List, Any
 
-from nonebot import get_driver
-from nonebot.config import Config
+from nonebot import get_driver, logger
+from nonebot.config import BaseConfig
 from pydantic import AnyHttpUrl, Extra
 
 
-class ELFConfig(Config):
+class ELFConfig(BaseConfig):
 
     class Config:
         extra = Extra.allow
 
-    RSS_PROXY: str = ''
-    RSSHUB: AnyHttpUrl = 'https://rsshub.app'
-    RSSHUB_BACKUP: List[AnyHttpUrl] = []
-    DELCACHE: int = 3
-    LIMT = 50
+    rss_proxy: str = ''
+    rsshub: AnyHttpUrl = 'https://rsshub.app'
+    rsshub_backup: List[AnyHttpUrl] = []
+    delcache: int = 3
+    limt = 50
 
-    ZIP_SIZE: int = 3 * 1024
+    zip_size: int = 3 * 1024
 
     blockquote: bool = True
-    showBlockword: bool = True
-    Blockword: List[str] = ["互动抽奖", "微博抽奖平台"]
+    showblockword: bool = True
+    blockword: List[str] = ["互动抽奖", "微博抽奖平台"]
 
-    UseBaidu: bool = False
-    BaiduID: str = ''
-    BaiduKEY: str = ''
+    usebaidu: bool = False
+    baiduid: str = ''
+    baidukey: str = ''
 
-    IsLinux: bool = (os.name != 'nt')
+    islinux: bool = (os.name != 'nt')
 
     is_open_auto_down_torrent: bool = False
     qb_web_url: str = 'http://127.0.0.1:8081'
     down_status_msg_grou: List[int] = []
     down_status_msg_date: int = 10
 
-    VERSION: str = "v2.1.6"
+    version: str = "v2.1.6"
+
+    def __getattr__(self, name: str) -> Any:
+        data = self.dict()
+        for k, v in data.items():
+            if k.casefold() == name.casefold():
+                return v
+        return None
 
 
-config = ELFConfig.parse_obj(get_driver().config.dict())
+config = ELFConfig(get_driver().config.dict())
+logger.debug(f'RSS Config loaded: {config!r}')
