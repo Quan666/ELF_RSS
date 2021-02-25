@@ -116,9 +116,11 @@ async def start(rss: RSS_class.rss) -> None:
         except:
             item_msg += await handle_date()
 
-        # 处理种子 暂时只支持 蜜柑计划 https://mikanani.me/
-        await handle_down_torrent(rss=rss, item=item)
-
+        # 处理种子
+        try:
+            await handle_down_torrent(rss=rss, item=item)
+        except Exception as e:
+            logger.error('下载种子时出错：{}'.format(e))
         # 发送消息并写入文件
         if await sendMsg(rss=rss, msg=item_msg):
             tmp = []
@@ -133,20 +135,20 @@ async def handle_down_torrent(rss: RSS_class, item: dict):
     if config.is_open_auto_down_torrent and rss.down_torrent:
         if rss.down_torrent_keyword:
             if re.search(rss.down_torrent_keyword, item['summary']):
-                await down_torrent(rss=rss, item=item)
+                await down_torrent(rss=rss, item=item, proxy=get_Proxy(rss.img_proxy))
         else:
-            await down_torrent(rss=rss, item=item)
+            await down_torrent(rss=rss, item=item, proxy=get_Proxy(rss.img_proxy))
 
 
 # 创建下载种子任务
 
 
-async def down_torrent(rss: RSS_class, item: dict):
+async def down_torrent(rss: RSS_class, item: dict, proxy=None):
     for tmp in item['links']:
-        if tmp['type'] == 'application/x-bittorrent':
+        if tmp['type'] == 'application/x-bittorrent' or tmp['href'].find('.torrent'):
             await start_down(url=tmp['href'], group_ids=rss.group_id,
                              name='订阅：{}\n{}'.format(rss.name, item['summary']),
-                             path=file_path + os.sep + 'torrent' + os.sep)
+                             path=file_path + os.sep + 'torrent' + os.sep, proxy=proxy)
 
 
 # 获取 RSS 并解析为 json ，失败重试

@@ -1,6 +1,8 @@
+import asyncio
 import os
-import re
+import uuid
 
+import httpx
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger
 from nonebot import logger, require
@@ -14,7 +16,7 @@ from ..config import config
 # 文件三种状态1.下载中2。上传中3.上传完成
 # 文件信息持久化存储
 # 关键词正则表达式
-# 下载开关pip install cx_Freeze
+# 下载开关
 
 
 app = nonebot.get_asgi()
@@ -55,14 +57,31 @@ async def get_qb():
     return qb
 
 
+async def getHash(url: str, proxy=None) -> str:
+    qb = await get_qb()
+    category = str(uuid.uuid4())
+    hash = None
+    async with httpx.AsyncClient(proxies=proxy) as client:
+        try:
+            res = await client.get(url, timeout=100)
+            qb.download_from_file(res.content, category=category)
+            while not hash:
+                for tmp_torrent in qb.torrents():
+                    if tmp_torrent['category'] == category:
+                        hash = tmp_torrent['hash']
+                await asyncio.sleep(1)
+        except Exception as e:
+            await send_Msg('下载种子失败,可能需要代理:{}'.format(e))
+    return hash
+
+
 # 种子地址，种子下载路径，群文件上传 群列表，订阅名称
-async def start_down(url: str, path: str, group_ids: list, name: str):
+async def start_down(url: str, path: str, group_ids: list, name: str, proxy=None):
     qb = await get_qb()
     if not qb:
         return
-    qb.download_from_link(link=url, path=path)
-    res = re.search('[a-f0-9]{40}', url)
-    hash = res[0]
+    # 获取种子 hash
+    hash = await getHash(url=url, proxy=proxy)
     await rss_trigger(hash=hash, group_ids=group_ids, name=name)
 
 
