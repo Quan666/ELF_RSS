@@ -119,6 +119,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
             elif one_info_list[0] == 'downkey':
                 if len(one_info_list[1]) > 0:
                     rss.down_torrent_keyword = one_info_list[1]
+                else:
+                    rss.down_torrent_keyword = None
             else:
                 await RssChange.send('❌ 参数错误或无权修改！\n{}'.format(change_tmp))
                 return

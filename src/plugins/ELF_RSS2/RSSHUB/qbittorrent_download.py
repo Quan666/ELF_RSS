@@ -1,10 +1,11 @@
+import os
 import re
 
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger
 from nonebot import logger, require
 from qbittorrent import Client
-
+from starlette.responses import FileResponse
 from ..config import config
 
 # 计划
@@ -16,61 +17,91 @@ from ..config import config
 # 下载开关pip install cx_Freeze
 
 
-# 种子地址，种子下载路径，群文件上传 群列表，订阅名称
-async def start_down(url: str, path: str, group_ids: list, name: str):
+app = nonebot.get_asgi()
+
+
+@app.get("/elfrss/file/{filename}")
+async def file(filename: str) -> FileResponse:
+    path = (await get_qb()).get_default_save_path()
+    return FileResponse(path=path + os.sep + filename, filename=filename)
+
+
+async def send_Msg(msg: str):
+    logger.info(msg)
+    bot, = nonebot.get_bots().values()
+    for group_id in config.down_status_msg_group:
+        await bot.send_msg(message_type='group', group_id=int(group_id), message=msg)
+
+
+async def get_qb():
     try:
         qb = Client(config.qb_web_url)
+        qb.login()
     except BaseException as e:
         bot, = nonebot.get_bots().values()
-        msg = '❌ 无法连接到 qbittorrent ,请检查：\n1.是否启动程序\n2.是否勾选了“Web用户界面（远程控制）”\n3.连接地址、端口是否正确\nE: {}'.format(
-            e)
+        msg = '❌ 无法连接到 qbittorrent ,请检查：\n1.是否启动程序\n2.是否勾选了“Web用户界面（远程控制）”\n3.连接地址、端口是否正确\nE: {}'.format(e)
         logger.error(msg)
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]), message=msg)
-        return
+        return None
     try:
-        qb.login()
-        qb.download_from_link(link=url, path=path)
+        qb.get_default_save_path()
     except BaseException as e:
         bot, = nonebot.get_bots().values()
         msg = '❌ 无法连登录到 qbittorrent ,请检查是否勾选 “对本地主机上的客户端跳过身份验证”。\nE: {}'.format(
             e)
         logger.error(msg)
         await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]), message=msg)
+        return None
+    return qb
+
+
+# 种子地址，种子下载路径，群文件上传 群列表，订阅名称
+async def start_down(url: str, path: str, group_ids: list, name: str):
+    qb = await get_qb()
+    if not qb:
         return
+    qb.download_from_link(link=url, path=path)
     res = re.search('[a-f0-9]{40}', url)
     hash = res[0]
     await rss_trigger(hash=hash, group_ids=group_ids, name=name)
 
 
 async def check_down_status(hash: str, group_ids: list, name: str):
-    qb = Client(config.qb_web_url)
-    qb.login()
+    qb = await get_qb()
+    if not qb:
+        return
     info = qb.get_torrent(hash)
     files = qb.get_torrent_files(hash)
     bot, = nonebot.get_bots().values()
-    if info['total_downloaded']/info['total_size'] >= 1.000000:
-        for id in config.down_status_msg_group:
-            await bot.send_msg(message_type='group', group_id=int(id), message=str('👏 {}\nHash: {} \n下载完成！'.format(name, hash)))
+    print(info['total_downloaded'] - info['total_size'])
+    print(info['total_downloaded'], info['total_size'])
+    if info['total_downloaded'] - info['total_size'] >= 0.000000:
+        await send_Msg(str('👏 {}\nHash: {} \n下载完成！'.format(name, hash)))
         for group_id in group_ids:
             for tmp in files:
                 # 异常包起来防止超时报错导致后续不执行
                 try:
-                    for id in config.down_status_msg_group:
-                        await bot.send_msg(message_type='group', group_id=int(id), message=str('{}\nHash: {} \n开始上传到群：{}'.format(name, hash, group_id)))
-                    await bot.call_api('upload_group_file', group_id=group_id, file=info['save_path']+tmp['name'], name=tmp['name'])
+                    if config.local_ip and len(config.local_ip) >= 7:
+                        # 通过这个API下载的文件能直接放入CQ码作为图片或语音发送 调用后会阻塞直到下载完成后才会返回数据，请注意下载大文件时的超时
+                        await send_Msg('go-cqhttp 开始下载文件：{}'.format(tmp['name']))
+                        path = (await bot.call_api('download_file',
+                                                   url='http://{}:8080/elfrss/file/{}'.format(config.local_ip,
+                                                                                              tmp['name']))).file
+                    else:
+                        path = info['save_path'] + tmp['name']
+                    await send_Msg(str('{}\nHash: {} \n开始上传到群：{}'.format(name, hash, group_id)))
+                    await bot.call_api('upload_group_file', group_id=group_id, file=path, name=tmp['name'])
                 except:
+                    print('asd')
                     continue
         scheduler = require("nonebot_plugin_apscheduler").scheduler
         scheduler.remove_job(hash)
     else:
-        logger.info('{}\nHash: {} \n下载了 {}%'.format(name, hash, round(
-            info['total_downloaded']/info['total_size']*100, 2)))
-        for id in config.down_status_msg_group:
-            await bot.send_msg(message_type='group', group_id=int(id), message=str('{}\nHash: {} \n下载了 {}%\n平均下载速度：{} KB/s'.format(name, hash, round(info['total_downloaded']/info['total_size']*100, 2), round(info['dl_speed_avg']/1024, 2))))
+        await send_Msg(str('{}\nHash: {} \n下载了 {}%\n平均下载速度：{} KB/s'.format(name, hash, round(
+            info['total_downloaded'] / info['total_size'] * 100, 2), round(info['dl_speed_avg'] / 1024, 2))))
 
 
 async def rss_trigger(hash: str, group_ids: list, name: str):
-
     scheduler = require("nonebot_plugin_apscheduler").scheduler
     # 制作一个“time分钟/次”触发器
     trigger = IntervalTrigger(
@@ -90,7 +121,4 @@ async def rss_trigger(hash: str, group_ids: list, name: str):
         # jobstore='default',  # 任务储存库，在下一小节中说明
         job_defaults=job_defaults,
     )
-    logger.info('{}\nHash: {} \n下载任务添加成功！'.format(name, hash))
-    bot, = nonebot.get_bots().values()
-    for id in config.down_status_msg_group:
-        await bot.send_msg(message_type='group', group_id=int(id), message=str('👏 {}\nHash: {} \n下载任务添加成功！'.format(name, hash)))
+    await send_Msg(str('👏 {}\nHash: {} \n下载任务添加成功！'.format(name, hash)))
