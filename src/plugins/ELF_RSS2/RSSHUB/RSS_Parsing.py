@@ -272,7 +272,26 @@ async def zipPic(content, name):
         return name + '.png'
 
 
-# 图片下载
+# 去你的 pixiv.cat
+async def fuck_pixiv(url: str) -> str:
+    if url.find('pixiv.cat'):
+        img_id = re.sub('https://pixiv.cat/', '', url)
+        img_id = img_id[:-4]
+        info_list = img_id.split('-')
+        async with httpx.AsyncClient(proxies={}) as client:
+            try:
+                req_json = (await client.get('https://hibiapi.getloli.com/api/pixiv/illust?id=' + info_list[0])).json()
+                if len(info_list) >= 2:
+                    return req_json['illust']['meta_pages'][int(info_list[1]) - 1]['image_urls']['original']
+                else:
+                    return req_json['illust']['meta_single_page']['original_image_url']
+            except Exception as e:
+                logger.error('处理pixiv.cat链接时出现问题 ：{}'.format(e))
+                return url
+    else:
+        return url
+
+
 # 下载图片
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
 async def dowimg(url: str, img_proxy: bool) -> str:
@@ -285,7 +304,14 @@ async def dowimg(url: str, img_proxy: bool) -> str:
         name = str(uuid.uuid4())
         async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=img_proxy)) as client:
             try:
-                pic = await client.get(url)
+
+                if config.close_pixiv_cat:
+                    url = await fuck_pixiv(url=url)
+
+                referer = re.findall('([hH][tT]{2}[pP][sS]{0,}://.*?)(?:/.*?)', url)[0]
+                headers = {'referer': referer}
+
+                pic = await client.get(url, headers=headers, timeout=60.0)
                 # 大小控制，图片压缩
                 if (float(len(pic.content) / 1024) > float(config.zip_size)):
                     filename = await zipPic(pic.content, name)

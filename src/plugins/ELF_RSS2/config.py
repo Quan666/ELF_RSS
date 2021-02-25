@@ -28,6 +28,8 @@ class ELFConfig(BaseConfig):
 
     islinux: bool = (os.name != 'nt')
 
+    close_pixiv_cat: bool = False
+
     is_open_auto_down_torrent: bool = False
     qb_web_url: str = 'http://127.0.0.1:8081'
     down_status_msg_grou: List[int] = []
