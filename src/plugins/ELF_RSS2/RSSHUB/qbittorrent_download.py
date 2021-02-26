@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import os
 import uuid
 
@@ -57,22 +58,61 @@ async def get_qb():
     return qb
 
 
-async def getHash(url: str, proxy=None) -> str:
+def getSize(size: int) -> str:
+    kb = 1024
+    mb = kb * 1024
+    gb = mb * 1024
+    tb = gb * 1024
+
+    if size >= tb:
+        return "%.2f TB" % float(size / tb)
+    if size >= gb:
+        return "%.2f GB" % float(size / gb)
+    if size >= mb:
+        return "%.2f MB" % float(size / mb)
+    if size >= kb:
+        return "%.2f KB" % float(size / kb)
+
+
+def get_torrent_b16Hash(content: bytes) -> str:
+    import magneturi
+    # mangetlink = magneturi.from_torrent_file(torrentname)
+    mangetlink = magneturi.from_torrent_data(content)
+    # print(mangetlink)
+    ch = ''
+    n = 20
+    b32Hash = n * ch + mangetlink[20:52]
+    # print(b32Hash)
+    b16Hash = base64.b16encode(base64.b32decode(b32Hash))
+    b16Hash = b16Hash.lower()
+    b16Hash = str(b16Hash, "utf-8")
+    # print("40位info hash值：" + '\n' + b16Hash)
+    # print("磁力链：" + '\n' + "magnet:?xt=urn:btih:" + b16Hash)
+    return b16Hash
+
+
+async def get_Hash_Name(url: str, proxy=None) -> dict:
+    if not proxy:
+        proxy = {}
     qb = await get_qb()
-    category = str(uuid.uuid4())
-    hash = None
+    info = None
     async with httpx.AsyncClient(proxies=proxy) as client:
         try:
             res = await client.get(url, timeout=100)
-            qb.download_from_file(res.content, category=category)
-            while not hash:
+            qb.download_from_file(res.content)
+            hash = get_torrent_b16Hash(res.content)
+            while not info:
                 for tmp_torrent in qb.torrents():
-                    if tmp_torrent['category'] == category:
-                        hash = tmp_torrent['hash']
+                    if tmp_torrent['hash'] == hash:
+                        info = {
+                            'hash': tmp_torrent['hash'],
+                            'filename': tmp_torrent['name'],
+                            'size': getSize(tmp_torrent['size'])
+                        }
                 await asyncio.sleep(1)
         except Exception as e:
             await send_Msg('下载种子失败,可能需要代理:{}'.format(e))
-    return hash
+    return info
 
 
 # 种子地址，种子下载路径，群文件上传 群列表，订阅名称
@@ -81,8 +121,9 @@ async def start_down(url: str, path: str, group_ids: list, name: str, proxy=None
     if not qb:
         return
     # 获取种子 hash
-    hash = await getHash(url=url, proxy=proxy)
-    await rss_trigger(hash=hash, group_ids=group_ids, name=name)
+    info = await get_Hash_Name(url=url, proxy=proxy)
+    await rss_trigger(hash=info['hash'], group_ids=group_ids,
+                      name='订阅：{}\n{}\n文件大小：{}'.format(name, info['filename'], info['size']))
 
 
 async def check_down_status(hash: str, group_ids: list, name: str):
@@ -92,8 +133,6 @@ async def check_down_status(hash: str, group_ids: list, name: str):
     info = qb.get_torrent(hash)
     files = qb.get_torrent_files(hash)
     bot, = nonebot.get_bots().values()
-    print(info['total_downloaded'] - info['total_size'])
-    print(info['total_downloaded'], info['total_size'])
     if info['total_downloaded'] - info['total_size'] >= 0.000000:
         await send_Msg(str('👏 {}\nHash: {} \n下载完成！'.format(name, hash)))
         for group_id in group_ids:
@@ -111,7 +150,6 @@ async def check_down_status(hash: str, group_ids: list, name: str):
                     await send_Msg(str('{}\nHash: {} \n开始上传到群：{}'.format(name, hash, group_id)))
                     await bot.call_api('upload_group_file', group_id=group_id, file=path, name=tmp['name'])
                 except:
-                    print('asd')
                     continue
         scheduler = require("nonebot_plugin_apscheduler").scheduler
         scheduler.remove_job(hash)

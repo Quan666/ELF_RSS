@@ -145,9 +145,9 @@ async def handle_down_torrent(rss: RSS_class, item: dict):
 
 async def down_torrent(rss: RSS_class, item: dict, proxy=None):
     for tmp in item['links']:
-        if tmp['type'] == 'application/x-bittorrent' or tmp['href'].find('.torrent'):
+        if tmp['type'] == 'application/x-bittorrent' or tmp['href'].find('.torrent') > 0:
             await start_down(url=tmp['href'], group_ids=rss.group_id,
-                             name='订阅：{}\n{}'.format(rss.name, item['summary']),
+                             name='{}'.format(rss.name),
                              path=file_path + os.sep + 'torrent' + os.sep, proxy=proxy)
 
 

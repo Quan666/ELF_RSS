@@ -13,3 +13,4 @@ nonebot-test~=0.1.0
 nonebot-plugin-apscheduler~=0.1.2
 typing-extensions~=3.7.4.3
 python-qbittorrent~=0.4.2
+magneturi~=1.3
