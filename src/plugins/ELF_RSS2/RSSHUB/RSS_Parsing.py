@@ -399,7 +399,7 @@ async def handle_html_tag(html, translation: bool) -> str:
     # issue36 处理md标签
     rss_str = re.sub(
         '\[img][hH][tT]{2}[pP][sS]{0,}://.*?\[/img]', '', str(html))
-    rss_str = re.sub('(\[.*?])|(\[/.*?])', '', str(rss_str))
+    rss_str = re.sub('(\[.*?=.*?])|(\[/.*?])', '', str(rss_str))
 
     # 处理一些 HTML 标签
     if config.blockquote == True:
