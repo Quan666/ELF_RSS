@@ -29,12 +29,15 @@ class ELFConfig(BaseConfig):
 
     islinux: bool = (os.name != 'nt')
 
+    close_pixiv_cat: bool = False
+
     is_open_auto_down_torrent: bool = False
     qb_web_url: str = 'http://127.0.0.1:8081'
     down_status_msg_grou: List[int] = []
     down_status_msg_date: int = 10
+    local_ip : str = '' # 还没写完
 
-    version: str = "v2.1.6"
+    version: str = "v2.1.7"
 
     def __getattr__(self, name: str) -> Any:
         data = self.dict()

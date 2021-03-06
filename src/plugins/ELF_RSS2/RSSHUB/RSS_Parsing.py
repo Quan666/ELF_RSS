@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 import asyncio
+import base64
 import codecs
 import difflib
 import json
@@ -12,6 +13,7 @@ import uuid
 from io import BytesIO
 from pathlib import Path
 
+import aiofiles
 import emoji
 import feedparser
 import httpx
@@ -114,14 +116,17 @@ async def start(rss: RSS_class.rss) -> None:
         except:
             item_msg += await handle_date()
 
-        # 处理种子 暂时只支持 蜜柑计划 https://mikanani.me/
-        await handle_down_torrent(rss=rss, item=item)
-
+        # 处理种子
+        try:
+            await handle_down_torrent(rss=rss, item=item)
+        except Exception as e:
+            logger.error('下载种子时出错：{}'.format(e))
         # 发送消息并写入文件
         if await sendMsg(rss=rss, msg=item_msg):
             tmp = []
             tmp.append(item)
             writeRss(name=rss.name, new_rss=new_rss, new_item=tmp)
+
 
 # 下载种子判断
 
@@ -130,17 +135,21 @@ async def handle_down_torrent(rss: RSS_class, item: dict):
     if config.is_open_auto_down_torrent and rss.down_torrent:
         if rss.down_torrent_keyword:
             if re.search(rss.down_torrent_keyword, item['summary']):
-                await down_torrent(rss=rss, item=item)
+                await down_torrent(rss=rss, item=item, proxy=get_Proxy(rss.img_proxy))
         else:
-            await down_torrent(rss=rss, item=item)
+            await down_torrent(rss=rss, item=item, proxy=get_Proxy(rss.img_proxy))
+
+
 # 创建下载种子任务
 
 
-async def down_torrent(rss: RSS_class, item: dict):
+async def down_torrent(rss: RSS_class, item: dict, proxy=None):
     for tmp in item['links']:
-        if tmp['type'] == 'application/x-bittorrent':
-            await start_down(url=tmp['href'], group_ids=rss.group_id, name='订阅：{}\n{}'.format(rss.name, item['summary']),
-                             path=file_path + os.sep + 'torrent' + os.sep)
+        if tmp['type'] == 'application/x-bittorrent' or tmp['href'].find('.torrent') > 0:
+            await start_down(url=tmp['href'], group_ids=rss.group_id,
+                             name='{}'.format(rss.name),
+                             path=file_path + os.sep + 'torrent' + os.sep, proxy=proxy)
+
 
 # 获取 RSS 并解析为 json ，失败重试
 
@@ -265,7 +274,26 @@ async def zipPic(content, name):
         return name + '.png'
 
 
-# 图片下载
+# 去你的 pixiv.cat
+async def fuck_pixiv(url: str) -> str:
+    if url.find('pixiv.cat'):
+        img_id = re.sub('https://pixiv.cat/', '', url)
+        img_id = img_id[:-4]
+        info_list = img_id.split('-')
+        async with httpx.AsyncClient(proxies={}) as client:
+            try:
+                req_json = (await client.get('https://hibiapi.getloli.com/api/pixiv/illust?id=' + info_list[0])).json()
+                if len(info_list) >= 2:
+                    return req_json['illust']['meta_pages'][int(info_list[1]) - 1]['image_urls']['original']
+                else:
+                    return req_json['illust']['meta_single_page']['original_image_url']
+            except Exception as e:
+                logger.error('处理pixiv.cat链接时出现问题 ：{}'.format(e))
+                return url
+    else:
+        return url
+
+
 # 下载图片
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
 async def dowimg(url: str, img_proxy: bool) -> str:
@@ -278,26 +306,14 @@ async def dowimg(url: str, img_proxy: bool) -> str:
         name = str(uuid.uuid4())
         async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=img_proxy)) as client:
             try:
-                # 删除该功能
 
-                # if config.close_pixiv_cat and url.find('pixiv.cat') >= 0:
-                #     img_proxy = False
-                #     headers = {'referer': config.pixiv_referer}
-                #     img_id = re.sub('https://pixiv.cat/', '', url)
-                #     img_id = img_id[:-4]
-                #     info_list = img_id.split('-')
-                #     req_json = requests.get('https://api.imjad.cn/pixiv/v1/?type=illust&id=' + info_list[0]).json()
-                #     if len(info_list) >= 2:
-                #         url = req_json['response'][0]['metadata']['pages'][int(info_list[1]) - 1]['image_urls']['large']
-                #     else:
-                #         url = req_json['response'][0]['image_urls']['large']
-                #
-                #     # 使用第三方反代服务器
-                #     url = re.sub('i.pximg.net', config.pixiv_proxy, url)
-                #     pic = await client.get(url, headers=headers, timeout=100.0)
-                # else:
-                #     pic = await client.get(url)
-                pic = await client.get(url)
+                if config.close_pixiv_cat:
+                    url = await fuck_pixiv(url=url)
+
+                referer = re.findall('([hH][tT]{2}[pP][sS]{0,}://.*?)(?:/.*?)', url)[0]
+                headers = {'referer': referer}
+
+                pic = await client.get(url, headers=headers, timeout=60.0)
                 # 大小控制，图片压缩
                 if (float(len(pic.content) / 1024) > float(config.zip_size)):
                     filename = await zipPic(pic.content, name)
@@ -336,6 +352,12 @@ async def dowimg(url: str, img_proxy: bool) -> str:
         raise BaseException
 
 
+# 将图片转化为 base64
+async def get_pic_base64(path: str) -> str:
+    async with aiofiles.open(path, mode='rb') as f:
+        return str(base64.b64encode(await f.read()), encoding="utf-8")
+
+
 # 处理图片、视频
 async def handle_img(html: str, img_proxy: bool) -> str:
     img_str = ''
@@ -344,7 +366,7 @@ async def handle_img(html: str, img_proxy: bool) -> str:
     for img in doc_img.items():
         img_path = await dowimg(img.attr("src"), img_proxy)
         if img_path != None or len(img_path) > 0:
-            img_str += '[CQ:image,file=file:///' + str(img_path) + ']'
+            img_str += '[CQ:image,file=base64://' + await get_pic_base64(str(img_path)) + ']'
         else:
             img_str += '\n图片走丢啦: {} \n'.format(img.attr("src"))
 
@@ -355,7 +377,7 @@ async def handle_img(html: str, img_proxy: bool) -> str:
         for video in doc_video.items():
             img_path = await dowimg(video.attr("poster"), img_proxy)
             if img_path != None or len(img_path) > 0:
-                img_str += '[CQ:image,file=file:///' + str(img_path) + ']'
+                img_str += '[CQ:image,file=base64://' + await get_pic_base64(str(img_path)) + ']'
             else:
                 img_str += '\n图片走丢啦: {} \n'.format(video.attr("poster"))
 
@@ -365,7 +387,7 @@ async def handle_img(html: str, img_proxy: bool) -> str:
     for img_tmp in img_list:
         img_path = await dowimg(img_tmp, img_proxy)
         if img_path != None or len(img_path) > 0:
-            img_str += '[CQ:image,file=file:///' + str(img_path) + ']'
+            img_str += '[CQ:image,file=base64://' + await get_pic_base64(str(img_path)) + ']'
         else:
             img_str += '\n图片走丢啦: {} \n'.format(img_tmp)
 
@@ -374,11 +396,10 @@ async def handle_img(html: str, img_proxy: bool) -> str:
 
 # HTML标签等处理
 async def handle_html_tag(html, translation: bool) -> str:
-
     # issue36 处理md标签
     rss_str = re.sub(
         '\[img][hH][tT]{2}[pP][sS]{0,}://.*?\[/img]', '', str(html))
-    rss_str = re.sub('(\[.*?])|(\[/.*?])', '', str(rss_str))
+    rss_str = re.sub('(\[.*?=.*?])|(\[/.*?])', '', str(rss_str))
 
     # 处理一些 HTML 标签
     if config.blockquote == True:
@@ -440,10 +461,10 @@ async def handle_translation(rss_str_tl: str) -> str:
             text = emoji.demojize(rss_str_tl)
             text = re.sub(r':[A-Za-z_]*:', ' ', text)
             text = '\n翻译(BaiduAPI)：\n' + \
-                str(rss_baidutrans.baidu_translate(re.escape(text)))
+                   str(rss_baidutrans.baidu_translate(re.escape(text)))
         else:
             text = '\n翻译：\n' + \
-                str(translator.translate(re.escape(text), lang_tgt='zh'))
+                   str(translator.translate(re.escape(text), lang_tgt='zh'))
         text = re.sub(r'\\', '', text)
         text = re.sub(r'百度翻译', '\n', text)
     except Exception as e:

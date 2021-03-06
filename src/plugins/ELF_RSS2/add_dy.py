@@ -22,7 +22,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 @RssAdd.got("RssAdd",
             prompt="请输入\n名称 [订阅地址]\n空格分割、[]表示可选\n私聊默认订阅到当前账号，群聊默认订阅到当前群组\n更多信息可通过 change 命令修改")
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
-    rss_dy_link = state["RssAdd"]
+    rss_dy_link = unescape(state["RssAdd"])
     user_id = event.user_id
     try:
         group_id = event.group_id
