@@ -7,8 +7,8 @@ from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 from nonebot.log import logger
 from nonebot.rule import to_me
 
-from .RSSHUB import RSS_class
-from .RSSHUB import rsstrigger as TR
+from .RSS import rss_class
+from .RSS import my_trigger as TR
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 
@@ -56,7 +56,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         await RssChange.send('❌ 订阅名称参数错误！')
         return
 
-    rss = RSS_class.rss(name, '', '-1', '-1')
+    rss = rss_class.rss(name, '', '-1', '-1')
     if not rss.findName(name=name):
         await RssChange.send('❌ 订阅 {} 不存在！'.format(name))
         return

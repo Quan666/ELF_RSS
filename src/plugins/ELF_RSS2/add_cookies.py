@@ -1,9 +1,10 @@
 from nonebot import on_command
 from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
+# from nonebot.adapters import Bot
 from nonebot.rule import to_me
 
-from .RSSHUB import RSS_class
+from .RSS import rss_class
 
 Addcookies = on_command('addcookies', aliases={'添加cookies'}, rule=to_me(
 ), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
@@ -25,7 +26,7 @@ async def handle_Addcookies(bot: Bot, event: Event, state: dict):
 
     dy = rss_cookies.split(' ', 1)
 
-    rss = RSS_class.rss(name='', url='', user_id='-1', group_id='-1')
+    rss = rss_class.rss(name='', url='', user_id='-1', group_id='-1')
     # 判断是否有该名称订阅
     try:
         name = dy[0]

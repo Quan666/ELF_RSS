@@ -7,7 +7,6 @@ from pydantic import AnyHttpUrl, Extra
 
 
 class ELFConfig(BaseConfig):
-
     class Config:
         extra = Extra.allow
 
@@ -35,7 +34,7 @@ class ELFConfig(BaseConfig):
     qb_web_url: str = 'http://127.0.0.1:8081'
     down_status_msg_grou: List[int] = []
     down_status_msg_date: int = 10
-    local_ip : str = '' # 还没写完
+    local_ip: str = ''  # 还没写完
 
     version: str = "v2.1.7"
 

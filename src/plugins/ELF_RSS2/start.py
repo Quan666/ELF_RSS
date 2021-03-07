@@ -4,9 +4,9 @@ from nonebot.adapters.cqhttp import Bot, Event
 
 from bot import driver
 from .config import config
-from .RSSHUB import RSS_class
-from .RSSHUB import del_cache as DC
-from .RSSHUB import rsstrigger as RT
+from .RSS import rss_class
+from .RSS import delete_cache as DC
+from .RSS import my_trigger as RT
 
 
 async def start():
@@ -18,7 +18,7 @@ async def start():
         pass
 
     try:
-        rss = RSS_class.rss('', '', '-1', '-1')
+        rss = rss_class.rss('', '', '-1', '-1')
         rss_list = rss.readRss()  # 读取list
         if not rss_list:
             raise Exception('第一次启动，你还没有订阅，记得添加哟！')

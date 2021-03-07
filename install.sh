@@ -75,10 +75,10 @@ install_ELF_RSS() {
   docker build -t elfrss:latest .
   mkdir /app
   cd ../
-  cp ./ELF_RSS /app
+  cp -ar ./ELF_RSS /app
 
   rm -rf ./ELF_RSS
-  docker run --name elfrss -p 8080:8080 -v /app/:/app/ -d elfrss:latest
+  docker run --name elfrss -p 8080:8080 -v /app/:/app/ -e TZ=Asia/Shanghai -d elfrss:latest
   echo "ELF_RSS 安装完成，请修改配置文件 /app/.env.prod"
 }
 install() {

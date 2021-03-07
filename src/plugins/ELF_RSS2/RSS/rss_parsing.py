@@ -25,7 +25,7 @@ from pyquery import PyQuery as pq
 from retrying import retry
 
 from ..config import config
-from . import RSS_class, rss_baidutrans
+from . import rss_class, translation_baidu
 # 存储目录
 from .qbittorrent_download import start_down
 
@@ -58,7 +58,7 @@ headers = {
 
 
 # 入口
-async def start(rss: RSS_class.rss) -> None:
+async def start(rss: rss_class.rss) -> None:
     # 网络加载 新RSS
     # 读取 旧RSS 记录
     # 检查更新
@@ -131,7 +131,7 @@ async def start(rss: RSS_class.rss) -> None:
 # 下载种子判断
 
 
-async def handle_down_torrent(rss: RSS_class, item: dict):
+async def handle_down_torrent(rss: rss_class, item: dict):
     if config.is_open_auto_down_torrent and rss.down_torrent:
         if rss.down_torrent_keyword:
             if re.search(rss.down_torrent_keyword, item['summary']):
@@ -143,7 +143,7 @@ async def handle_down_torrent(rss: RSS_class, item: dict):
 # 创建下载种子任务
 
 
-async def down_torrent(rss: RSS_class, item: dict, proxy=None):
+async def down_torrent(rss: rss_class, item: dict, proxy=None):
     for tmp in item['links']:
         if tmp['type'] == 'application/x-bittorrent' or tmp['href'].find('.torrent') > 0:
             await start_down(url=tmp['href'], group_ids=rss.group_id,
@@ -155,7 +155,7 @@ async def down_torrent(rss: RSS_class, item: dict, proxy=None):
 
 
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
-async def get_rss(rss: RSS_class.rss) -> dict:
+async def get_rss(rss: rss_class.rss) -> dict:
     # 判断是否使用cookies
     if rss.cookies:
         cookies = rss.cookies
@@ -166,7 +166,7 @@ async def get_rss(rss: RSS_class.rss) -> dict:
     async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=rss.img_proxy), cookies=cookies,
                                  headers=headers) as client:
         try:
-            r = await client.get(rss.geturl(), timeout=60)
+            r = await client.get(rss.geturl())
             if rss.name == 'cookies':
                 logger.debug(r.content)
             # 解析为 JSON
@@ -194,9 +194,13 @@ async def get_rss(rss: RSS_class.rss) -> dict:
             if d.entries:
                 pass
         except:
-            logger.error(
-                rss.name + ' 抓取失败！将重试 5 次！多次失败请检查订阅地址 {} ！\n如果设置了 cookies 请检查 cookies 正确性'.format(rss.geturl()))
-            raise BaseException
+            if rss.cookies:
+                cookies_str = '\n如果设置了 cookies 请检查 cookies 正确性'
+            else:
+                cookies_str = ''
+            e_msg = rss.name + ' 抓取失败！将重试 5 次！多次失败请检查订阅地址 {} ！{}'.format(rss.geturl(), cookies_str)
+            logger.error(e_msg)
+            raise Exception(e_msg)
         return d
 
 
@@ -206,7 +210,7 @@ async def handle_title(title: str) -> str:
 
 
 # 处理正文，图片放后面
-async def handle_summary(summary: str, rss: RSS_class.rss) -> str:
+async def handle_summary(summary: str, rss: rss_class.rss) -> str:
     # 去掉换行
     # summary = re.sub('\n', '', summary)
     # 处理 summary 使其 HTML标签统一，方便处理
@@ -313,7 +317,7 @@ async def dowimg(url: str, img_proxy: bool) -> str:
                 referer = re.findall('([hH][tT]{2}[pP][sS]{0,}://.*?)(?:/.*?)', url)[0]
                 headers = {'referer': referer}
 
-                pic = await client.get(url, headers=headers, timeout=60.0)
+                pic = await client.get(url, headers=headers)
                 # 大小控制，图片压缩
                 if (float(len(pic.content) / 1024) > float(config.zip_size)):
                     filename = await zipPic(pic.content, name)
@@ -354,6 +358,9 @@ async def dowimg(url: str, img_proxy: bool) -> str:
 
 # 将图片转化为 base64
 async def get_pic_base64(path: str) -> str:
+    # 解决docker下找不到图片文件问题
+    if config.islinux and path[0:1] != '/':
+        path = '/' + path
     async with aiofiles.open(path, mode='rb') as f:
         return str(base64.b64encode(await f.read()), encoding="utf-8")
 
@@ -461,7 +468,7 @@ async def handle_translation(rss_str_tl: str) -> str:
             text = emoji.demojize(rss_str_tl)
             text = re.sub(r':[A-Za-z_]*:', ' ', text)
             text = '\n翻译(BaiduAPI)：\n' + \
-                   str(rss_baidutrans.baidu_translate(re.escape(text)))
+                   str(translation_baidu.baidu_translate(re.escape(text)))
         else:
             text = '\n翻译：\n' + \
                    str(translator.translate(re.escape(text), lang_tgt='zh'))
@@ -537,7 +544,7 @@ def writeRss(name: str, new_rss: dict, new_item: list = None):
 
 
 # 发送消息
-async def sendMsg(rss: RSS_class, msg: str) -> bool:
+async def sendMsg(rss: rss_class, msg: str) -> bool:
     bot, = nonebot.get_bots().values()
     try:
         if len(msg) <= 0:

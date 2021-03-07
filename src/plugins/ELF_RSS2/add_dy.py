@@ -3,8 +3,8 @@ from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 from nonebot.rule import to_me
 
-from .RSSHUB import RSS_class
-from .RSSHUB import rsstrigger as TR
+from .RSS import rss_class
+from .RSS import my_trigger as TR
 
 RssAdd = on_command('add', aliases={'添加订阅', 'sub'}, rule=to_me(
 ), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
@@ -31,7 +31,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
 
     dy = rss_dy_link.split(' ')
 
-    rss = RSS_class.rss(name='', url='', user_id='-1', group_id='-1')
+    rss = rss_class.rss(name='', url='', user_id='-1', group_id='-1')
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅
     try:
         name = dy[0]

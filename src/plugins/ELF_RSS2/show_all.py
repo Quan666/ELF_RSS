@@ -3,7 +3,7 @@ from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event, permission
 from nonebot.rule import to_me
 
-from .RSSHUB import RSS_class
+from .RSS import rss_class
 
 RssShowAll = on_command('showall', aliases={'selectall', '所有订阅'}, rule=to_me(), priority=5,
                         permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
@@ -17,7 +17,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     except:
         group_id = None
 
-    rss = RSS_class.rss('', '', '-1', '-1')
+    rss = rss_class.rss('', '', '-1', '-1')
     if group_id:
         rss_list = rss.findGroup(group=str(group_id))
         if not rss_list:
