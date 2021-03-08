@@ -36,7 +36,7 @@ class ELFConfig(BaseConfig):
     down_status_msg_date: int = 10
     local_ip: str = ''  # 还没写完
 
-    version: str = "v2.1.7"
+    version: str = "v2.1.8"
 
     def __getattr__(self, name: str) -> Any:
         data = self.dict()
@@ -46,5 +46,5 @@ class ELFConfig(BaseConfig):
         return None
 
 
-config = ELFConfig(get_driver().config.dict())
+config = ELFConfig(**get_driver().config.dict())
 logger.debug(f'RSS Config loaded: {config!r}')
