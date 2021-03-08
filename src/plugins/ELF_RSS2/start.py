@@ -2,7 +2,6 @@ import nonebot
 from nonebot import logger, on_metaevent
 from nonebot.adapters.cqhttp import Bot, Event
 
-from bot import driver
 from .config import config
 from .RSS import rss_class
 from .RSS import delete_cache as DC
