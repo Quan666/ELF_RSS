@@ -64,7 +64,10 @@ async def start(rss: rss_class.rss) -> None:
     # 检查更新
     # 对更新的 RSS 记录列表进行处理，当发送成功后才写入，成功一条写一条
 
-    new_rss = await get_rss(rss)
+    try:
+        new_rss = await get_rss(rss)
+    except:
+        return
     new_rss_list = new_rss.entries
     try:
         old_rss_list = readRss(rss.name)['entries']
@@ -198,7 +201,7 @@ async def get_rss(rss: rss_class.rss) -> dict:
                 cookies_str = '\n如果设置了 cookies 请检查 cookies 正确性'
             else:
                 cookies_str = ''
-            e_msg = rss.name + ' 抓取失败！将重试 5 次！多次失败请检查订阅地址 {} ！{}'.format(rss.geturl(), cookies_str)
+            e_msg = rss.name + ' 抓取失败！已经重试 5 次！请检查订阅地址 {} {}\n如果是网络问题，请忽略该错误！'.format(rss.geturl(), cookies_str)
             logger.error(e_msg)
             raise Exception(e_msg)
         return d

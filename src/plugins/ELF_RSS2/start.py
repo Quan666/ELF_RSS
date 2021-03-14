@@ -10,7 +10,6 @@ from .RSS import my_trigger as RT
 
 async def start():
     bot, = nonebot.get_bots().values()
-
     try:
         DC.delcache_trigger()
     except:
@@ -32,7 +31,7 @@ async def start():
                            message='第一次启动，你还没有订阅，记得添加哟！\nVersion: {}\nAuthor：Quan666\nhttps://github.com/Quan666/ELF_RSS'.format(
                                config.version))
         logger.info('第一次启动，你还没有订阅，记得添加哟！')
-        # logger.debug(e)
+        logger.debug(e)
 
 
 async def check_first_connect(bot: Bot, event: Event, state: dict) -> bool:
