@@ -8,7 +8,8 @@
 > 2. 更简洁的代码，方便移植到你自己的机器人
 > 3. 使用全新的 [Nonebot2](https://v2.nonebot.dev/guide/) 框架
 >
-> **注意：1.x 仍然可以使用**
+
+[![](https://img.shields.io/badge/qq%E7%BE%A4-984827132-orange?style=flat-square)](https://jq.qq.com/?_wv=1027&k=sST08Nkd)
 
 ## 功能介绍
 * 发送QQ消息来动态增、删、查、改 RSS 订阅
@@ -17,6 +18,7 @@
 * 个性化订阅设置（更新频率、翻译、仅标题、仅图片等）
 * 多平台支持
 * 图片压缩后发送
+* 种子下载并上传到群文件
 
 ## TODO
 
