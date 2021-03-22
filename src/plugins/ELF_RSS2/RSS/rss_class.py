@@ -28,11 +28,12 @@ class rss:
     cookies = ''
     down_torrent: bool = False  # 是否下载种子
     down_torrent_keyword: str = None  # 过滤关键字，支持正则
+    is_open_upload_group: bool = True  # 默认开启上传到群
 
     # 定义构造方法
     def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
                  translation=False, only_title=False, only_pic=False, cookies: str = '', down_torrent: bool = False,
-                 down_torrent_keyword: str = None):
+                 down_torrent_keyword: str = None, is_open_upload_group: bool = True):
         self.name = name
         self.url = url
         if user_id != '-1':
@@ -54,6 +55,7 @@ class rss:
             self.cookies = cookies
         self.down_torrent = down_torrent
         self.down_torrent_keyword = down_torrent_keyword
+        self.is_open_upload_group=is_open_upload_group
 
     # 返回订阅链接
     def geturl(self, rsshub: str = config.rsshub) -> str:
@@ -176,6 +178,13 @@ class rss:
         with codecs.open(str(file_path + "rss.json"), "w", 'utf-8') as dump_f:
             dump_f.write(json.dumps(rss_json, sort_keys=True,
                                     indent=4, ensure_ascii=False))
+        self.delete_file()
+
+    # 删除订阅json文件
+    def delete_file(self):
+        this_file_path = str(file_path + self.name + '.json')
+        if os.path.exists(this_file_path):
+            os.remove(this_file_path)
 
     def findGroup(self, group: str) -> list:
         rss_old = self.readRss()
@@ -224,14 +233,15 @@ class rss:
             down_msg = '\n种子自动下载功能未打开'
         else:
             down_msg = ''
-        ret = '名称：{}\n订阅地址：{}\n订阅QQ：{}\n订阅群：{}\n更新时间：{}\n代理：{}\n翻译：{}\n仅标题：{}\n仅图片：{}\n下载种子：{}\n下载关键词：{}{}{}'.format(self.name, self.url,
-                                                                                                                     str(self.user_id), str(
-                                                                                                                         self.group_id), str(self.time), str(self.img_proxy), str(self.translation), str(self.only_title),
-                                                                                                                     str(
-                                                                                                                         self.only_pic),
-                                                                                                                     str(
-                                                                                                                         self.down_torrent),
-                                                                                                                     str(
-                                                                                                                         self.down_torrent_keyword),
-                                                                                                                     str(cookies_str), down_msg)
+        ret = '名称：{}\n订阅地址：{}\n订阅QQ：{}\n订阅群：{}\n更新时间：{}\n代理：{}\n翻译：{}\n仅标题：{}\n仅图片：{}\n下载种子：{}\n关键词：{}{}{}\n是否上传到群：{}'.format(
+            self.name, self.url,
+            str(self.user_id), str(
+                self.group_id), str(self.time), str(self.img_proxy), str(self.translation), str(self.only_title),
+            str(
+                self.only_pic),
+            str(
+                self.down_torrent),
+            str(
+                self.down_torrent_keyword),
+            str(cookies_str), down_msg,self.is_open_upload_group)
         return ret

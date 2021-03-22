@@ -1,14 +1,14 @@
 import asyncio
 import base64
-import os
-import uuid
+import datetime
+import time
 
 import httpx
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger
 from nonebot import logger, require
 from qbittorrent import Client
-from starlette.responses import FileResponse
+# from starlette.responses import FileResponse
 from ..config import config
 
 # 计划
@@ -20,20 +20,37 @@ from ..config import config
 # 下载开关
 
 
-app = nonebot.get_asgi()
+# app = nonebot.get_asgi()
 
 
-@app.get("/elfrss/file/{filename}")
-async def file(filename: str) -> FileResponse:
-    path = (await get_qb()).get_default_save_path()
-    return FileResponse(path=path + os.sep + filename, filename=filename)
+# @app.get("/elfrss/file/{filename}",include_in_schema=False)
+# async def file(filename: str) -> FileResponse:
+#     path = (await get_qb()).get_default_save_path()
+#     return FileResponse(path=path + os.sep + filename, filename=filename)
+
+DOWN_STATUS_DOWNING = 1  # 下载中
+DOWN_STATUS_UPLOADING = 2  # 上传中
+DOWN_STATUS_UPLOADOK = 3  # 上传完成
+down_info = {}
 
 
-async def send_Msg(msg: str):
+# 示例
+# {
+#     "hash值": {
+#         "status":DOWN_STATUS_DOWNING,
+#         "start_time":None, # 下载开始时间
+#         "downing_tips_msg_id":[] # 下载中通知群上一条通知的信息，用于撤回，防止刷屏
+#     }
+# }
+
+# 发送通知
+async def send_Msg(msg: str) -> list:
     logger.info(msg)
     bot, = nonebot.get_bots().values()
+    msg_id = []
     for group_id in config.down_status_msg_group:
-        await bot.send_msg(message_type='group', group_id=int(group_id), message=msg)
+        msg_id.append(await bot.send_msg(message_type='group', group_id=int(group_id), message=msg))
+    return msg_id
 
 
 async def get_qb():
@@ -116,7 +133,7 @@ async def get_Hash_Name(url: str, proxy=None) -> dict:
 
 
 # 种子地址，种子下载路径，群文件上传 群列表，订阅名称
-async def start_down(url: str, path: str, group_ids: list, name: str, proxy=None):
+async def start_down(url: str, path: str, group_ids: list, name: str, proxy=None)->str:
     qb = await get_qb()
     if not qb:
         return
@@ -124,8 +141,14 @@ async def start_down(url: str, path: str, group_ids: list, name: str, proxy=None
     info = await get_Hash_Name(url=url, proxy=proxy)
     await rss_trigger(hash=info['hash'], group_ids=group_ids,
                       name='订阅：{}\n{}\n文件大小：{}'.format(name, info['filename'], info['size']))
+    down_info[info['hash']] = {
+        "status": DOWN_STATUS_DOWNING,
+        "start_time": datetime.datetime.now(),  # 下载开始时间
+        "downing_tips_msg_id": []  # 下载中通知群上一条通知的信息，用于撤回，防止刷屏
+    }
+    return info['hash']
 
-
+# 检查下载状态
 async def check_down_status(hash: str, group_ids: list, name: str):
     qb = await get_qb()
     if not qb:
@@ -134,7 +157,9 @@ async def check_down_status(hash: str, group_ids: list, name: str):
     files = qb.get_torrent_files(hash)
     bot, = nonebot.get_bots().values()
     if info['total_downloaded'] - info['total_size'] >= 0.000000:
-        await send_Msg(str('👏 {}\nHash: {} \n下载完成！'.format(name, hash)))
+        all_time = (datetime.datetime.now() - down_info[hash]['start_time']).seconds
+        await send_Msg(str('👏 {}\nHash: {} \n下载完成！耗时：{} s'.format(name, hash, str(all_time))))
+        down_info[hash]['status'] = DOWN_STATUS_UPLOADING
         for group_id in group_ids:
             for tmp in files:
                 # 异常包起来防止超时报错导致后续不执行
@@ -153,9 +178,19 @@ async def check_down_status(hash: str, group_ids: list, name: str):
                     continue
         scheduler = require("nonebot_plugin_apscheduler").scheduler
         scheduler.remove_job(hash)
+        down_info[hash]['status'] = DOWN_STATUS_UPLOADOK
     else:
-        await send_Msg(str('{}\nHash: {} \n下载了 {}%\n平均下载速度：{} KB/s'.format(name, hash, round(
+        await delete_msg(down_info[hash]['downing_tips_msg_id'])
+        msg_id = await send_Msg(str('{}\nHash: {} \n下载了 {}%\n平均下载速度：{} KB/s'.format(name, hash, round(
             info['total_downloaded'] / info['total_size'] * 100, 2), round(info['dl_speed_avg'] / 1024, 2))))
+        down_info[hash]['downing_tips_msg_id'] = msg_id
+
+
+# 撤回消息
+async def delete_msg(msg_ids: list):
+    bot, = nonebot.get_bots().values()
+    for msg_id in msg_ids:
+        await bot.call_api('delete_msg',message_id=msg_id['message_id'])
 
 
 async def rss_trigger(hash: str, group_ids: list, name: str):

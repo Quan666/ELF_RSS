@@ -36,7 +36,9 @@ class ELFConfig(BaseConfig):
     down_status_msg_date: int = 10
     local_ip: str = ''  # 还没写完
 
-    version: str = "v2.1.8"
+    max_length: int = 0 # 正文长度限制，防止消息太长刷屏
+
+    version: str = "v2.1.9"
 
     def __getattr__(self, name: str) -> Any:
         data = self.dict()

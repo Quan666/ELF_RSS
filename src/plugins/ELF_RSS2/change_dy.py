@@ -32,13 +32,13 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
                              '\n对应参数:'
                              '\n订阅链接-url QQ-qq 群-qun 更新频率-time'
                              '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op'
-                             '\n下载种子-downopen 下载关键词-downkey'
+                             '\n下载种子-downopen 关键词-downkey 种子上传到群-upgroup'
                              '\n注：'
-                             '\nproxy、tl、ot、op、downopen 值为 1/0'
-                             '\n下载关键词支持正则表达式，匹配时下载'
+                             '\nproxy、tl、ot、op、downopen、upgroup 值为 1/0'
+                             '\n关键词支持正则表达式，匹配时推送消息及下载，设为空(downkey=)时不生效 '
                              '\nQQ、群号前加英文逗号表示追加,-1设为空'
                              '\n各个属性空格分割'
-                             '\n详细：http://ii1.fun/nmEFn2'.strip())
+                             '\n详细：https://oy.mk/ckL'.strip())
 
 
 @RssChange.got("RssChange", prompt='')
@@ -98,6 +98,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                     rss.group_id = qun_list
             elif one_info_list[0] == 'url':
                 rss.url = one_info_list[1]
+                rss.delete_file()
             elif one_info_list[0] == 'time':
                 if re.search('_|\*|/|,|-', one_info_list[1]):
                     rss.time = one_info_list[1]
@@ -114,6 +115,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 rss.only_title = bool(int(one_info_list[1]))
             elif one_info_list[0] == 'op':
                 rss.only_pic = bool(int(one_info_list[1]))
+            elif one_info_list[0] == 'upgroup':
+                rss.is_open_upload_group = bool(int(one_info_list[1]))
             elif one_info_list[0] == 'downopen':
                 rss.down_torrent = bool(int(one_info_list[1]))
             elif one_info_list[0] == 'downkey':

@@ -87,10 +87,18 @@ async def start(rss: rss_class.rss) -> None:
             match = re.findall("|".join(config.blockword), item['summary'])
             if match:
                 logger.info('内含屏蔽词，已经取消推送该消息')
+                write_item(rss=rss, new_rss=new_rss, new_item=item)
+                continue
+        # 检查是否匹配关键词 使用 down_torrent_keyword 字段
+        if rss.down_torrent_keyword:
+            if not re.search(rss.down_torrent_keyword, item['summary']):
+                print(rss.down_torrent_keyword)
+                write_item(rss=rss, new_rss=new_rss, new_item=item)
                 continue
         # 检查是否只推送有图片的消息
         if rss.only_pic and not re.search('<img.+?>', item['summary']):
             logger.info('已开启仅图片，该消息没有图片，将跳过')
+            write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
 
         item_msg = '【' + new_rss.feed.title + '】更新了!\n----------------------\n'
@@ -121,37 +129,50 @@ async def start(rss: rss_class.rss) -> None:
 
         # 处理种子
         try:
-            await handle_down_torrent(rss=rss, item=item)
+            hash_list = await handle_down_torrent(rss=rss, item=item)
+            item_msg += '\n磁力：'
+            for h in hash_list:
+                item_msg+=f'magnet:?xt=urn:btih:{h}\n'
+            item_msg=item_msg[:-1]
         except Exception as e:
             logger.error('下载种子时出错：{}'.format(e))
         # 发送消息并写入文件
         if await sendMsg(rss=rss, msg=item_msg):
-            tmp = []
-            tmp.append(item)
-            writeRss(name=rss.name, new_rss=new_rss, new_item=tmp)
+            write_item(rss=rss, new_rss=new_rss, new_item=item)
+
+
+# 写入单条消息
+def write_item(rss: rss_class.rss, new_rss: list, new_item: str):
+    tmp = []
+    tmp.append(new_item)
+    writeRss(name=rss.name, new_rss=new_rss, new_item=tmp)
 
 
 # 下载种子判断
 
 
-async def handle_down_torrent(rss: rss_class, item: dict):
+async def handle_down_torrent(rss: rss_class, item: dict)->list:
+    if not rss.is_open_upload_group:
+        rss.group_id = []
     if config.is_open_auto_down_torrent and rss.down_torrent:
         if rss.down_torrent_keyword:
             if re.search(rss.down_torrent_keyword, item['summary']):
-                await down_torrent(rss=rss, item=item, proxy=get_Proxy(rss.img_proxy))
+                return await down_torrent(rss=rss, item=item, proxy=get_Proxy(rss.img_proxy))
         else:
-            await down_torrent(rss=rss, item=item, proxy=get_Proxy(rss.img_proxy))
+            return await down_torrent(rss=rss, item=item, proxy=get_Proxy(rss.img_proxy))
 
 
 # 创建下载种子任务
 
 
-async def down_torrent(rss: rss_class, item: dict, proxy=None):
+async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
+    hash_list = []
     for tmp in item['links']:
         if tmp['type'] == 'application/x-bittorrent' or tmp['href'].find('.torrent') > 0:
-            await start_down(url=tmp['href'], group_ids=rss.group_id,
-                             name='{}'.format(rss.name),
-                             path=file_path + os.sep + 'torrent' + os.sep, proxy=proxy)
+            hash_list.append(await start_down(url=tmp['href'], group_ids=rss.group_id,
+                                              name='{}'.format(rss.name),
+                                              path=file_path + os.sep + 'torrent' + os.sep, proxy=proxy))
+    return hash_list
 
 
 # 获取 RSS 并解析为 json ，失败重试
@@ -451,6 +472,10 @@ async def handle_html_tag(html, translation: bool) -> str:
     # 去掉换行
     rss_str = re.sub('\n\n|\n\n\n', '', rss_str)
     rss_str_tl = re.sub('\n\n|\n\n\n', '', rss_str_tl)
+
+    if config.max_length>0 and len(rss_str)>config.max_length:
+        rss_str=rss_str[:config.max_length]+'...'
+        rss_str_tl = rss_str_tl[:config.max_length]+'...'
     # 翻译
     if translation:
         return rss_str + await handle_translation(rss_str_tl=rss_str_tl)
