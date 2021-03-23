@@ -130,10 +130,11 @@ async def start(rss: rss_class.rss) -> None:
         # 处理种子
         try:
             hash_list = await handle_down_torrent(rss=rss, item=item)
-            item_msg += '\n磁力：'
-            for h in hash_list:
-                item_msg+=f'magnet:?xt=urn:btih:{h}\n'
-            item_msg=item_msg[:-1]
+            if hash_list:
+                item_msg += '\n磁力：'
+                for h in hash_list:
+                    item_msg+=f'magnet:?xt=urn:btih:{h}\n'
+                item_msg=item_msg[:-1]
         except Exception as e:
             logger.error('下载种子时出错：{}'.format(e))
         # 发送消息并写入文件
