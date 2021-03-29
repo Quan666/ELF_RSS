@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import datetime
+import re
 import time
 
 import httpx
@@ -113,22 +114,28 @@ async def get_Hash_Name(url: str, proxy=None) -> dict:
         proxy = {}
     qb = await get_qb()
     info = None
-    async with httpx.AsyncClient(proxies=proxy) as client:
-        try:
-            res = await client.get(url, timeout=100)
-            qb.download_from_file(res.content)
-            hash = get_torrent_b16Hash(res.content)
-            while not info:
-                for tmp_torrent in qb.torrents():
-                    if tmp_torrent['hash'] == hash:
-                        info = {
-                            'hash': tmp_torrent['hash'],
-                            'filename': tmp_torrent['name'],
-                            'size': getSize(tmp_torrent['size'])
-                        }
-                await asyncio.sleep(1)
-        except Exception as e:
-            await send_Msg('下载种子失败,可能需要代理:{}'.format(e))
+    if re.search("magnet:\?xt=urn:btih:",url) :
+        qb.download_from_link(link=url)
+        hash = re.search('[a-f0-9]{40}',url)[0]
+    else:
+        async with httpx.AsyncClient(proxies=proxy) as client:
+            try:
+                res = await client.get(url, timeout=100)
+                qb.download_from_file(res.content)
+                hash = get_torrent_b16Hash(res.content)
+            except Exception as e:
+                await send_Msg('下载种子失败,可能需要代理:{}'.format(e))
+                return None
+
+    while not info:
+        for tmp_torrent in qb.torrents():
+            if tmp_torrent['hash'] == hash and tmp_torrent['size']:
+                info = {
+                    'hash': tmp_torrent['hash'],
+                    'filename': tmp_torrent['name'],
+                    'size': getSize(tmp_torrent['size'])
+                }
+        await asyncio.sleep(1)
     return info
 
 

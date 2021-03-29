@@ -10,7 +10,7 @@ from . import rss_class, rss_parsing, util
 
 
 # 检测某个rss更新 #任务体
-@util.time_out(time=20)  # 20s  任务超时时间
+@util.time_out(time=300)  # 20s  任务超时时间
 async def check_update(rss: rss_class.rss):
     logger.info('{} 检查更新'.format(rss.name))
     await rss_parsing.start(rss)
