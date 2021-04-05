@@ -21,13 +21,6 @@ from ..config import config
 # 下载开关
 
 
-# app = nonebot.get_asgi()
-
-
-# @app.get("/elfrss/file/{filename}",include_in_schema=False)
-# async def file(filename: str) -> FileResponse:
-#     path = (await get_qb()).get_default_save_path()
-#     return FileResponse(path=path + os.sep + filename, filename=filename)
 
 DOWN_STATUS_DOWNING = 1  # 下载中
 DOWN_STATUS_UPLOADING = 2  # 上传中
@@ -171,12 +164,8 @@ async def check_down_status(hash: str, group_ids: list, name: str):
             for tmp in files:
                 # 异常包起来防止超时报错导致后续不执行
                 try:
-                    if config.local_ip and len(config.local_ip) >= 7:
-                        # 通过这个API下载的文件能直接放入CQ码作为图片或语音发送 调用后会阻塞直到下载完成后才会返回数据，请注意下载大文件时的超时
-                        await send_Msg('go-cqhttp 开始下载文件：{}'.format(tmp['name']))
-                        path = (await bot.call_api('download_file',
-                                                   url='http://{}:8080/elfrss/file/{}'.format(config.local_ip,
-                                                                                              tmp['name']))).file
+                    if config.qb_down_path and len(config.qb_down_path) > 0 :
+                        path = config.qb_down_path + tmp['name']
                     else:
                         path = info['save_path'] + tmp['name']
                     await send_Msg(str('{}\nHash: {} \n开始上传到群：{}'.format(name, hash, group_id)))

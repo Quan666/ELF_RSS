@@ -32,13 +32,13 @@ class ELFConfig(BaseConfig):
 
     is_open_auto_down_torrent: bool = False
     qb_web_url: str = 'http://127.0.0.1:8081'
+    qb_down_path: str = ''  # qb的文件下载地址，这个地址必须是 go-cqhttp能访问到的
     down_status_msg_grou: List[int] = []
     down_status_msg_date: int = 10
-    local_ip: str = ''  # 还没写完
 
     max_length: int = 0 # 正文长度限制，防止消息太长刷屏
 
-    version: str = "v2.1.9"
+    version: str = "v2.2.1"
 
     def __getattr__(self, name: str) -> Any:
         data = self.dict()
