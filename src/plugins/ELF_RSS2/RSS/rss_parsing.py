@@ -92,7 +92,11 @@ async def start(rss: rss_class.rss) -> None:
         # 检查是否匹配关键词 使用 down_torrent_keyword 字段
         if rss.down_torrent_keyword:
             if not re.search(rss.down_torrent_keyword, item['summary']):
-                print(rss.down_torrent_keyword)
+                write_item(rss=rss, new_rss=new_rss, new_item=item)
+                continue
+        # 检查是否匹配黑名单关键词 使用 black_keyword 字段
+        if rss.black_keyword:
+            if re.search(rss.black_keyword, item['summary']):
                 write_item(rss=rss, new_rss=new_rss, new_item=item)
                 continue
         # 检查是否只推送有图片的消息
@@ -130,7 +134,7 @@ async def start(rss: rss_class.rss) -> None:
         # 处理种子
         try:
             hash_list = await handle_down_torrent(rss=rss, item=item)
-            if hash_list:
+            if hash_list and len(hash_list)>0:
                 item_msg += '\n磁力：'
                 for h in hash_list:
                     item_msg+=f'magnet:?xt=urn:btih:{h}\n'

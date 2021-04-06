@@ -33,7 +33,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             info = ''
             for rss_tmp in rss_list:
                 if flag % 5 == 0 and flag != 0:
-                    await RssShowAll.send(str(info))
+                    await RssShowAll.send(str(info[:-2]))
                     info = ''
                 info += 'Name：{}\nURL：{}\n\n'.format(rss_tmp.name, rss_tmp.url)
                 flag += 1

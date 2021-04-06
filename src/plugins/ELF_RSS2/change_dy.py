@@ -32,10 +32,11 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
                              '\n对应参数:'
                              '\n订阅链接-url QQ-qq 群-qun 更新频率-time'
                              '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op'
-                             '\n下载种子-downopen 关键词-downkey 种子上传到群-upgroup'
+                             '\n下载种子-downopen 白名单关键词-wkey 黑名单关键词-bkey 种子上传到群-upgroup'
                              '\n注：'
                              '\nproxy、tl、ot、op、downopen、upgroup 值为 1/0'
-                             '\n关键词支持正则表达式，匹配时推送消息及下载，设为空(downkey=)时不生效 '
+                             '\n白名单关键词支持正则表达式，匹配时推送消息及下载，设为空(wkey=)时不生效 '
+                             '\n黑名单关键词同白名单一样，只是匹配时不推送，两者可以一起用'
                              '\nQQ、群号前加英文逗号表示追加,-1设为空'
                              '\n各个属性空格分割'
                              '\n详细：https://oy.mk/ckL'.strip())
@@ -119,11 +120,16 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 rss.is_open_upload_group = bool(int(one_info_list[1]))
             elif one_info_list[0] == 'downopen':
                 rss.down_torrent = bool(int(one_info_list[1]))
-            elif one_info_list[0] == 'downkey':
+            elif one_info_list[0] == 'downkey' or one_info_list[0] == 'wkey':
                 if len(one_info_list[1]) > 0:
                     rss.down_torrent_keyword = one_info_list[1]
                 else:
                     rss.down_torrent_keyword = None
+            elif one_info_list[0] == 'blackkey' or one_info_list[0] == 'bkey':
+                if len(one_info_list[1]) > 0:
+                    rss.black_keyword = one_info_list[1]
+                else:
+                    rss.black_keyword = None
             else:
                 await RssChange.send('❌ 参数错误或无权修改！\n{}'.format(change_tmp))
                 return
