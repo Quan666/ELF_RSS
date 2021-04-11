@@ -283,27 +283,29 @@ async def handle_date(date=None) -> str:
 
 
 # 图片压缩
-async def zipPic(content, name):
-    img_path = file_path + 'imgs' + os.sep
+async def zipPic(content):
     # 打开一个jpg/png图像文件，注意是当前路径:
     im = Image.open(BytesIO(content))
     # 获得图像尺寸:
-    w, h = im.size
-    logger.info('Original image size: %sx%s' % (w, h))
+    width, height = im.size
     # 算出缩小比
     Proportion = int(len(content) / (float(config.zip_size) * 1024))
     logger.info('算出的缩小比:' + str(Proportion))
-    # 缩放
-    im.thumbnail((w // Proportion, h // Proportion))
-    logger.info('Resize image to: %sx%s' % (w // Proportion, h // Proportion))
-    # 把缩放后的图像用jpeg格式保存:
-    try:
-        im.save(img_path + name + '.jpg', 'jpeg')
-        return name + '.jpg'
-    except Exception:
-        im.save(img_path + name + '.png', 'png')
-        return name + '.png'
+    if Proportion>0:
+        # 缩放
+        im.thumbnail((width // Proportion, height // Proportion))
+    width, height = im.size
+    logger.info('Resize image to: %sx%s' % (width, height))
+    return im
 
+# 将图片转化为 base64
+async def get_pic_base64(content,file_type) -> str:
+    # im = Image.open(BytesIO(content))
+    im = await zipPic(content)
+    jpeg_image_buffer = BytesIO()
+    im.save(jpeg_image_buffer, file_type)
+    res = str(base64.b64encode(jpeg_image_buffer.getvalue()), encoding="utf-8")
+    return res
 
 # 去你的 pixiv.cat
 async def fuck_pixiv(url: str) -> str:
@@ -325,71 +327,28 @@ async def fuck_pixiv(url: str) -> str:
         return url
 
 
-# 下载图片
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
-async def dowimg(url: str, img_proxy: bool) -> str:
+async def dowimg(url: str, proxy: bool) -> str:
     try:
-        img_path = file_path + 'imgs' + os.sep
-        if not os.path.isdir(img_path):
-            logger.info(str(img_path) + '文件夹不存在，已重新创建')
-            os.makedirs(img_path)  # 创建目录
-        file_suffix = os.path.splitext(url)  # 返回列表[路径/文件名，文件后缀]
-        name = str(uuid.uuid4())
-        async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=img_proxy)) as client:
-            try:
-
-                if config.close_pixiv_cat:
-                    url = await fuck_pixiv(url=url)
-
-                referer = re.findall('([hH][tT]{2}[pP][sS]{0,}://.*?)(?:/.*?)', url)[0]
-                headers = {'referer': referer}
-
-                pic = await client.get(url, headers=headers)
-                # 大小控制，图片压缩
-                if (float(len(pic.content) / 1024) > float(config.zip_size)):
-                    filename = await zipPic(pic.content, name)
-                else:
-                    if len(file_suffix[1]) > 0:
-                        filename = name + file_suffix[1]
-                    elif pic.headers['Content-Type'] == 'image/jpeg':
-                        filename = name + '.jpg'
-                    elif pic.headers['Content-Type'] == 'image/png':
-                        filename = name + '.png'
-                    else:
-                        filename = name + '.jpg'
-                    with codecs.open(str(img_path + filename), "wb") as dump_f:
-                        dump_f.write(pic.content)
-
-                if config.islinux:
-                    imgs_name = img_path + filename
-                    if len(imgs_name) > 0:
-                        # imgs_name = os.getcwd() + re.sub(r'\./|\\', r'/', imgs_name)
-                        imgs_name = re.sub(r'\./|\\', r'/', imgs_name)
-                        imgs_name = imgs_name[1:]
-                    return imgs_name
-                else:
-                    imgs_name = img_path + filename
-                    if len(imgs_name) > 0:
-                        imgs_name = re.sub('/', r'\\', imgs_name)
-                        imgs_name = re.sub(r'\\', r'\\\\', imgs_name)
-                        imgs_name = re.sub(r'/', r'\\\\', imgs_name)
-                    return imgs_name
-            except BaseException as e:
-                logger.error('图片下载失败,将重试 2E:' + str(e))
-                raise BaseException
-                # return ''
+        async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=proxy)) as client:
+            if config.close_pixiv_cat:
+                url = await fuck_pixiv(url=url)
+            referer = re.findall('([hH][tT]{2}[pP][sS]{0,}://.*?)(?:/.*?)', url)[0]
+            headers = {'referer': referer}
+            pic = await client.get(url, headers=headers)
+            # image/gif, image/png, image/jpeg, image/bmp, image/webp, image/x-icon, image/vnd.microsoft.icon
+            if pic.headers['Content-Type'] == 'image/jpeg':
+                file_type = 'jpeg'
+            elif pic.headers['Content-Type'] == 'image/png':
+                file_type = 'png'
+            elif pic.headers['Content-Type'] == 'image/gif':
+                file_type = 'gif'
+            else:
+                file_type = 'jpeg'
+            return await get_pic_base64(pic.content,file_type)
     except BaseException as e:
-        logger.error('图片下载失败,将重试 1E:' + str(e))
+        logger.error('图片下载失败,将重试 E:' + str(e))
         raise BaseException
-
-
-# 将图片转化为 base64
-async def get_pic_base64(path: str) -> str:
-    # 解决docker下找不到图片文件问题
-    if config.islinux and path[0:1] != '/':
-        path = '/' + path
-    async with aiofiles.open(path, mode='rb') as f:
-        return str(base64.b64encode(await f.read()), encoding="utf-8")
 
 
 # 处理图片、视频
@@ -398,9 +357,9 @@ async def handle_img(html: str, img_proxy: bool) -> str:
     # 处理图片
     doc_img = html('img')
     for img in doc_img.items():
-        img_path = await dowimg(img.attr("src"), img_proxy)
-        if img_path != None or len(img_path) > 0:
-            img_str += '[CQ:image,file=base64://' + await get_pic_base64(str(img_path)) + ']'
+        img_base64 = await dowimg(img.attr("src"), img_proxy)
+        if img_base64 != None or len(img_base64) > 0:
+            img_str += '[CQ:image,file=base64://' + img_base64 + ']'
         else:
             img_str += '\n图片走丢啦: {} \n'.format(img.attr("src"))
 
@@ -409,9 +368,9 @@ async def handle_img(html: str, img_proxy: bool) -> str:
     if doc_video:
         img_str += '视频封面：'
         for video in doc_video.items():
-            img_path = await dowimg(video.attr("poster"), img_proxy)
-            if img_path != None or len(img_path) > 0:
-                img_str += '[CQ:image,file=base64://' + await get_pic_base64(str(img_path)) + ']'
+            img_base64 = await dowimg(video.attr("poster"), img_proxy)
+            if img_base64 != None or len(img_base64) > 0:
+                img_str += '[CQ:image,file=base64://' + img_base64 + ']'
             else:
                 img_str += '\n图片走丢啦: {} \n'.format(video.attr("poster"))
 
@@ -419,9 +378,9 @@ async def handle_img(html: str, img_proxy: bool) -> str:
     img_list = re.findall(
         '(?:\[img])([hH][tT]{2}[pP][sS]{0,}://.*?)(?:\[/img])', str(html))
     for img_tmp in img_list:
-        img_path = await dowimg(img_tmp, img_proxy)
-        if img_path != None or len(img_path) > 0:
-            img_str += '[CQ:image,file=base64://' + await get_pic_base64(str(img_path)) + ']'
+        img_base64 = await dowimg(img_tmp, img_proxy)
+        if img_base64 != None or len(img_base64) > 0:
+            img_str += '[CQ:image,file=base64://' + img_base64 + ']'
         else:
             img_str += '\n图片走丢啦: {} \n'.format(img_tmp)
 
