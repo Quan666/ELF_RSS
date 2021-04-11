@@ -6,6 +6,7 @@ import codecs
 import difflib
 import json
 import os.path
+import random
 import re
 import time
 import unicodedata
@@ -53,7 +54,7 @@ headers = {
     'Cache-Control': 'max-age=0',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
     'Connection': 'keep-alive',
-    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+    'Content-Type': 'application/xml; charset=utf-8'
 }
 
 
@@ -71,7 +72,7 @@ async def start(rss: rss_class.rss) -> None:
     new_rss_list = new_rss.entries
     try:
         old_rss_list = readRss(rss.name)['entries']
-    except:
+    except BaseException as e:
         writeRss(name=rss.name, new_rss=new_rss, new_item=None)
         logger.info('{} 订阅第一次抓取成功！'.format(rss.name))
         return
@@ -296,6 +297,11 @@ async def zipPic(content):
         im.thumbnail((width // Proportion, height // Proportion))
     width, height = im.size
     logger.info('Resize image to: %sx%s' % (width, height))
+    # 和谐
+    pim = im.load()
+    points=[[0,0],[width-1,0],[0,height-1],[width-1,height-1]]
+    for point in points:
+        pim[point[0], point[1]] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     return im
 
 # 将图片转化为 base64
