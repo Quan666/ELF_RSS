@@ -3,7 +3,7 @@ from nonebot import permission as SUPERUSER
 from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 # from nonebot.adapters import Bot
 from nonebot.rule import to_me
-
+from .RSS import my_trigger as TR
 from .RSS import rss_class
 
 Addcookies = on_command('addcookies', aliases={'添加cookies'}, rule=to_me(
@@ -47,6 +47,7 @@ async def handle_Addcookies(bot: Bot, event: Event, state: dict):
 
     rss.name = name
     if rss.setCookies(cookies):
+        await TR.addJob(rss)
         await Addcookies.send('👏 {}的Cookies添加成功！\nCookies:{}\n'.format(rss.name, rss.cookies))
     else:
         await Addcookies.send('👏 {}的Cookies添加失败！\nCookies:{}\n'.format(rss.name, rss.cookies))

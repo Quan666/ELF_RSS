@@ -218,6 +218,7 @@ class rss:
                         name, value = line.strip().split("=")
                         cookies[name] = value
                 self.cookies = cookies
+                self.writeRss()
                 return True
             else:
                 self.cookies = None

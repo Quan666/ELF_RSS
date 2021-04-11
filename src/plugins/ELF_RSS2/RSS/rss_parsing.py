@@ -51,7 +51,7 @@ headers = {
     'Accept': '*/*',
     'Accept-Language': 'en-US,en;q=0.9',
     'Cache-Control': 'max-age=0',
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
     'Connection': 'keep-alive',
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
 }
@@ -196,8 +196,6 @@ async def get_rss(rss: rss_class.rss) -> dict:
                                  headers=headers) as client:
         try:
             r = await client.get(rss.geturl())
-            if rss.name == 'cookies':
-                logger.debug(r.content)
             # 解析为 JSON
             d = feedparser.parse(r.content)
         except BaseException as e:
