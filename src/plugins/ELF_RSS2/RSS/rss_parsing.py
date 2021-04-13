@@ -135,11 +135,11 @@ async def start(rss: rss_class.rss) -> None:
         # 处理种子
         try:
             hash_list = await handle_down_torrent(rss=rss, item=item)
-            if hash_list and len(hash_list)>0:
-                item_msg += '\n磁力：'
+            if hash_list and len(hash_list) > 0 and hash_list[0] != None:
+                item_msg += '\n磁力：\n'
                 for h in hash_list:
-                    item_msg+=f'magnet:?xt=urn:btih:{h}\n'
-                item_msg=item_msg[:-1]
+                    item_msg += f'magnet:?xt=urn:btih:{h}\n'
+                item_msg = item_msg[:-1]
         except Exception as e:
             logger.error('下载种子时出错：{}'.format(e))
         # 发送消息并写入文件
@@ -157,7 +157,7 @@ def write_item(rss: rss_class.rss, new_rss: list, new_item: str):
 # 下载种子判断
 
 
-async def handle_down_torrent(rss: rss_class, item: dict)->list:
+async def handle_down_torrent(rss: rss_class, item: dict) -> list:
     if not rss.is_open_upload_group:
         rss.group_id = []
     if config.is_open_auto_down_torrent and rss.down_torrent:
@@ -284,7 +284,7 @@ async def handle_date(date=None) -> str:
 
 
 # 图片压缩
-async def zipPic(content):
+async def zipPic(content, file_type):
     # 打开一个jpg/png图像文件，注意是当前路径:
     im = Image.open(BytesIO(content))
     # 获得图像尺寸:
@@ -292,26 +292,34 @@ async def zipPic(content):
     # 算出缩小比
     Proportion = int(len(content) / (float(config.zip_size) * 1024))
     logger.info('算出的缩小比:' + str(Proportion))
-    if Proportion>0:
+    if Proportion > 0:
         # 缩放
         im.thumbnail((width // Proportion, height // Proportion))
     width, height = im.size
     logger.info('Resize image to: %sx%s' % (width, height))
     # 和谐
     pim = im.load()
-    points=[[0,0],[width-1,0],[0,height-1],[width-1,height-1]]
-    for point in points:
-        pim[point[0], point[1]] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    points = [[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]]
+    try:
+        for point in points:
+            if file_type == 'png':
+                im.putpixel((point[0], point[1]), random.randint(0, 255))
+            elif file_type == 'jpg':
+                pim[point[0], point[1]] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    except:
+        logger.error('图片和谐失败！')
     return im
 
+
 # 将图片转化为 base64
-async def get_pic_base64(content,file_type) -> str:
+async def get_pic_base64(content, file_type) -> str:
     # im = Image.open(BytesIO(content))
-    im = await zipPic(content)
+    im = await zipPic(content, file_type)
     jpeg_image_buffer = BytesIO()
     im.save(jpeg_image_buffer, file_type)
     res = str(base64.b64encode(jpeg_image_buffer.getvalue()), encoding="utf-8")
     return res
+
 
 # 去你的 pixiv.cat
 async def fuck_pixiv(url: str) -> str:
@@ -351,7 +359,7 @@ async def dowimg(url: str, proxy: bool) -> str:
                 file_type = 'gif'
             else:
                 file_type = 'jpeg'
-            return await get_pic_base64(pic.content,file_type)
+            return await get_pic_base64(pic.content, file_type)
     except BaseException as e:
         logger.error('图片下载失败,将重试 E:' + str(e))
         raise BaseException
@@ -441,9 +449,9 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub('\n\n|\n\n\n', '', rss_str)
     rss_str_tl = re.sub('\n\n|\n\n\n', '', rss_str_tl)
 
-    if config.max_length>0 and len(rss_str)>config.max_length:
-        rss_str=rss_str[:config.max_length]+'...'
-        rss_str_tl = rss_str_tl[:config.max_length]+'...'
+    if config.max_length > 0 and len(rss_str) > config.max_length:
+        rss_str = rss_str[:config.max_length] + '...'
+        rss_str_tl = rss_str_tl[:config.max_length] + '...'
     # 翻译
     if translation:
         return rss_str + await handle_translation(rss_str_tl=rss_str_tl)
