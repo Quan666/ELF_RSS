@@ -30,11 +30,13 @@ class rss:
     down_torrent_keyword: str = None  # 过滤关键字，支持正则
     black_keyword: str = None  # 黑名单关键词
     is_open_upload_group: bool = True  # 默认开启上传到群
+    duplicate_filter_mode = 'none'  # 是否去重 link:链接相同去重 title:标题相同去重 both:链接与标题都相同时去重
 
     # 定义构造方法
     def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
                  translation=False, only_title=False, only_pic=False, cookies: str = '', down_torrent: bool = False,
-                 down_torrent_keyword: str = None, black_keyword: str = None, is_open_upload_group: bool = True):
+                 down_torrent_keyword: str = None, black_keyword: str = None, is_open_upload_group: bool = True,
+                 duplicate_filter_mode = 'none'):
         self.name = name
         self.url = url
         if user_id != '-1':
@@ -58,6 +60,7 @@ class rss:
         self.down_torrent_keyword = down_torrent_keyword
         self.black_keyword = black_keyword
         self.is_open_upload_group = is_open_upload_group
+        self.duplicate_filter_mode = duplicate_filter_mode
 
     # 返回订阅链接
     def geturl(self, rsshub: str = config.rsshub) -> str:
@@ -181,10 +184,17 @@ class rss:
             dump_f.write(json.dumps(rss_json, sort_keys=True,
                                     indent=4, ensure_ascii=False))
         self.delete_file()
+        self.delete_file_db()
 
     # 删除订阅json文件
     def delete_file(self):
         this_file_path = str(file_path + self.name + '.json')
+        if os.path.exists(this_file_path):
+            os.remove(this_file_path)
+
+    # 删除订阅db文件
+    def delete_file_db(self):
+        this_file_path = str(file_path + self.name + '.db')
         if os.path.exists(this_file_path):
             os.remove(this_file_path)
 
@@ -236,17 +246,18 @@ class rss:
             down_msg = '\n种子自动下载功能未打开'
         else:
             down_msg = ''
-        ret = '名称：{}\n订阅地址：{}\n订阅QQ：{}\n订阅群：{}\n更新时间：{}\n代理：{}\n翻译：{}\n仅标题：{}\n仅图片：{}\n下载种子：{}\n白名单关键词：{}\n黑名单关键词：{}{}{}\n是否上传到群：{}'.format(
-            self.name, self.url,
-            str(self.user_id), str(
-                self.group_id), str(self.time), str(self.img_proxy), str(self.translation), str(self.only_title),
-            str(
-                self.only_pic),
-            str(
-                self.down_torrent),
-            str(
-                self.down_torrent_keyword),
-            str(
-                self.black_keyword),
-            str(cookies_str), down_msg, self.is_open_upload_group)
+        ret = (f'名称：{self.name}\n'
+               f'订阅地址：{self.url}\n'
+               f'订阅QQ：{self.user_id}\n'
+               f'订阅群：{self.group_id}\n'
+               f'更新时间：{self.time}\n'
+               f'代理：{self.img_proxy}\n'
+               f'翻译：{self.translation}\n'
+               f'仅标题：{self.only_title}\n'
+               f'仅图片：{self.only_pic}\n'
+               f'下载种子：{self.down_torrent}\n'
+               f'白名单关键词：{self.down_torrent_keyword}\n'
+               f'黑名单关键词：{self.black_keyword}{cookies_str}{down_msg}\n'
+               f'是否上传到群：{self.is_open_upload_group}\n'
+               f'去重模式：{self.duplicate_filter_mode}\n')
         return ret
