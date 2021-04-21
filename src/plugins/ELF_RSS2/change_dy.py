@@ -33,8 +33,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
                              '\n订阅链接-url QQ-qq 群-qun 更新频率-time'
                              '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op'
                              '\n下载种子-downopen 白名单关键词-wkey 黑名单关键词-bkey 种子上传到群-upgroup'
+                             '\n去重模式-mode'
                              '\n注：'
                              '\nproxy、tl、ot、op、downopen、upgroup 值为 1/0'
+                             '\n去重模式分为按链接(link)、标题(title)、标题与链接(both)判断，设为空(mode=)时不生效'
                              '\n白名单关键词支持正则表达式，匹配时推送消息及下载，设为空(wkey=)时不生效 '
                              '\n黑名单关键词同白名单一样，只是匹配时不推送，两者可以一起用'
                              '\nQQ、群号前加英文逗号表示追加,-1设为空'
@@ -130,6 +132,11 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                     rss.black_keyword = one_info_list[1]
                 else:
                     rss.black_keyword = None
+            elif one_info_list[0] == 'mode':
+                if (one_info_list[1] in ['link', 'title', 'both']):
+                    rss.duplicate_filter_mode = one_info_list[1]
+                else:
+                    rss.duplicate_filter_mode = 'none'
             else:
                 await RssChange.send('❌ 参数错误或无权修改！\n{}'.format(change_tmp))
                 return

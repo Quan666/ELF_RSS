@@ -8,6 +8,7 @@ import json
 import os.path
 import random
 import re
+import sqlite3
 import time
 import unicodedata
 import uuid
@@ -82,6 +83,40 @@ async def start(rss: rss_class.rss) -> None:
         # 没有更新，返回
         logger.info('{} 没有新信息'.format(rss.name))
         return
+    # 检查是否启用去重 使用 duplicate_filter_mode 字段
+    conn = None
+    if rss.duplicate_filter_mode != 'none':
+        conn = sqlite3.connect(file_path + (rss.name + '.db'))
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT 
+            name
+        FROM 
+            sqlite_master 
+        WHERE 
+            type ='table' AND 
+            name NOT LIKE 'sqlite_%';
+        """)
+        result = cursor.fetchone()
+        # 检查是否存在用来去重的sqlite3数据表，不存在就创建一个
+        if result is None:
+            cursor.execute("""
+            CREATE TABLE "main" (
+                "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "link" TEXT,
+                "title" TEXT,
+                "datetime" TEXT DEFAULT (DATETIME('Now', 'LocalTime'))
+            );
+            """)
+            cursor.close()
+            conn.commit()
+        # 移除超过 30 天没重复过的记录
+        else:
+            cursor.execute(
+                "DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-30 Day');"
+            )
+            cursor.close()
+            conn.commit()
     for item in change_rss_list:
         # 检查是否包含屏蔽词
         if config.showblockword == False:
@@ -98,6 +133,11 @@ async def start(rss: rss_class.rss) -> None:
         # 检查是否匹配黑名单关键词 使用 black_keyword 字段
         if rss.black_keyword:
             if re.search(rss.black_keyword, item['summary']):
+                write_item(rss=rss, new_rss=new_rss, new_item=item)
+                continue
+        # 检查是否启用去重 使用 duplicate_filter_mode 字段
+        if rss.duplicate_filter_mode != 'none':
+            if duplicate_exists(rss=rss, item=item, conn=conn):
                 write_item(rss=rss, new_rss=new_rss, new_item=item)
                 continue
         # 检查是否只推送有图片的消息
@@ -145,7 +185,40 @@ async def start(rss: rss_class.rss) -> None:
         # 发送消息并写入文件
         if await sendMsg(rss=rss, msg=item_msg):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
+    if conn is not None:
+        conn.close()
 
+
+# 去重判断
+def duplicate_exists(rss: rss_class.rss, item: dict,
+                     conn: sqlite3.connect) -> bool:
+    link = item['link'].replace("'", "''")
+    title = item['title'].replace("'", "''")
+    cursor = conn.cursor()
+    result = None
+    sql = "SELECT * FROM main WHERE "
+    if rss.duplicate_filter_mode == 'link':
+        sql += f"link='{link}';"
+    elif rss.duplicate_filter_mode == 'title':
+        sql += f"link='{title}';"
+    else:
+        sql += f"link='{link}' AND title='{title}';"
+    cursor.execute(sql)
+    result = cursor.fetchone()
+    if result is not None:
+        id = result[0]
+        cursor.execute(
+            f"UPDATE main SET datetime = DATETIME('Now','LocalTime') WHERE id = {id};"
+        )
+        cursor.close()
+        conn.commit()
+        return True
+    else:
+        cursor.execute(
+            f"INSERT INTO main (link, title) VALUES ('{link}', '{title}');")
+        cursor.close()
+        conn.commit()
+        return False
 
 # 写入单条消息
 def write_item(rss: rss_class.rss, new_rss: list, new_item: str):
@@ -393,6 +466,15 @@ async def handle_img(html: str, img_proxy: bool) -> str:
         '(?:\[img])([hH][tT]{2}[pP][sS]{0,}://.*?)(?:\[/img])', str(html))
     for img_tmp in img_list:
         img_base64 = await dowimg(img_tmp, img_proxy)
+        if img_base64 != None or len(img_base64) > 0:
+            img_str += '[CQ:image,file=base64://' + img_base64 + ']'
+        else:
+            img_str += '\n图片走丢啦: {} \n'.format(img_tmp)
+
+    # 一个网站的 RSS 源 description 标签内容格式为: 'Image: ...'
+    image_search = re.search(r'Image: (https?:\/\/\S*)', str(html))
+    if image_search:
+        img_base64 = await dowimg(image_search.group(1), img_proxy)
         if img_base64 != None or len(img_base64) > 0:
             img_str += '[CQ:image,file=base64://' + img_base64 + ']'
         else:
