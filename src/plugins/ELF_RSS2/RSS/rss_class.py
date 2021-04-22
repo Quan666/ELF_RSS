@@ -4,7 +4,6 @@ import os
 import re
 from pathlib import Path
 
-import nonebot
 from nonebot.log import logger
 
 from ..config import config
@@ -27,16 +26,16 @@ class rss:
     only_pic = False  # 仅图片
     cookies = ''
     down_torrent: bool = False  # 是否下载种子
-    down_torrent_keyword: str = None  # 过滤关键字，支持正则
-    black_keyword: str = None  # 黑名单关键词
+    down_torrent_keyword: str = ''  # 过滤关键字，支持正则
+    black_keyword: str = ''  # 黑名单关键词
     is_open_upload_group: bool = True  # 默认开启上传到群
-    duplicate_filter_mode = 'none'  # 是否去重 link:链接相同去重 title:标题相同去重 both:链接与标题都相同时去重
+    duplicate_filter_mode: str = ''  # 是否去重 link:链接相同去重 title:标题相同去重 both:链接与标题都相同时去重
 
     # 定义构造方法
     def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
                  translation=False, only_title=False, only_pic=False, cookies: str = '', down_torrent: bool = False,
                  down_torrent_keyword: str = None, black_keyword: str = None, is_open_upload_group: bool = True,
-                 duplicate_filter_mode = 'none'):
+                 duplicate_filter_mode: str = None):
         self.name = name
         self.url = url
         if user_id != '-1':
@@ -52,7 +51,7 @@ class rss:
         self.translation = translation
         self.only_title = only_title
         self.only_pic = only_pic
-        if len(cookies) <= 0 or cookies == None:
+        if len(cookies) <= 0 or cookies is None:
             self.cookies = None
         else:
             self.cookies = cookies
@@ -122,7 +121,7 @@ class rss:
     # 查找是否存在当前订阅名 rss 要转换为 rss_
     def findName(self, name: str):
         # 过滤特殊字符
-        name = re.sub(r'\?|\*|\:|\"|\<|\>|\\|/|\|', '_', name)
+        name = re.sub(r'[?*:"<>\\/|]', '_', name)
         if name == 'rss':
             name = 'rss_'
         list = self.readRss()
