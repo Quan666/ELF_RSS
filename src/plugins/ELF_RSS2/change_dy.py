@@ -81,7 +81,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 if qq_list[0] == '':
                     qq_list.remove(qq_list[0])
                     for qq_tmp in qq_list:
-                        if not qq_tmp in rss.user_id:
+                        if qq_tmp not in rss.user_id:
                             rss.user_id.append(str(qq_tmp))
                 else:
                     rss.user_id = qq_list
@@ -95,7 +95,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 if qun_list[0] == '':
                     qun_list.remove(qun_list[0])
                     for qun_tmp in qun_list:
-                        if not qun_tmp in rss.group_id:
+                        if qun_tmp not in rss.group_id:
                             rss.group_id.append(str(qun_tmp))
                 else:
                     rss.group_id = qun_list
@@ -103,7 +103,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 rss.url = one_info_list[1]
                 rss.delete_file()
             elif one_info_list[0] == 'time':
-                if re.search('_|\*|/|,|-', one_info_list[1]):
+                if re.search(r'[_*/,-]', one_info_list[1]):
                     rss.time = one_info_list[1]
                 else:
                     if int(one_info_list[1]) < 1:
@@ -133,10 +133,10 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 else:
                     rss.black_keyword = None
             elif one_info_list[0] == 'mode':
-                if (one_info_list[1] in ['link', 'title', 'both']):
+                if one_info_list[1] in ['link', 'title', 'both']:
                     rss.duplicate_filter_mode = one_info_list[1]
                 else:
-                    rss.duplicate_filter_mode = 'none'
+                    rss.duplicate_filter_mode = None
             else:
                 await RssChange.send('❌ 参数错误或无权修改！\n{}'.format(change_tmp))
                 return

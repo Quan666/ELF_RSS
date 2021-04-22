@@ -11,11 +11,9 @@ import re
 import sqlite3
 import time
 import unicodedata
-import uuid
 from io import BytesIO
 from pathlib import Path
 
-import aiofiles
 import emoji
 import feedparser
 import httpx
@@ -101,7 +99,7 @@ async def start(rss: rss_class.rss) -> None:
         # 检查是否存在用来去重的sqlite3数据表，不存在就创建一个
         if result is None:
             cursor.execute("""
-            CREATE TABLE "main" (
+            CREATE TABLE main (
                 "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                 "link" TEXT,
                 "title" TEXT,
@@ -119,7 +117,7 @@ async def start(rss: rss_class.rss) -> None:
             conn.commit()
     for item in change_rss_list:
         # 检查是否包含屏蔽词
-        if config.showblockword == False:
+        if not config.showblockword:
             match = re.findall("|".join(config.blockword), item['summary'])
             if match:
                 logger.info('内含屏蔽词，已经取消推送该消息')
@@ -152,7 +150,7 @@ async def start(rss: rss_class.rss) -> None:
             # 先判断与正文相识度，避免标题正文一样，或者是标题为正文前N字等情况
 
             # 处理item['summary']只有图片的情况
-            text = re.sub('<video.+?><\/video>|<img.+?>', '', item['summary'])
+            text = re.sub(r'<video.+?></video>|<img.+?>', '', item['summary'])
             text = re.sub('<br>', '', text)
             Similarity = difflib.SequenceMatcher(None, text, item['title'])
             if Similarity.quick_ratio() <= 0.1:  # 标题正文相似度
@@ -175,7 +173,7 @@ async def start(rss: rss_class.rss) -> None:
         # 处理种子
         try:
             hash_list = await handle_down_torrent(rss=rss, item=item)
-            if hash_list and len(hash_list) > 0 and hash_list[0] != None:
+            if hash_list and len(hash_list) > 0 and hash_list[0] is not None:
                 item_msg += '\n磁力：\n'
                 for h in hash_list:
                     item_msg += f'magnet:?xt=urn:btih:{h}\n'
@@ -220,6 +218,7 @@ def duplicate_exists(rss: rss_class.rss, item: dict,
         conn.commit()
         return False
 
+
 # 写入单条消息
 def write_item(rss: rss_class.rss, new_rss: list, new_item: str):
     tmp = []
@@ -228,8 +227,6 @@ def write_item(rss: rss_class.rss, new_rss: list, new_item: str):
 
 
 # 下载种子判断
-
-
 async def handle_down_torrent(rss: rss_class, item: dict) -> list:
     if not rss.is_open_upload_group:
         rss.group_id = []
@@ -242,8 +239,6 @@ async def handle_down_torrent(rss: rss_class, item: dict) -> list:
 
 
 # 创建下载种子任务
-
-
 async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
     hash_list = []
     for tmp in item['links']:
@@ -255,8 +250,6 @@ async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
 
 
 # 获取 RSS 并解析为 json ，失败重试
-
-
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
 async def get_rss(rss: rss_class.rss) -> dict:
     # 判断是否使用cookies
@@ -445,7 +438,7 @@ async def handle_img(html: str, img_proxy: bool) -> str:
     doc_img = html('img')
     for img in doc_img.items():
         img_base64 = await dowimg(img.attr("src"), img_proxy)
-        if img_base64 != None or len(img_base64) > 0:
+        if img_base64 is not None and len(img_base64) > 0:
             img_str += '[CQ:image,file=base64://' + img_base64 + ']'
         else:
             img_str += '\n图片走丢啦: {} \n'.format(img.attr("src"))
@@ -456,7 +449,7 @@ async def handle_img(html: str, img_proxy: bool) -> str:
         img_str += '视频封面：'
         for video in doc_video.items():
             img_base64 = await dowimg(video.attr("poster"), img_proxy)
-            if img_base64 != None or len(img_base64) > 0:
+            if img_base64 is not None and len(img_base64) > 0:
                 img_str += '[CQ:image,file=base64://' + img_base64 + ']'
             else:
                 img_str += '\n图片走丢啦: {} \n'.format(video.attr("poster"))
@@ -466,19 +459,19 @@ async def handle_img(html: str, img_proxy: bool) -> str:
         '(?:\[img])([hH][tT]{2}[pP][sS]{0,}://.*?)(?:\[/img])', str(html))
     for img_tmp in img_list:
         img_base64 = await dowimg(img_tmp, img_proxy)
-        if img_base64 != None or len(img_base64) > 0:
+        if img_base64 is not None and len(img_base64) > 0:
             img_str += '[CQ:image,file=base64://' + img_base64 + ']'
         else:
             img_str += '\n图片走丢啦: {} \n'.format(img_tmp)
 
     # 一个网站的 RSS 源 description 标签内容格式为: 'Image: ...'
-    image_search = re.search(r'Image: (https?:\/\/\S*)', str(html))
+    image_search = re.search(r'Image: (https?://\S*)', str(html))
     if image_search:
         img_base64 = await dowimg(image_search.group(1), img_proxy)
-        if img_base64 != None or len(img_base64) > 0:
+        if img_base64 is not None and len(img_base64) > 0:
             img_str += '[CQ:image,file=base64://' + img_base64 + ']'
         else:
-            img_str += '\n图片走丢啦: {} \n'.format(img_tmp)
+            img_str += '\n图片走丢啦: {} \n'.format(image_search)
 
     return img_str
 
@@ -491,7 +484,7 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub('(\[.*?=.*?])|(\[/.*?])', '', str(rss_str))
 
     # 处理一些 HTML 标签
-    if config.blockquote == True:
+    if config.blockquote:
         rss_str = re.sub('<blockquote>|</blockquote>', '', str(rss_str))
     else:
         rss_str = re.sub('<blockquote.*>', '', str(rss_str))
@@ -510,7 +503,7 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub('<dt.+?\">|<dt>|</dt>', '', rss_str)
 
     # 删除图片、视频标签
-    rss_str = re.sub('<video.+?><\/video>|<img.+?>', '', rss_str)
+    rss_str = re.sub(r'<video.+?></video>|<img.+?>', '', rss_str)
 
     rss_str_tl = rss_str  # 翻译用副本
     # <a> 标签处理
@@ -531,7 +524,7 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub('\n\n|\n\n\n', '', rss_str)
     rss_str_tl = re.sub('\n\n|\n\n\n', '', rss_str_tl)
 
-    if config.max_length > 0 and len(rss_str) > config.max_length:
+    if 0 < config.max_length < len(rss_str):
         rss_str = rss_str[:config.max_length] + '...'
         rss_str_tl = rss_str_tl[:config.max_length] + '...'
     # 翻译
