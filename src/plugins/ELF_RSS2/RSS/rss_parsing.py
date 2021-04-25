@@ -20,7 +20,7 @@ import httpx
 import nonebot
 from google_trans_new import google_translator
 from nonebot.log import logger
-from PIL import Image
+from PIL import Image, ImageSequence
 from pyquery import PyQuery as pq
 from retrying import retry
 
@@ -267,7 +267,7 @@ async def get_rss(rss: rss_class.rss) -> dict:
             d = feedparser.parse(r.content)
         except BaseException as e:
             # logger.error("抓取订阅 {} 的 RSS 失败，将重试 ！ E：{}".format(rss.name, e))
-            if not re.match(u'[hH][tT]{2}[pP][sS]{0,}://', rss.url, flags=0) and config.rsshub_backup:
+            if not re.match(u'[hH][tT]{2}[pP][sS]?://', rss.url, flags=0) and config.rsshub_backup:
                 logger.error('RSSHub :' + config.rsshub +
                              ' 访问失败 ！使用备用RSSHub 地址！')
                 for rsshub_url in list(config.rsshub_backup):
@@ -349,41 +349,60 @@ async def handle_date(date=None) -> str:
         return '日期：' + time.strftime("%m{}%d{} %H:%M:%S", time.localtime()).format('月', '日')
 
 
+# GIF文件逐帧缩放
+def frames_thumbnail(frames, size):
+    for frame in frames:
+        thumbnail = frame.copy()
+        thumbnail.thumbnail(size)
+        yield thumbnail
+
+
 # 图片压缩
-async def zipPic(content, file_type):
+async def zipPic(content):
     # 打开一个jpg/png图像文件，注意是当前路径:
     im = Image.open(BytesIO(content))
-    # 获得图像尺寸:
-    width, height = im.size
-    # 算出缩小比
-    Proportion = int(len(content) / (float(config.zip_size) * 1024))
-    logger.info('算出的缩小比:' + str(Proportion))
-    if Proportion > 0:
-        # 缩放
-        im.thumbnail((width // Proportion, height // Proportion))
-    width, height = im.size
-    logger.info('Resize image to: %sx%s' % (width, height))
-    # 和谐
-    pim = im.load()
-    points = [[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]]
-    try:
-        for point in points:
-            if file_type == 'png':
-                im.putpixel((point[0], point[1]), random.randint(0, 255))
-            elif file_type == 'jpg':
-                pim[point[0], point[1]] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-    except:
-        logger.error('图片和谐失败！')
-    return im
+    # 获得图像文件类型：
+    file_type = im.format
+    if file_type != 'GIF':
+        # 对图像文件进行缩小处理
+        im.thumbnail((config.zip_size, config.zip_size))
+        width, height = im.size
+        logger.info(f'Resize image to: {width} x {height}')
+        # 和谐
+        pim = im.load()
+        points = [[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]]
+        try:
+            for point in points:
+                if file_type == 'PNG':
+                    im.putpixel(point, random.randint(0, 255))
+                elif file_type == 'JPEG':
+                    pim[point[0], point[1]] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        except:
+            logger.error('图片和谐失败！')
+        return im
+    else:
+        # GIF长宽最大值（暂时写死）
+        gif_size = 300, 300
+        frames = ImageSequence.Iterator(im)
+        frames = frames_thumbnail(frames, gif_size)
+        om = next(frames)
+        om.info = im.info
+        om.format = im.format
+        return om, frames
 
 
 # 将图片转化为 base64
-async def get_pic_base64(content, file_type) -> str:
-    # im = Image.open(BytesIO(content))
-    im = await zipPic(content, file_type)
-    jpeg_image_buffer = BytesIO()
-    im.save(jpeg_image_buffer, file_type)
-    res = str(base64.b64encode(jpeg_image_buffer.getvalue()), encoding="utf-8")
+async def get_pic_base64(content) -> str:
+    im = await zipPic(content)
+    if type(im) == tuple:
+        frames = im[1]
+        im = im[0]
+        image_buffer = BytesIO()
+        im.save(image_buffer, format=im.format, save_all=True, append_images=list(frames))
+    else:
+        image_buffer = BytesIO()
+        im.save(image_buffer, format=im.format)
+    res = str(base64.b64encode(image_buffer.getvalue()), encoding="utf-8")
     return res
 
 
@@ -413,21 +432,12 @@ async def dowimg(url: str, proxy: bool) -> str:
         async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=proxy)) as client:
             if config.close_pixiv_cat:
                 url = await fuck_pixiv(url=url)
-            referer = re.findall('([hH][tT]{2}[pP][sS]{0,}://.*?)(?:/.*?)', url)[0]
+            referer = re.findall('([hH][tT]{2}[pP][sS]?://.*?)/.*?', url)[0]
             headers = {'referer': referer}
             pic = await client.get(url, headers=headers)
-            # image/gif, image/png, image/jpeg, image/bmp, image/webp, image/x-icon, image/vnd.microsoft.icon
-            if pic.headers['Content-Type'] == 'image/jpeg':
-                file_type = 'jpeg'
-            elif pic.headers['Content-Type'] == 'image/png':
-                file_type = 'png'
-            elif pic.headers['Content-Type'] == 'image/gif':
-                file_type = 'gif'
-            else:
-                file_type = 'jpeg'
-            return await get_pic_base64(pic.content, file_type)
+            return await get_pic_base64(pic.content)
     except BaseException as e:
-        logger.error('图片下载失败,将重试 E:' + str(e))
+        logger.error(f'图片[{url}]下载失败,将重试 E:' + str(e))
         raise BaseException
 
 
@@ -456,7 +466,7 @@ async def handle_img(html: str, img_proxy: bool) -> str:
 
     # 解决 issue36
     img_list = re.findall(
-        '(?:\[img])([hH][tT]{2}[pP][sS]{0,}://.*?)(?:\[/img])', str(html))
+        '(?:\[img])([hH][tT]{2}[pP][sS]?://.*?)(?:\[/img])', str(html))
     for img_tmp in img_list:
         img_base64 = await dowimg(img_tmp, img_proxy)
         if img_base64 is not None and len(img_base64) > 0:
@@ -480,7 +490,7 @@ async def handle_img(html: str, img_proxy: bool) -> str:
 async def handle_html_tag(html, translation: bool) -> str:
     # issue36 处理md标签
     rss_str = re.sub(
-        '\[img][hH][tT]{2}[pP][sS]{0,}://.*?\[/img]', '', str(html))
+        '\[img][hH][tT]{2}[pP][sS]?://.*?\[/img]', '', str(html))
     rss_str = re.sub('(\[.*?=.*?])|(\[/.*?])', '', str(rss_str))
 
     # 处理一些 HTML 标签
