@@ -63,7 +63,7 @@ class rss:
 
     # 返回订阅链接
     def geturl(self, rsshub: str = config.rsshub) -> str:
-        if re.match(u'[hH][tT]{2}[pP][sS]{0,}://', self.url, flags=0):
+        if re.match(u'[hH][tT]{2}[pP][sS]?://', self.url, flags=0):
             return self.url
         else:
             # 先判断地址是否 / 开头
