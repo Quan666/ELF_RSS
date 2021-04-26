@@ -16,7 +16,9 @@ class ELFConfig(BaseConfig):
     delcache: int = 3
     limt = 50
 
-    zip_size: int = 3 * 1024
+    zip_size: int = 2 * 1024
+
+    gif_zip_size: int = 6 * 1024
 
     blockquote: bool = True
     showblockword: bool = True
@@ -36,7 +38,7 @@ class ELFConfig(BaseConfig):
     down_status_msg_grou: List[int] = []
     down_status_msg_date: int = 10
 
-    max_length: int = 0 # 正文长度限制，防止消息太长刷屏
+    max_length: int = 0  # 正文长度限制，防止消息太长刷屏
 
     version: str = "v2.2.1"
 
