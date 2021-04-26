@@ -350,12 +350,12 @@ async def handle_date(date=None) -> str:
 
 
 # GIF 文件逐帧缩放
-def extract_and_resize_frames(image: Image, resize_to: int = None):
-    # 分析 GIF 源文件的结构模式，是完整的还是差分的，根据每一帧存储的内容做区分
+def extract_and_resize_frames(image: Image, resize_ratio: float = 2.0):
+    # 分析 GIF 源文件的结构模式，是全量还是差分的，根据每一帧存储的内容做区分
     mode = analyse_image(image)['mode']
-    # 如果没指定缩放大小，默认将长宽缩小为原来的 1/2
-    if not resize_to:
-        resize_to = (image.size[0] // 2, image.size[1] // 2)
+    resize_to = (image.size[0] // resize_ratio, image.size[1] // resize_ratio)
+    # 读取到第一帧
+    image.seek(0)
     # 获取到第一帧的调色盘，并将第一帧转换为RGBA色彩模式，为了后面处理差分帧做准备
     p = image.getpalette()
     last_frame = image.convert('RGBA')
