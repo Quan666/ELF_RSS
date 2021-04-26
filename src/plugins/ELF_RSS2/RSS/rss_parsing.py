@@ -409,7 +409,7 @@ def analyse_image(image: Image):
 
 # 图片压缩
 async def zipPic(content):
-    # 打开一个jpg/png图像文件，注意是当前路径:
+    # 打开一个 JPEG/PNG/GIF 图像文件
     im = Image.open(BytesIO(content))
     # 获得图像文件类型：
     file_type = im.format
@@ -427,13 +427,14 @@ async def zipPic(content):
                     im.putpixel(point, random.randint(0, 255))
                 elif file_type == 'JPEG':
                     pim[point[0], point[1]] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        except:
-            logger.error('图片和谐失败！')
+        except BaseException as e:
+            logger.error(f'图片和谐失败！ E:{e}')
+            raise
         return im
     else:
         if len(content) > config.gif_zip_size * 1024:
             return extract_and_resize_frames(im)
-        return im
+        return BytesIO(content)
 
 
 # 将图片转化为 base64
@@ -446,6 +447,8 @@ async def get_pic_base64(content) -> str:
             im[0].save(image_buffer, format='GIF', optimize=True)
         else:
             im[0].save(image_buffer, format='GIF', optimize=True, save_all=True, append_images=im[1:])
+    elif type(im) == BytesIO:
+        image_buffer = im
     else:
         image_buffer = BytesIO()
         im.save(image_buffer, format=im.format)
@@ -482,10 +485,12 @@ async def dowimg(url: str, proxy: bool) -> str:
             referer = re.findall('([hH][tT]{2}[pP][sS]?://.*?)/.*?', url)[0]
             headers = {'referer': referer}
             pic = await client.get(url, headers=headers)
+            if pic.status_code != 200:
+                raise BaseException
             return await get_pic_base64(pic.content)
     except BaseException as e:
-        logger.error(f'图片[{url}]下载失败,将重试 E:' + str(e))
-        raise BaseException
+        logger.error(f'图片[{url}]下载失败,将重试 E:{e}')
+        raise
 
 
 # 处理图片、视频
