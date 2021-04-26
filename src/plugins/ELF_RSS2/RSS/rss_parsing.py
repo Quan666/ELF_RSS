@@ -20,7 +20,7 @@ import httpx
 import nonebot
 from google_trans_new import google_translator
 from nonebot.log import logger
-from PIL import Image, ImageSequence
+from PIL import Image
 from pyquery import PyQuery as pq
 from retrying import retry
 
@@ -349,12 +349,59 @@ async def handle_date(date=None) -> str:
         return '日期：' + time.strftime("%m{}%d{} %H:%M:%S", time.localtime()).format('月', '日')
 
 
-# GIF文件逐帧缩放
-def frames_thumbnail(frames, size):
-    for frame in frames:
-        thumbnail = frame.copy()
-        thumbnail.thumbnail(size)
-        yield thumbnail
+# GIF 文件逐帧缩放
+def extract_and_resize_frames(image: Image, resize_to: int = None):
+    # 分析 GIF 源文件的结构模式，是完整的还是差分的，根据每一帧存储的内容做区分
+    mode = analyse_image(image)['mode']
+    # 如果没指定缩放大小，默认将长宽缩小为原来的 1/2
+    if not resize_to:
+        resize_to = (image.size[0] // 2, image.size[1] // 2)
+    # 获取到第一帧的调色盘，并将第一帧转换为RGBA色彩模式，为了后面处理差分帧做准备
+    p = image.getpalette()
+    last_frame = image.convert('RGBA')
+    # 处理后的所有帧
+    all_frames = []
+
+    try:
+        while True:
+            # 如果 GIF 源文件用的是局部颜色表，每一帧有自己的局部调色盘；否则，把全局调色盘应用给新的一帧。
+            if not image.getpalette():
+                image.putpalette(p)
+            new_frame = Image.new('RGBA', image.size)
+            # 如果 GIF 源文件为差分模式，即部分帧只是存储与上一帧的差分，此时将当前抽出的帧覆盖到上一帧上作为新的一帧
+            if mode == 'partial':
+                new_frame.paste(last_frame)
+            new_frame.paste(image, (0, 0), image.convert('RGBA'))
+            new_frame.thumbnail(resize_to)
+            all_frames.append(new_frame)
+            last_frame = new_frame
+            # 读取到下一帧
+            image.seek(image.tell() + 1)
+    except EOFError:
+        pass
+
+    return all_frames
+
+
+# 分析 GIF 文件的结构模式
+def analyse_image(image: Image):
+    results = {
+        'size': image.size,
+        'mode': 'full',
+    }
+    try:
+        while True:
+            if image.tile:
+                tile = image.tile[0]
+                update_region = tile[1]
+                update_region_dimensions = update_region[2:]
+                if update_region_dimensions != image.size:
+                    results['mode'] = 'partial'
+                    break
+            image.seek(image.tell() + 1)
+    except EOFError:
+        pass
+    return results
 
 
 # 图片压缩
@@ -381,24 +428,21 @@ async def zipPic(content):
             logger.error('图片和谐失败！')
         return im
     else:
-        # GIF长宽最大值（暂时写死）
-        gif_size = 300, 300
-        frames = ImageSequence.Iterator(im)
-        frames = frames_thumbnail(frames, gif_size)
-        om = next(frames)
-        om.info = im.info
-        om.format = im.format
-        return om, frames
+        if len(content) > config.gif_zip_size * 1024:
+            return extract_and_resize_frames(im)
+        return im
 
 
 # 将图片转化为 base64
 async def get_pic_base64(content) -> str:
     im = await zipPic(content)
-    if type(im) == tuple:
-        frames = im[1]
-        im = im[0]
+    if type(im) == list:
         image_buffer = BytesIO()
-        im.save(image_buffer, format=im.format, save_all=True, append_images=list(frames))
+        if len(im) == 1:
+            logger.warning("当前 GIF 只有一帧")
+            im[0].save(image_buffer, format='GIF', optimize=True)
+        else:
+            im[0].save(image_buffer, format='GIF', optimize=True, save_all=True, append_images=im[1:])
     else:
         image_buffer = BytesIO()
         im.save(image_buffer, format=im.format)
