@@ -440,9 +440,9 @@ async def get_pic_base64(content) -> str:
         image_buffer = BytesIO()
         if len(im) == 1:
             logger.warning("当前 GIF 只有一帧")
-            im[0].save(image_buffer, format=im[0].format, optimize=True)
+            im[0].save(image_buffer, format='GIF', optimize=True)
         else:
-            im[0].save(image_buffer, format=im[0].format, optimize=True, save_all=True, append_images=im[1:])
+            im[0].save(image_buffer, format='GIF', optimize=True, save_all=True, append_images=im[1:])
     else:
         image_buffer = BytesIO()
         im.save(image_buffer, format=im.format)
