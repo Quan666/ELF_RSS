@@ -373,6 +373,9 @@ def extract_and_resize_frames(image: Image, resize_to: int = None):
                 new_frame.paste(last_frame)
             new_frame.paste(image, (0, 0), image.convert('RGBA'))
             new_frame.thumbnail(resize_to)
+            # 如果当前帧存在持续时间，则赋值给新的帧
+            if 'duration' in image.info:
+                new_frame.info['duration'] = image.info['duration']
             all_frames.append(new_frame)
             last_frame = new_frame
             # 读取到下一帧
