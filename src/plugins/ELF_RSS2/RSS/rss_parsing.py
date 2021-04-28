@@ -10,6 +10,7 @@ import random
 import re
 import sqlite3
 import time
+import imagehash
 import unicodedata
 from io import BytesIO
 from pathlib import Path
@@ -83,38 +84,28 @@ async def start(rss: rss_class.rss) -> None:
         return
     # 检查是否启用去重 使用 duplicate_filter_mode 字段
     conn = None
-    if rss.duplicate_filter_mode != 'none':
+    if rss.duplicate_filter_mode:
         conn = sqlite3.connect(file_path + (rss.name + '.db'))
         cursor = conn.cursor()
+        # 用来去重的 sqlite3 数据表如果不存在就创建一个
         cursor.execute("""
-        SELECT 
-            name
-        FROM 
-            sqlite_master 
-        WHERE 
-            type ='table' AND 
-            name NOT LIKE 'sqlite_%';
+        CREATE TABLE IF NOT EXISTS main (
+            "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            "link" TEXT,
+            "title" TEXT,
+            "image_hash" TEXT,
+            "datetime" TEXT DEFAULT (DATETIME('Now', 'LocalTime'))
+        );
         """)
-        result = cursor.fetchone()
-        # 检查是否存在用来去重的sqlite3数据表，不存在就创建一个
-        if result is None:
-            cursor.execute("""
-            CREATE TABLE main (
-                "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                "link" TEXT,
-                "title" TEXT,
-                "datetime" TEXT DEFAULT (DATETIME('Now', 'LocalTime'))
-            );
-            """)
-            cursor.close()
-            conn.commit()
+        cursor.close()
+        conn.commit()
+        cursor = conn.cursor()
         # 移除超过 30 天没重复过的记录
-        else:
-            cursor.execute(
-                "DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-30 Day');"
-            )
-            cursor.close()
-            conn.commit()
+        cursor.execute(
+            "DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-30 Day');"
+        )
+        cursor.close()
+        conn.commit()
     for item in change_rss_list:
         # 检查是否包含屏蔽词
         if not config.showblockword:
@@ -134,8 +125,8 @@ async def start(rss: rss_class.rss) -> None:
                 write_item(rss=rss, new_rss=new_rss, new_item=item)
                 continue
         # 检查是否启用去重 使用 duplicate_filter_mode 字段
-        if rss.duplicate_filter_mode != 'none':
-            if duplicate_exists(rss=rss, item=item, conn=conn):
+        if rss.duplicate_filter_mode:
+            if await duplicate_exists(rss=rss, item=item, conn=conn):
                 write_item(rss=rss, new_rss=new_rss, new_item=item)
                 continue
         # 检查是否只推送有图片的消息
@@ -188,20 +179,34 @@ async def start(rss: rss_class.rss) -> None:
 
 
 # 去重判断
-def duplicate_exists(rss: rss_class.rss, item: dict,
-                     conn: sqlite3.connect) -> bool:
+async def duplicate_exists(rss: rss_class.rss, item: dict,
+                           conn: sqlite3.connect) -> bool:
     link = item['link'].replace("'", "''")
     title = item['title'].replace("'", "''")
+    image_hash = None
     cursor = conn.cursor()
-    result = None
-    sql = "SELECT * FROM main WHERE "
-    if rss.duplicate_filter_mode == 'link':
-        sql += f"link='{link}';"
-    elif rss.duplicate_filter_mode == 'title':
-        sql += f"link='{title}';"
-    else:
-        sql += f"link='{link}' AND title='{title}';"
-    cursor.execute(sql)
+    sql = "SELECT * FROM main WHERE 1=1 "
+    if 'image' in rss.duplicate_filter_mode:
+        summary = item['summary']
+        try:
+            summary_doc = pq(summary)
+        except:
+            # 没有正文内容直接跳过
+            return False
+        img_doc = summary_doc('img')
+        # 只处理仅有一张图片的情况
+        if len(img_doc) != 1:
+            return False
+        url = img_doc.attr("src")
+        # 通过图像的指纹来判断是否实际是同一张图片
+        image_hash = await dowimg(url, rss.img_proxy, get_hash=True)
+        logger.info(f'image_hash: {image_hash}')
+        sql += f"AND image_hash='{image_hash}'"
+    if 'link' in rss.duplicate_filter_mode:
+        sql += f"AND link='{link}'"
+    if 'title' in rss.duplicate_filter_mode:
+        sql += f"AND title='{title}'"
+    cursor.execute(f'{sql};')
     result = cursor.fetchone()
     if result is not None:
         id = result[0]
@@ -212,10 +217,26 @@ def duplicate_exists(rss: rss_class.rss, item: dict,
         conn.commit()
         return True
     else:
-        cursor.execute(
-            f"INSERT INTO main (link, title) VALUES ('{link}', '{title}');")
-        cursor.close()
-        conn.commit()
+        while True:
+            cursor = conn.cursor()
+            try:
+                cursor.execute(
+                    f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
+                )
+                cursor.close()
+                conn.commit()
+            except sqlite3.OperationalError as e:
+                # 如果数据表中缺少 image_hash 列就加上
+                if "table main has no column named image_hash" in str(e):
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "ALTER TABLE main ADD image_hash TEXT;"
+                    )
+                    cursor.close()
+                    conn.commit()
+                continue
+            else:
+                break
         return False
 
 
@@ -477,7 +498,7 @@ async def fuck_pixiv(url: str) -> str:
 
 
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
-async def dowimg(url: str, proxy: bool) -> str:
+async def dowimg(url: str, proxy: bool, get_hash: bool = False) -> str:
     try:
         async with httpx.AsyncClient(proxies=get_Proxy(open_proxy=proxy)) as client:
             if config.close_pixiv_cat:
@@ -487,10 +508,15 @@ async def dowimg(url: str, proxy: bool) -> str:
             pic = await client.get(url, headers=headers)
             if pic.status_code != 200:
                 raise BaseException
+            if get_hash:
+                # 返回图像的指纹
+                im = Image.open(BytesIO(pic.content))
+                return imagehash.average_hash(im)
             return await get_pic_base64(pic.content)
     except BaseException as e:
         logger.error(f'图片[{url}]下载失败,将重试 E:{e}')
-        raise
+        if str(e):
+            raise
 
 
 # 处理图片、视频
