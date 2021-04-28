@@ -29,7 +29,7 @@ class rss:
     down_torrent_keyword: str = None  # 过滤关键字，支持正则
     black_keyword: str = None  # 黑名单关键词
     is_open_upload_group: bool = True  # 默认开启上传到群
-    duplicate_filter_mode: str = None  # 是否去重 link:链接相同去重 title:标题相同去重 both:链接与标题都相同时去重
+    duplicate_filter_mode: [str] = None  # 去重模式
 
     # 定义构造方法
     def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
@@ -245,11 +245,11 @@ class rss:
             down_msg = '\n种子自动下载功能未打开'
         else:
             down_msg = ''
-        mode_name = {"link": "链接", "title": "标题", "both": "链接与标题都"}
+        mode_name = {"link": "链接", "title": "标题", "image": "图片"}
         if not self.duplicate_filter_mode:
             mode_msg = '\n未启用去重模式'
         else:
-            mode_msg = f'\n已启用去重模式，{mode_name[self.duplicate_filter_mode]}相同时去重'
+            mode_msg = f'\n已启用去重模式，{"、".join(mode_name[i] for i in self.duplicate_filter_mode)}相同时去重'
         ret = (f'名称：{self.name}\n'
                f'订阅地址：{self.url}\n'
                f'订阅QQ：{self.user_id}\n'

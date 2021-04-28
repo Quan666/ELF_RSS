@@ -36,10 +36,13 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
                              '\n去重模式-mode'
                              '\n注：'
                              '\nproxy、tl、ot、op、downopen、upgroup 值为 1/0'
-                             '\n去重模式分为按链接(link)、标题(title)、标题与链接(both)判断，设为空(mode=)时不生效'
+                             '\n去重模式分为按链接(link)、标题(title)、图片(image)判断'
+                             '\n其中 image 模式,出于性能考虑以及避免误伤情况发生,生效对象限定为只带 1 张图片的消息,'
+                             '\n并且不建议用在一条消息可能带多张图片的 feed 源上,否则会出现这种误伤情况:'
+                             '\n新的带多图的消息里含有上一条只带 1 张图片的消息中的图片,因此被过滤掉'
                              '\n白名单关键词支持正则表达式，匹配时推送消息及下载，设为空(wkey=)时不生效 '
                              '\n黑名单关键词同白名单一样，只是匹配时不推送，两者可以一起用'
-                             '\nQQ、群号前加英文逗号表示追加,-1设为空'
+                             '\nQQ、群号、去重模式前加英文逗号表示追加,-1设为空'
                              '\n各个属性空格分割'
                              '\n详细：https://oy.mk/ckL'.strip())
 
@@ -69,36 +72,27 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         if not str(group_id) in rss.group_id:
             await RssChange.send('❌ 修改失败，当前群组无权操作订阅：{}'.format(rss.name))
             return
+
+    # 处理带多个值的订阅参数
+    def handle_property(info: str, property_list: list) -> list:
+        # 清空
+        if info == '-1':
+            return []
+        info_list = info.split(',')
+        # 追加
+        if info_list[0] == "":
+            info_list.pop(0)
+            return property_list + [i for i in info_list if i not in property_list]
+        return info_list
+
     try:
         for change_tmp in change_list:
             one_info_list = change_tmp.split('=', 1)
             if one_info_list[0] == 'qq' and not group_id:  # 暂时禁止群管理员修改 QQ
-                if one_info_list[1] == '-1':
-                    rss.user_id = []
-                    continue
-                qq_list = one_info_list[1].split(',')
-                # 表示追加
-                if qq_list[0] == '':
-                    qq_list.remove(qq_list[0])
-                    for qq_tmp in qq_list:
-                        if qq_tmp not in rss.user_id:
-                            rss.user_id.append(str(qq_tmp))
-                else:
-                    rss.user_id = qq_list
+                rss.user_id = handle_property(one_info_list[1], rss.user_id)
             # 暂时禁止群管理员修改群号，如要取消订阅可以使用 deldy 命令
             elif one_info_list[0] == 'qun' and not group_id:
-                if one_info_list[1] == '-1':
-                    rss.group_id = []
-                    continue
-                qun_list = one_info_list[1].split(',')
-                # 表示追加
-                if qun_list[0] == '':
-                    qun_list.remove(qun_list[0])
-                    for qun_tmp in qun_list:
-                        if qun_tmp not in rss.group_id:
-                            rss.group_id.append(str(qun_tmp))
-                else:
-                    rss.group_id = qun_list
+                rss.group_id = handle_property(one_info_list[1], rss.group_id)
             elif one_info_list[0] == 'url':
                 rss.url = one_info_list[1]
                 rss.delete_file()
@@ -133,10 +127,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
                 else:
                     rss.black_keyword = None
             elif one_info_list[0] == 'mode':
-                if one_info_list[1] in ['link', 'title', 'both']:
-                    rss.duplicate_filter_mode = one_info_list[1]
-                else:
-                    rss.duplicate_filter_mode = None
+                rss.duplicate_filter_mode = handle_property(one_info_list[1], rss.duplicate_filter_mode)
             else:
                 await RssChange.send('❌ 参数错误或无权修改！\n{}'.format(change_tmp))
                 return
