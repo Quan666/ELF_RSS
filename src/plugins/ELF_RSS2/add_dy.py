@@ -26,7 +26,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     user_id = event.user_id
     try:
         group_id = event.group_id
-    except:
+    except Exception:
         group_id = None
 
     dy = rss_dy_link.split(' ')
@@ -35,7 +35,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅
     try:
         name = dy[0]
-    except:
+    except Exception:
         await RssAdd.send('❌ 输入的订阅名为空！')
         return
 
@@ -53,7 +53,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
 
     try:
         url = dy[1]
-    except:
+    except Exception:
         await RssAdd.send('❌ 输入的订阅地址为空！')
         return
 

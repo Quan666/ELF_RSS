@@ -73,7 +73,8 @@ class rss:
                 return rsshub + '/' + self.url
 
     # 读取记录
-    def readRss(self) -> list:
+    @staticmethod
+    def readRss() -> list:
         # 如果文件不存在
         if not os.path.isfile(str(file_path + "rss.json")):
             return []
@@ -94,8 +95,7 @@ class rss:
         rss_old = self.readRss()
         # 把当前 self 写入
         if not rss_new:
-            rss_new = []
-            rss_new.append(self)
+            rss_new = [self]
 
         for tmp_new in rss_new:
             flag = True
@@ -236,7 +236,7 @@ class rss:
             logger.error('{} 的 Cookies 设置时出错！E: {}'.format(self.name, e))
             return False
 
-    def toString(self) -> str:
+    def __str__(self) -> str:
         if self.cookies:
             cookies_str = '\ncookies:True'
         else:

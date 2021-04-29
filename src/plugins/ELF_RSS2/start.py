@@ -12,7 +12,7 @@ async def start():
     bot, = nonebot.get_bots().values()
     try:
         DC.delcache_trigger()
-    except:
+    except Exception:
         pass
 
     try:
@@ -36,7 +36,7 @@ async def start():
 
 async def check_first_connect(bot: Bot, event: Event, state: dict) -> bool:
     if event.meta_event_type == 'lifecycle' and not config.is_start:
-        config.is_start=True
+        config.is_start = True
         return True
     return False
 

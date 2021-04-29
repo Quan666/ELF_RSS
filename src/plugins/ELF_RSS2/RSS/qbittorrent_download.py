@@ -21,7 +21,6 @@ from ..config import config
 # 下载开关
 
 
-
 DOWN_STATUS_DOWNING = 1  # 下载中
 DOWN_STATUS_UPLOADING = 2  # 上传中
 DOWN_STATUS_UPLOADOK = 3  # 上传完成
@@ -107,9 +106,9 @@ async def get_Hash_Name(url: str, proxy=None) -> dict:
         proxy = {}
     qb = await get_qb()
     info = None
-    if re.search("magnet:\?xt=urn:btih:",url) :
+    if re.search(r"magnet:\?xt=urn:btih:", url):
         qb.download_from_link(link=url)
-        hash = re.search('[a-f0-9]{40}',url)[0]
+        hash = re.search('[a-f0-9]{40}', url)[0]
     else:
         async with httpx.AsyncClient(proxies=proxy) as client:
             try:
@@ -133,7 +132,7 @@ async def get_Hash_Name(url: str, proxy=None) -> dict:
 
 
 # 种子地址，种子下载路径，群文件上传 群列表，订阅名称
-async def start_down(url: str, path: str, group_ids: list, name: str, proxy=None)->str:
+async def start_down(url: str, path: str, group_ids: list, name: str, proxy=None) -> str:
     qb = await get_qb()
     if not qb:
         return
@@ -147,6 +146,7 @@ async def start_down(url: str, path: str, group_ids: list, name: str, proxy=None
         "downing_tips_msg_id": []  # 下载中通知群上一条通知的信息，用于撤回，防止刷屏
     }
     return info['hash']
+
 
 # 检查下载状态
 async def check_down_status(hash: str, group_ids: list, name: str):
@@ -164,13 +164,13 @@ async def check_down_status(hash: str, group_ids: list, name: str):
             for tmp in files:
                 # 异常包起来防止超时报错导致后续不执行
                 try:
-                    if config.qb_down_path and len(config.qb_down_path) > 0 :
+                    if config.qb_down_path and len(config.qb_down_path) > 0:
                         path = config.qb_down_path + tmp['name']
                     else:
                         path = info['save_path'] + tmp['name']
                     await send_Msg(str('{}\nHash: {} \n开始上传到群：{}'.format(name, hash, group_id)))
                     await bot.call_api('upload_group_file', group_id=group_id, file=path, name=tmp['name'])
-                except:
+                except Exception:
                     continue
         scheduler = require("nonebot_plugin_apscheduler").scheduler
         scheduler.remove_job(hash)
@@ -186,7 +186,7 @@ async def check_down_status(hash: str, group_ids: list, name: str):
 async def delete_msg(msg_ids: list):
     bot, = nonebot.get_bots().values()
     for msg_id in msg_ids:
-        await bot.call_api('delete_msg',message_id=msg_id['message_id'])
+        await bot.call_api('delete_msg', message_id=msg_id['message_id'])
 
 
 async def rss_trigger(hash: str, group_ids: list, name: str):

@@ -30,7 +30,7 @@ async def handle_Addcookies(bot: Bot, event: Event, state: dict):
     # 判断是否有该名称订阅
     try:
         name = dy[0]
-    except:
+    except Exception:
         await Addcookies.send('❌ 输入的订阅名为空！')
         return
 
@@ -41,7 +41,7 @@ async def handle_Addcookies(bot: Bot, event: Event, state: dict):
 
     try:
         cookies = dy[1]
-    except:
+    except Exception:
         await Addcookies.send('❌ 输入的cookies为空！')
         return
 
