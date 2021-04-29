@@ -22,7 +22,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     user_id = event.user_id
     try:
         group_id = event.group_id
-    except:
+    except Exception:
         group_id = None
 
     rss = rss_class.rss('', '', '-1', '-1')
@@ -39,7 +39,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
                 return
             rss.group_id = [str(group_id), '*']
             rss.user_id = ['*']
-        await RssShow.send(rss.toString())
+        await RssShow.send(str(rss))
         return
 
     if group_id:
@@ -51,7 +51,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         rss_list = rss.findUser(user=str(user_id))
     if rss_list:
         if len(rss_list) == 1:
-            await RssShow.send(rss_list[0].toString())
+            await RssShow.send(str(rss_list[0]))
         else:
             flag = 0
             info = ''

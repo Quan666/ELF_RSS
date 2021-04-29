@@ -30,7 +30,7 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     rss_name = unescape(state["Rssdel"])
     try:
         group_id = event.group_id
-    except:
+    except Exception:
         group_id = None
 
     rss = rss_class.rss('', '', '-1', '-1')

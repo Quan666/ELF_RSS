@@ -1,5 +1,5 @@
 # coding: utf8
-'''
+"""
     @Author: LCY
     @Contact: lchuanyong@126.com
     @blog: http://http://blog.csdn.net/lcyong_
@@ -13,7 +13,7 @@
     官方链接：
            http://api.fanyi.baidu.com/api/trans/product/index
 
-'''
+"""
 
 import hashlib
 import http.client
@@ -62,6 +62,6 @@ if __name__ == '__main__':
     while True:
         print("请输入要翻译的内容,如果退出输入q")
         content = input()
-        if (content == 'q'):
+        if content == 'q':
             break
         baidu_translate(content)

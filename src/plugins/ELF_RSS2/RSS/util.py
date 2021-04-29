@@ -3,8 +3,9 @@ import asyncio
 import functools
 from nonebot import logger
 
+
 # 异步函数超时结束装饰器
-def time_out(time:int):
+def time_out(time: int):
     def decorate(method):
         @functools.wraps(method)
         async def wrapper(self, *args, **kwargs):

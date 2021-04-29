@@ -6,6 +6,7 @@ from qbittorrent import Client
 from .config import config
 upload_group_file = on_command('uploadfile', rule=to_me(), priority=5)
 
+
 async def get_qb():
     try:
         qb = Client(config.qb_web_url)
@@ -25,6 +26,7 @@ async def get_qb():
         return None
     return qb
 
+
 def getSize(size: int) -> str:
     kb = 1024
     mb = kb * 1024
@@ -40,6 +42,7 @@ def getSize(size: int) -> str:
     if size >= kb:
         return "%.2f KB" % float(size / kb)
 
+
 # 检查下载状态
 async def check_down_status(hash: str, group_id: int):
     qb = await get_qb()
@@ -52,13 +55,13 @@ async def check_down_status(hash: str, group_id: int):
         for tmp in files:
             # 异常包起来防止超时报错导致后续不执行
             try:
-                if config.qb_down_path and len(config.qb_down_path) > 0 :
+                if config.qb_down_path and len(config.qb_down_path) > 0:
                     path = config.qb_down_path + tmp['name']
                 else:
                     path = info['save_path'] + tmp['name']
-                await  upload_group_file.send(str('{}\n大小：{}\nHash: {} \n开始上传'.format(tmp['name'],getSize(info['total_size']),hash)))
+                await upload_group_file.send(str('{}\n大小：{}\nHash: {} \n开始上传'.format(tmp['name'], getSize(info['total_size']), hash)))
                 await bot.call_api('upload_group_file', group_id=group_id, file=path, name=tmp['name'])
-            except:
+            except Exception:
                 continue
     else:
         await upload_group_file.send(str('Hash: {} \n下载了 {}%\n平均下载速度：{} KB/s'.format(hash, round(
@@ -70,4 +73,4 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     hash = str(event.__getattribute__('message'))
     if event.__getattribute__('message_type') == 'private':
         await upload_group_file.finish('请在群聊中使用哦')
-    await check_down_status(hash=hash,group_id=event.group_id)
+    await check_down_status(hash=hash, group_id=event.group_id)

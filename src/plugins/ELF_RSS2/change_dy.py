@@ -52,13 +52,13 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     change_info = unescape(state["RssChange"])
     try:
         group_id = event.group_id
-    except:
+    except Exception:
         group_id = None
     change_list = change_info.split(' ')
     try:
         name = change_list[0]
         change_list.remove(name)
-    except:
+    except Exception:
         await RssChange.send('❌ 订阅名称参数错误！')
         return
 
@@ -140,8 +140,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
             # 奇怪的逻辑，群管理能修改订阅消息，这对其他订阅者不公平。
             rss.group_id = [str(group_id), '*']
             rss.user_id = ['*']
-        await RssChange.send('👏 修改成功\n{}'.format(rss.toString()))
-        logger.info('👏 修改成功\n{}'.format(rss.toString()))
+        await RssChange.send(f'👏 修改成功\n{rss}')
+        logger.info(f'👏 修改成功\n{rss}')
     except BaseException as e:
         await RssChange.send('❌ 参数解析出现错误！\nE: {}'.format(str(e)))
         logger.error('❌ 参数解析出现错误！\nE: {}'.format(str(e)))

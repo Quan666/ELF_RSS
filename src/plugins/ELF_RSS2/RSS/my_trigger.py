@@ -32,7 +32,7 @@ async def addJob(rss: rss_class.rss):
 
 
 def rss_trigger(rss: rss_class.rss):
-    if re.search('_|\*|/|,|-', rss.time):
+    if re.search(r'[_*/,-]', rss.time):
         my_trigger_cron(rss)
         return
     scheduler = require("nonebot_plugin_apscheduler").scheduler
@@ -49,10 +49,10 @@ def rss_trigger(rss: rss_class.rss):
         id=rss.name,
         # kwargs=None,
         misfire_grace_time=30,  # 允许的误差时间，建议不要省略
-        max_instances=1,# 最大并发
-        default=ThreadPoolExecutor(64), # 最大线程
-        processpool=ProcessPoolExecutor(8), # 最大进程
-        coalesce=True # 积攒的任务是否只跑一次，是否合并所有错过的Job
+        max_instances=1,  # 最大并发
+        default=ThreadPoolExecutor(64),  # 最大线程
+        processpool=ProcessPoolExecutor(8),  # 最大进程
+        coalesce=True  # 积攒的任务是否只跑一次，是否合并所有错过的Job
     )
     logger.info('定时任务 {} 添加成功'.format(rss.name))
 
@@ -66,7 +66,7 @@ def my_trigger_cron(rss: rss_class.rss):
     tmp_list = rss.time.split('_')
     times_list = ['*/5', '*', '*', '*', '*']
     for i in range(0, len(tmp_list)):
-        if tmp_list[i] != None and tmp_list[i] != '':
+        if tmp_list[i]:
             times_list[i] = tmp_list[i]
     try:
         # 制作一个触发器
@@ -90,9 +90,9 @@ def my_trigger_cron(rss: rss_class.rss):
         args=(rss,),  # 函数的参数列表，注意：只有一个值时，不能省略末尾的逗号
         id=rss.name,
         misfire_grace_time=30,  # 允许的误差时间，建议不要省略
-        max_instances=1,# 最大并发
-        default=ThreadPoolExecutor(64), # 最大线程
-        processpool=ProcessPoolExecutor(8), # 最大进程
-        coalesce=True # 积攒的任务是否只跑一次，是否合并所有错过的Job
+        max_instances=1,  # 最大并发
+        default=ThreadPoolExecutor(64),  # 最大线程
+        processpool=ProcessPoolExecutor(8),  # 最大进程
+        coalesce=True  # 积攒的任务是否只跑一次，是否合并所有错过的Job
     )
     logger.info('定时任务 {} 添加成功'.format(rss.name))

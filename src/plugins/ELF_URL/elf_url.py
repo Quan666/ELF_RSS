@@ -34,7 +34,7 @@ async def get_uri_of_url(url: str) -> str:
             # res = await client.post(www, headers=headers, data=json.dumps(data))
             res = await client.get(f'{www}?url={url}')
             res = res.json()
-            if res['code']!=200:
+            if res['code'] != 200:
                 raise Exception('获取短链错误')
             return res['data']['url']
         except Exception as e:
