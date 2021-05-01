@@ -28,10 +28,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 @Rssdel.got("Rssdel", prompt="输入要删除的订阅名")
 async def handle_RssAdd(bot: Bot, event: Event, state: dict):
     rss_name = unescape(state["Rssdel"])
-    try:
+    group_id = None
+    if event.message_type == 'group':
         group_id = event.group_id
-    except Exception:
-        group_id = None
 
     rss = rss_class.rss('', '', '-1', '-1')
     if rss.findName(name=rss_name):

@@ -4,6 +4,7 @@ from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.rule import to_me
 from qbittorrent import Client
 from .config import config
+
 upload_group_file = on_command('uploadfile', rule=to_me(), priority=5)
 
 
@@ -70,7 +71,7 @@ async def check_down_status(hash: str, group_id: int):
 
 @upload_group_file.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    hash = str(event.__getattribute__('message'))
-    if event.__getattribute__('message_type') == 'private':
+    hash = str(event.message)
+    if event.message_type == 'private':
         await upload_group_file.finish('请在群聊中使用哦')
     await check_down_status(hash=hash, group_id=event.group_id)

@@ -313,7 +313,9 @@ async def get_rss(rss: rss_class.rss) -> dict:
                 cookies_str = '\n如果设置了 cookies 请检查 cookies 正确性'
             else:
                 cookies_str = ''
-            e_msg = f'{rss.name} 抓取失败！已经重试 5 次！请检查订阅地址 {rss.geturl()} {cookies_str}\n如果是网络问题，请忽略该错误！E:{e}\nnew_rss:{d}'
+            e_msg = (f'{rss.name} 抓取失败！已经重试 5 次！请检查订阅地址 {rss.geturl()} {cookies_str}\n'
+                     f'如果是网络问题，请忽略该错误！E: {e}\n'
+                     f'new_rss:{d}')
             logger.error(e_msg)
             raise
         return d
@@ -453,7 +455,7 @@ async def zipPic(content):
                     else:
                         pim[point[0], point[1]] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         except BaseException as e:
-            logger.error(f'图片和谐失败！ E:{e}')
+            logger.error(f'图片和谐失败！ E: {e}')
             raise
         return im
     else:
@@ -520,10 +522,9 @@ async def dowimg(url: str, proxy: bool, get_hash: bool = False) -> str:
                 im = Image.open(BytesIO(pic.content))
                 return imagehash.average_hash(im)
             return await get_pic_base64(pic.content)
-    except BaseException as e:
-        logger.error(f'图片[{url}]下载失败,将重试 E:{e}')
-        if str(e):
-            raise
+    except Exception as e:
+        logger.error(f'图片[{url}]下载失败,将重试 \nE: {e}')
+        raise
 
 
 # 处理图片、视频
@@ -727,19 +728,19 @@ async def sendMsg(rss: rss_class, msg: str) -> bool:
                 try:
                     await bot.send_msg(message_type='private', user_id=id, message=str(msg))
                 except NetworkError as e:
-                    logger.error(f'网络错误,消息发送失败,将重试 E:{e}')
+                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}')
                 except Exception as e:
-                    logger.error(f'QQ号[{id}]不合法或者不是好友 E:{e}')
+                    logger.error(f'QQ号[{id}]不合法或者不是好友 E: {e}')
 
         if rss.group_id:
             for id in rss.group_id:
                 try:
                     await bot.send_msg(message_type='group', group_id=id, message=str(msg))
                 except NetworkError as e:
-                    logger.error(f'网络错误,消息发送失败,将重试 E:{e}')
+                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}')
                 except Exception as e:
-                    logger.info(f'群号[{id}]不合法或者未加群 E:{e}')
+                    logger.info(f'群号[{id}]不合法或者未加群 E: {e}')
         return True
     except Exception as e:
-        logger.info(f'发生错误 消息发送失败 E:{e}')
+        logger.info(f'发生错误 消息发送失败 E: {e}')
         return False

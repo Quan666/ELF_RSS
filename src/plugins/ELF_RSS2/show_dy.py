@@ -20,10 +20,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     else:
         rss_name = None
     user_id = event.user_id
-    try:
+    group_id = None
+    if event.message_type == 'group':
         group_id = event.group_id
-    except Exception:
-        group_id = None
 
     rss = rss_class.rss('', '', '-1', '-1')
 
