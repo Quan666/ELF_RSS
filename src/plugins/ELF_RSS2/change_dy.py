@@ -76,8 +76,10 @@ def handle_change_list(rss: rss_class.rss, key_to_change: str, value_to_change: 
     elif key_to_change == 'url':
         rss.delete_file()
     elif key_to_change == 'time':
-        if not re.search(r'[_*/,-]', value_to_change) and float(value_to_change) < 1:
+        if not re.search(r'[_*/,-]', value_to_change) and int(float(value_to_change)) < 1:
             value_to_change = '1'
+        else:
+            value_to_change = str(int(float(value_to_change)))
     elif key_to_change in ['proxy', 'tl', 'ot', 'op', 'upgroup', 'downopen']:
         value_to_change = bool(int(value_to_change))
     elif key_to_change in ['downkey', 'wkey', 'blackkey', 'bkey'] and len(value_to_change.strip()) == 0:

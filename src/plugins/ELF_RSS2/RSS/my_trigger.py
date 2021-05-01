@@ -24,8 +24,8 @@ async def delJob(rss: rss_class.rss):
         logger.debug(e)
 
 
-async def addJob(rss: rss_class.rss):
-    await delJob(rss)
+async def add_job(rss: rss_class.rss):
+    await del_job(rss)
     # 加入订阅任务队列,加入前判断是否存在群组或用户，二者不能同时为空
     if len(rss.user_id) > 0 or len(rss.group_id) > 0:
         rss_trigger(rss)
@@ -38,7 +38,7 @@ def rss_trigger(rss: rss_class.rss):
     scheduler = require("nonebot_plugin_apscheduler").scheduler
     # 制作一个“time分钟/次”触发器
     trigger = IntervalTrigger(
-        minutes=int(float(rss.time)),
+        minutes=int(rss.time),
         jitter=10
     )
     # 添加任务
