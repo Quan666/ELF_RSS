@@ -13,7 +13,6 @@ class ELFConfig(BaseConfig):
     rss_proxy: str = ''
     rsshub: AnyHttpUrl = 'https://rsshub.app'
     rsshub_backup: List[AnyHttpUrl] = []
-    delcache: int = 3
     limt = 50
 
     zip_size: int = 2 * 1024
