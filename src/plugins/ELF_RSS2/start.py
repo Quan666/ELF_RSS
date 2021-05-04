@@ -4,16 +4,11 @@ from nonebot.adapters.cqhttp import Bot, Event
 
 from .config import config
 from .RSS import rss_class
-from .RSS import delete_cache as DC
 from .RSS import my_trigger as RT
 
 
 async def start():
     bot, = nonebot.get_bots().values()
-    try:
-        DC.delcache_trigger()
-    except Exception:
-        pass
 
     try:
         rss = rss_class.rss('', '', '-1', '-1')
