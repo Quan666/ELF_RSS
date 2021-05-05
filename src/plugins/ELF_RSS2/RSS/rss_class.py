@@ -183,17 +183,10 @@ class rss:
             dump_f.write(json.dumps(rss_json, sort_keys=True,
                                     indent=4, ensure_ascii=False))
         self.delete_file()
-        self.delete_file_db()
 
     # 删除订阅json文件
     def delete_file(self):
         this_file_path = str(file_path + self.name + '.json')
-        if os.path.exists(this_file_path):
-            os.remove(this_file_path)
-
-    # 删除订阅db文件
-    def delete_file_db(self):
-        this_file_path = str(file_path + self.name + '.db')
         if os.path.exists(this_file_path):
             os.remove(this_file_path)
 
@@ -249,7 +242,11 @@ class rss:
         if not self.duplicate_filter_mode:
             mode_msg = '\n未启用去重模式'
         else:
-            mode_msg = f'\n已启用去重模式，{"、".join(mode_name[i] for i in self.duplicate_filter_mode)}相同时去重'
+            delimiter = '、'
+            if 'or' in self.duplicate_filter_mode:
+                delimiter = ' 或 '
+            mode_msg = ('\n已启用去重模式，'
+                        f"{delimiter.join(mode_name[i] for i in self.duplicate_filter_mode if i != 'or')}相同时去重")
         ret = (f'名称：{self.name}\n'
                f'订阅地址：{self.url}\n'
                f'订阅QQ：{self.user_id}\n'

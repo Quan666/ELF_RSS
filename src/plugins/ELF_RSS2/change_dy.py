@@ -38,13 +38,12 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
                              '\nproxy、tl、ot、op、downopen、upgroup 值为 1/0'
                              '\n去重模式分为按链接(link)、标题(title)、图片(image)判断'
                              '\n其中 image 模式,出于性能考虑以及避免误伤情况发生,生效对象限定为只带 1 张图片的消息,'
-                             '\n并且不建议用在一条消息可能带多张图片的 feed 源上,否则会出现这种误伤情况:'
-                             '\n新的带多图的消息里含有上一条只带 1 张图片的消息中的图片,因此被过滤掉'
+                             '\n此外,如果属性中带有 or 说明判断逻辑是任一匹配即去重,默认为全匹配'
                              '\n白名单关键词支持正则表达式，匹配时推送消息及下载，设为空(wkey=)时不生效'
                              '\n黑名单关键词同白名单一样，只是匹配时不推送，两者可以一起用'
                              '\nQQ、群号、去重模式前加英文逗号表示追加,-1设为空'
                              '\n各个属性空格分割'
-                             '\n详细：https://oy.mk/ckL'.strip())
+                             '\n详细：https://oy.mk/ckL')
 
 
 # 处理带多个值的订阅参数
@@ -57,7 +56,8 @@ def handle_property(value: str, property_list: list) -> list:
     if value_list[0] == "":
         value_list.pop(0)
         return property_list + [i for i in value_list if i not in property_list]
-    return value_list
+    # 防止用户输入重复参数,去重并保持原来的顺序
+    return list(dict.fromkeys(value_list))
 
 
 attribute_dict = {'qq': 'user_id', 'qun': 'group_id', 'url': 'url', 'time': 'time',
@@ -96,13 +96,8 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         group_id = event.group_id
     change_list = change_info.split(' ')
 
-    try:
-        name = change_list[0]
-        change_list.remove(name)
-    except Exception:
-        await RssChange.send('❌ 订阅名称参数错误！')
-        return
-
+    name = change_list[0]
+    change_list.pop(0)
     rss = rss_class.rss(name, '', '-1', '-1')
     if not rss.findName(name=name):
         await RssChange.send(f'❌ 订阅 {name} 不存在！')
@@ -117,6 +112,11 @@ async def handle_RssAdd(bot: Bot, event: Event, state: dict):
         for change_dict in change_list:
             key_to_change, value_to_change = change_dict.split('=', 1)
             if key_to_change in attribute_dict.keys():
+                # 对用户输入的去重模式参数进行校验
+                mode_property_set = {'', '-1', 'link', 'title', 'image', 'or'}
+                if key_to_change == 'mode' and (set(value_to_change.split(',')) - mode_property_set or value_to_change == 'or'):
+                    await RssChange.send(f'❌ 去重模式参数错误！\n{change_dict}')
+                    return
                 handle_change_list(rss, key_to_change, value_to_change, group_id)
             else:
                 await RssChange.send(f'❌ 参数错误或无权修改！\n{change_dict}')

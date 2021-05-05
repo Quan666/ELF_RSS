@@ -86,7 +86,7 @@ async def start(rss: rss_class.rss) -> None:
     # 检查是否启用去重 使用 duplicate_filter_mode 字段
     conn = None
     if rss.duplicate_filter_mode:
-        conn = sqlite3.connect(file_path + (rss.name + '.db'))
+        conn = sqlite3.connect(file_path + 'cache.db')
         cursor = conn.cursor()
         # 用来去重的 sqlite3 数据表如果不存在就创建一个
         cursor.execute("""
@@ -207,6 +207,8 @@ async def duplicate_exists(rss: rss_class.rss, item: dict,
         sql += f"AND link='{link}'"
     if 'title' in rss.duplicate_filter_mode:
         sql += f"AND title='{title}'"
+    if 'or' in rss.duplicate_filter_mode:
+        sql = sql.replace('AND', 'OR').replace('OR', 'AND', 1)
     cursor.execute(f'{sql};')
     result = cursor.fetchone()
     if result is not None:
@@ -218,26 +220,11 @@ async def duplicate_exists(rss: rss_class.rss, item: dict,
         conn.commit()
         return True
     else:
-        while True:
-            cursor = conn.cursor()
-            try:
-                cursor.execute(
-                    f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
-                )
-                cursor.close()
-                conn.commit()
-            except sqlite3.OperationalError as e:
-                # 如果数据表中缺少 image_hash 列就加上
-                if "table main has no column named image_hash" in str(e):
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        "ALTER TABLE main ADD image_hash TEXT;"
-                    )
-                    cursor.close()
-                    conn.commit()
-                continue
-            else:
-                break
+        cursor.execute(
+            f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
+        )
+        cursor.close()
+        conn.commit()
         return False
 
 
