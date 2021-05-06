@@ -568,7 +568,7 @@ async def handle_html_tag(html, translation: bool) -> str:
     if config.blockquote:
         rss_str = re.sub('<blockquote>|</blockquote>', '', str(rss_str))
     else:
-        rss_str = re.sub('<blockquote .+?>', '', str(rss_str))
+        rss_str = re.sub('<blockquote .+?\">', '', str(rss_str))
     rss_str = re.sub('<br/><br/>|<br><br>|<br>|<br/>', '\n', rss_str)
     rss_str = re.sub('<span>|<span .+?\">|</span>', '', rss_str)
     rss_str = re.sub('<pre .+?\">|</pre>', '', rss_str)
