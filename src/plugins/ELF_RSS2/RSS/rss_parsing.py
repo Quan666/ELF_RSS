@@ -186,7 +186,7 @@ async def duplicate_exists(rss: rss_class.rss, item: dict,
     title = item['title'].replace("'", "''")
     image_hash = None
     cursor = conn.cursor()
-    sql = "SELECT * FROM main WHERE 1=1 "
+    sql = "SELECT * FROM main WHERE 1=1"
     if 'image' in rss.duplicate_filter_mode:
         summary = item['summary']
         try:
@@ -202,11 +202,11 @@ async def duplicate_exists(rss: rss_class.rss, item: dict,
         # 通过图像的指纹来判断是否实际是同一张图片
         image_hash = await dowimg(url, rss.img_proxy, get_hash=True)
         logger.info(f'image_hash: {image_hash}')
-        sql += f"AND image_hash='{image_hash}'"
+        sql += f" AND image_hash='{image_hash}'"
     if 'link' in rss.duplicate_filter_mode:
-        sql += f"AND link='{link}'"
+        sql += f" AND link='{link}'"
     if 'title' in rss.duplicate_filter_mode:
-        sql += f"AND title='{title}'"
+        sql += f" AND title='{title}'"
     if 'or' in rss.duplicate_filter_mode:
         sql = sql.replace('AND', 'OR').replace('OR', 'AND', 1)
     cursor.execute(f'{sql};')
