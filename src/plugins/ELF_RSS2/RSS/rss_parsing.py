@@ -101,9 +101,9 @@ async def start(rss: rss_class.rss) -> None:
         cursor.close()
         conn.commit()
         cursor = conn.cursor()
-        # 移除超过 30 天没重复过的记录
+        # 移除超过 config.db_cache_expire 天没重复过的记录
         cursor.execute(
-            "DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-30 Day');"
+            f"DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-{config.db_cache_expire} Day');"
         )
         cursor.close()
         conn.commit()
