@@ -86,7 +86,7 @@ async def start(rss: rss_class.rss) -> None:
     # 检查是否启用去重 使用 duplicate_filter_mode 字段
     conn = None
     if rss.duplicate_filter_mode:
-        conn = sqlite3.connect(file_path + (rss.name + '.db'))
+        conn = sqlite3.connect(file_path + 'cache.db')
         cursor = conn.cursor()
         # 用来去重的 sqlite3 数据表如果不存在就创建一个
         cursor.execute("""
@@ -101,9 +101,9 @@ async def start(rss: rss_class.rss) -> None:
         cursor.close()
         conn.commit()
         cursor = conn.cursor()
-        # 移除超过 30 天没重复过的记录
+        # 移除超过 config.db_cache_expire 天没重复过的记录
         cursor.execute(
-            "DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-30 Day');"
+            f"DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-{config.db_cache_expire} Day');"
         )
         cursor.close()
         conn.commit()
@@ -186,7 +186,7 @@ async def duplicate_exists(rss: rss_class.rss, item: dict,
     title = item['title'].replace("'", "''")
     image_hash = None
     cursor = conn.cursor()
-    sql = "SELECT * FROM main WHERE 1=1 "
+    sql = "SELECT * FROM main WHERE 1=1"
     if 'image' in rss.duplicate_filter_mode:
         summary = item['summary']
         try:
@@ -202,11 +202,13 @@ async def duplicate_exists(rss: rss_class.rss, item: dict,
         # 通过图像的指纹来判断是否实际是同一张图片
         image_hash = await dowimg(url, rss.img_proxy, get_hash=True)
         logger.info(f'image_hash: {image_hash}')
-        sql += f"AND image_hash='{image_hash}'"
+        sql += f" AND image_hash='{image_hash}'"
     if 'link' in rss.duplicate_filter_mode:
-        sql += f"AND link='{link}'"
+        sql += f" AND link='{link}'"
     if 'title' in rss.duplicate_filter_mode:
-        sql += f"AND title='{title}'"
+        sql += f" AND title='{title}'"
+    if 'or' in rss.duplicate_filter_mode:
+        sql = sql.replace('AND', 'OR').replace('OR', 'AND', 1)
     cursor.execute(f'{sql};')
     result = cursor.fetchone()
     if result is not None:
@@ -218,26 +220,11 @@ async def duplicate_exists(rss: rss_class.rss, item: dict,
         conn.commit()
         return True
     else:
-        while True:
-            cursor = conn.cursor()
-            try:
-                cursor.execute(
-                    f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
-                )
-                cursor.close()
-                conn.commit()
-            except sqlite3.OperationalError as e:
-                # 如果数据表中缺少 image_hash 列就加上
-                if "table main has no column named image_hash" in str(e):
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        "ALTER TABLE main ADD image_hash TEXT;"
-                    )
-                    cursor.close()
-                    conn.commit()
-                continue
-            else:
-                break
+        cursor.execute(
+            f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
+        )
+        cursor.close()
+        conn.commit()
         return False
 
 
@@ -728,7 +715,7 @@ async def sendMsg(rss: rss_class, msg: str) -> bool:
                 try:
                     await bot.send_msg(message_type='private', user_id=id, message=str(msg))
                 except NetworkError as e:
-                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}')
+                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}\n{msg}')
                 except Exception as e:
                     logger.error(f'QQ号[{id}]不合法或者不是好友 E: {e}')
 
@@ -737,7 +724,7 @@ async def sendMsg(rss: rss_class, msg: str) -> bool:
                 try:
                     await bot.send_msg(message_type='group', group_id=id, message=str(msg))
                 except NetworkError as e:
-                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}')
+                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}\n{msg}')
                 except Exception as e:
                     logger.info(f'群号[{id}]不合法或者未加群 E: {e}')
         return True
