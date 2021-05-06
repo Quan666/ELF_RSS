@@ -715,7 +715,7 @@ async def sendMsg(rss: rss_class, msg: str) -> bool:
                 try:
                     await bot.send_msg(message_type='private', user_id=id, message=str(msg))
                 except NetworkError as e:
-                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}')
+                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}\n{msg}')
                 except Exception as e:
                     logger.error(f'QQ号[{id}]不合法或者不是好友 E: {e}')
 
@@ -724,7 +724,7 @@ async def sendMsg(rss: rss_class, msg: str) -> bool:
                 try:
                     await bot.send_msg(message_type='group', group_id=id, message=str(msg))
                 except NetworkError as e:
-                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}')
+                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}\n{msg}')
                 except Exception as e:
                     logger.info(f'群号[{id}]不合法或者未加群 E: {e}')
         return True
