@@ -21,14 +21,14 @@ class ELFConfig(BaseConfig):
     gif_zip_size: int = 6 * 1024
 
     blockquote: bool = True
-    showblockword: bool = True
-    blockword: List[str] = ["互动抽奖", "微博抽奖平台"]
+    show_black_word: bool = True
+    black_word: List[str] = ["互动抽奖", "微博抽奖平台"]
 
-    usebaidu: bool = False
-    baiduid: str = ''
-    baidukey: str = ''
+    use_baidu: bool = False
+    baidu_id: str = ''
+    baidu_key: str = ''
 
-    islinux: bool = (os.name != 'nt')
+    is_linux: bool = (os.name != 'nt')
 
     close_pixiv_cat: bool = False
 

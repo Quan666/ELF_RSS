@@ -27,8 +27,8 @@ from ..config import config
 
 
 def baidu_translate(content):
-    appid = config.baiduid
-    secret_key = config.baidukey
+    appid = config.baidu_id
+    secret_key = config.baidu_key
     http_client = None
     my_url = '/api/trans/vip/translate'
     q = content
@@ -39,7 +39,7 @@ def baidu_translate(content):
     sign = hashlib.md5(sign.encode()).hexdigest()
     my_url = my_url + '?appid=' + str(appid) + '&q=' + urllib.parse.quote(
         q) + '&from=' + from_lang + '&to=' + to_lang + '&salt=' + str(
-        salt) + '&sign=' + sign
+            salt) + '&sign=' + sign
 
     try:
         http_client = http.client.HTTPConnection('api.fanyi.baidu.com')
@@ -61,7 +61,7 @@ def baidu_translate(content):
 if __name__ == '__main__':
     while True:
         print("请输入要翻译的内容,如果退出输入q")
-        content = input()
-        if content == 'q':
+        input_content = input()
+        if input_content == 'q':
             break
-        baidu_translate(content)
+        baidu_translate(input_content)

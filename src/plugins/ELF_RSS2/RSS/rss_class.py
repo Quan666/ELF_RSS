@@ -32,10 +32,23 @@ class Rss:
     duplicate_filter_mode: [str] = None  # 去重模式
     max_image_number: int = 0  # 图片数量限制，防止消息太长刷屏
 
-    def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
-                 translation=False, only_title=False, only_pic=False, cookies: str = '', down_torrent: bool = False,
-                 down_torrent_keyword: str = None, black_keyword: str = None, is_open_upload_group: bool = True,
-                 duplicate_filter_mode: str = None, max_image_number: int = 0):
+    def __init__(self,
+                 name: str,
+                 url: str,
+                 user_id: str,
+                 group_id: str,
+                 time='5',
+                 img_proxy=False,
+                 translation=False,
+                 only_title=False,
+                 only_pic=False,
+                 cookies: str = '',
+                 down_torrent: bool = False,
+                 down_torrent_keyword: str = None,
+                 black_keyword: str = None,
+                 is_open_upload_group: bool = True,
+                 duplicate_filter_mode: str = None,
+                 max_image_number: int = 0):
         self.name = name
         self.url = url
         if user_id != '-1':
@@ -116,8 +129,11 @@ class Rss:
         if not os.path.isdir(FILE_PATH):
             os.makedirs(FILE_PATH)
         with codecs.open(str(FILE_PATH + "rss.json"), "w", 'utf-8') as dump_f:
-            dump_f.write(json.dumps(rss_json, sort_keys=True,
-                                    indent=4, ensure_ascii=False))
+            dump_f.write(
+                json.dumps(rss_json,
+                           sort_keys=True,
+                           indent=4,
+                           ensure_ascii=False))
 
     # 查找是否存在当前订阅名 rss 要转换为 rss_
     def find_name(self, name: str):
@@ -125,10 +141,10 @@ class Rss:
         name = re.sub(r'[?*:"<>\\/|]', '_', name)
         if name == 'rss':
             name = 'rss_'
-        list = self.read_rss()
-        for tmp in list:
-            if tmp.name == name:
-                return tmp
+        feed_list = self.read_rss()
+        for feed in feed_list:
+            if feed.name == name:
+                return feed
         return None
 
     # 查找是否存在当前订阅链接
@@ -175,14 +191,17 @@ class Rss:
         rss_json = []
         for rss_one in rss_old:
             if rss_one.name != delrss.name:
-                rss_json.append(json.dumps(
-                    rss_one.__dict__, ensure_ascii=False))
+                rss_json.append(
+                    json.dumps(rss_one.__dict__, ensure_ascii=False))
 
         if not os.path.isdir(FILE_PATH):
             os.makedirs(FILE_PATH)
         with codecs.open(str(FILE_PATH + "rss.json"), "w", 'utf-8') as dump_f:
-            dump_f.write(json.dumps(rss_json, sort_keys=True,
-                                    indent=4, ensure_ascii=False))
+            dump_f.write(
+                json.dumps(rss_json,
+                           sort_keys=True,
+                           indent=4,
+                           ensure_ascii=False))
         self.delete_file()
 
     # 删除订阅json文件
@@ -193,24 +212,24 @@ class Rss:
 
     def find_group(self, group: str) -> list:
         rss_old = self.read_rss()
-        re = []
+        result = []
         for rss_tmp in rss_old:
             for group_tmp in rss_tmp.group_id:
                 if group_tmp == str(group):
                     # 隐私考虑，群组下不展示除当前群组外的群号和QQ
                     rss_tmp.group_id = [str(group), '*']
                     rss_tmp.user_id = ['*']
-                    re.append(rss_tmp)
-        return re
+                    result.append(rss_tmp)
+        return result
 
     def find_user(self, user: str) -> list:
         rss_old = self.read_rss()
-        re = []
+        result = []
         for rss_tmp in rss_old:
             for group_tmp in rss_tmp.user_id:
                 if group_tmp == str(user):
-                    re.append(rss_tmp)
-        return re
+                    result.append(rss_tmp)
+        return result
 
     def set_cookies(self, cookies_str: str) -> bool:
         try:
@@ -227,7 +246,7 @@ class Rss:
                 self.cookies = None
                 return False
         except Exception as e:
-            logger.error('{} 的 Cookies 设置时出错！E: {}'.format(self.name, e))
+            logger.error(f'{self.name} 的 Cookies 设置时出错！E: {e}')
             return False
 
     def __str__(self) -> str:
@@ -246,8 +265,10 @@ class Rss:
             delimiter = '、'
             if 'or' in self.duplicate_filter_mode:
                 delimiter = ' 或 '
-            mode_msg = ('\n已启用去重模式，'
-                        f"{delimiter.join(mode_name[i] for i in self.duplicate_filter_mode if i != 'or')}相同时去重")
+            mode_msg = (
+                '\n已启用去重模式，'
+                f"{delimiter.join(mode_name[i] for i in self.duplicate_filter_mode if i != 'or')}相同时去重"
+            )
         ret = (f'名称：{self.name}\n'
                f'订阅地址：{self.url}\n'
                f'订阅QQ：{self.user_id}\n'

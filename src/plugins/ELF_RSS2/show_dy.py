@@ -1,27 +1,29 @@
 from nonebot import on_command
-from nonebot import permission as SUPERUSER
-from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
+from nonebot import permission as su
+from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission, unescape
 from nonebot.rule import to_me
 
 from .RSS import rss_class
 
-RSS_SHOW = on_command('show', aliases={'查看订阅'}, rule=to_me(
-), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
+RSS_SHOW = on_command('show',
+                      aliases={'查看订阅'},
+                      rule=to_me(),
+                      priority=5,
+                      permission=su.SUPERUSER | permission.GROUP_ADMIN
+                      | permission.GROUP_OWNER)
 
-# 不带订阅名称默认展示当前群组或账号的订阅
-# 带订阅名称就显示该订阅的
 
-
+# 不带订阅名称默认展示当前群组或账号的订阅，带订阅名称就显示该订阅的
 @RSS_SHOW.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    args = str(event.message).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
+    args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
         rss_name = unescape(args)  # 如果用户发送了参数则直接赋值
     else:
         rss_name = None
-    user_id = event.user_id
+    user_id = event.get_user_id()
     group_id = None
-    if event.message_type == 'group':
+    if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
     rss = rss_class.Rss('', '', '-1', '-1')
@@ -64,4 +66,3 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
     else:
         await RSS_SHOW.send('❌ 当前没有任何订阅！')
-        return

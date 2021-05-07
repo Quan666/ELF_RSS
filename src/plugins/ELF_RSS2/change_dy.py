@@ -1,50 +1,52 @@
 import re
 
 from nonebot import on_command
-from nonebot import permission as SUPERUSER
+from nonebot import permission as su
 from nonebot import require
-from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
+from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission, unescape
 from nonebot.log import logger
 from nonebot.rule import to_me
 
 from .RSS import rss_class
-from .RSS import my_trigger as TR
+from .RSS import my_trigger as tr
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 
-# 存储目录
-# file_path = './data/'
-
-RSS_CHANGE = on_command('change', aliases={'修改订阅', 'moddy'}, rule=to_me(), priority=5,
-                        permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
+RSS_CHANGE = on_command('change',
+                        aliases={'修改订阅', 'modify'},
+                        rule=to_me(),
+                        priority=5,
+                        permission=su.SUPERUSER | permission.GROUP_ADMIN
+                        | permission.GROUP_OWNER)
 
 
 @RSS_CHANGE.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    args = str(event.message).strip()
+    args = str(event.get_message()).strip()
     if args:
         state["RSS_CHANGE"] = unescape(args)  # 如果用户发送了参数则直接赋值
     else:
-        await RSS_CHANGE.send('请输入要修改的订阅'
-                              '\n订阅名 属性=,值'
-                              '\n如:'
-                              '\ntest qq=,123,234 qun=-1'
-                              '\n对应参数:'
-                              '\n订阅链接-url QQ-qq 群-qun 更新频率-time'
-                              '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op'
-                              '\n下载种子-downopen 白名单关键词-wkey 黑名单关键词-bkey 种子上传到群-upgroup'
-                              '\n去重模式-mode'
-                              '\n图片数量限制-img_num 最多一条消息只会发送指定数量的图片，防止刷屏'
-                              '\n注：'
-                              '\nproxy、tl、ot、op、downopen、upgroup 值为 1/0'
-                              '\n去重模式分为按链接(link)、标题(title)、图片(image)判断'
-                              '\n其中 image 模式,出于性能考虑以及避免误伤情况发生,生效对象限定为只带 1 张图片的消息,'
-                              '\n此外,如果属性中带有 or 说明判断逻辑是任一匹配即去重,默认为全匹配'
-                              '\n白名单关键词支持正则表达式，匹配时推送消息及下载，设为空(wkey=)时不生效'
-                              '\n黑名单关键词同白名单一样，只是匹配时不推送，两者可以一起用'
-                              '\nQQ、群号、去重模式前加英文逗号表示追加,-1设为空'
-                              '\n各个属性空格分割'
-                              '\n详细：https://oy.mk/ckL')
+        await RSS_CHANGE.send(
+            '请输入要修改的订阅'
+            '\n订阅名 属性=,值'
+            '\n如:'
+            '\ntest qq=,123,234 qun=-1'
+            '\n对应参数:'
+            '\n订阅链接-url QQ-qq 群-qun 更新频率-time'
+            '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op'
+            '\n下载种子-downopen 白名单关键词-wkey 黑名单关键词-bkey 种子上传到群-upgroup'
+            '\n去重模式-mode'
+            '\n图片数量限制-img_num 最多一条消息只会发送指定数量的图片，防止刷屏'
+            '\n注：'
+            '\nproxy、tl、ot、op、downopen、upgroup 值为 1/0'
+            '\n去重模式分为按链接(link)、标题(title)、图片(image)判断'
+            '\n其中 image 模式,出于性能考虑以及避免误伤情况发生,生效对象限定为只带 1 张图片的消息,'
+            '\n此外,如果属性中带有 or 说明判断逻辑是任一匹配即去重,默认为全匹配'
+            '\n白名单关键词支持正则表达式，匹配时推送消息及下载，设为空(wkey=)时不生效'
+            '\n黑名单关键词同白名单一样，只是匹配时不推送，两者可以一起用'
+            '\nQQ、群号、去重模式前加英文逗号表示追加,-1设为空'
+            '\n各个属性空格分割'
+            '\n详细：https://oy.mk/ckL')
 
 
 # 处理带多个值的订阅参数
@@ -56,25 +58,41 @@ def handle_property(value: str, property_list: list) -> list:
     # 追加
     if value_list[0] == "":
         value_list.pop(0)
-        return property_list + [i for i in value_list if i not in property_list]
+        return property_list + [
+            i for i in value_list if i not in property_list
+        ]
     # 防止用户输入重复参数,去重并保持原来的顺序
     return list(dict.fromkeys(value_list))
 
 
-attribute_dict = {'qq': 'user_id', 'qun': 'group_id', 'url': 'url', 'time': 'time',
-                  'proxy': 'img_proxy', 'tl': 'translation', 'ot': 'only_title',
-                  'op': 'only_pic', 'upgroup': 'is_open_upload_group',
-                  'downopen': 'down_torrent', 'downkey': 'down_torrent_keyword',
-                  'wkey': 'down_torrent_keyword', 'blackkey': 'black_keyword',
-                  'bkey': 'black_keyword', 'mode': 'duplicate_filter_mode',
-                  'img_num': 'max_image_number'}
+attribute_dict = {
+    'qq': 'user_id',
+    'qun': 'group_id',
+    'url': 'url',
+    'time': 'time',
+    'proxy': 'img_proxy',
+    'tl': 'translation',
+    'ot': 'only_title',
+    'op': 'only_pic',
+    'upgroup': 'is_open_upload_group',
+    'downopen': 'down_torrent',
+    'downkey': 'down_torrent_keyword',
+    'wkey': 'down_torrent_keyword',
+    'blackkey': 'black_keyword',
+    'bkey': 'black_keyword',
+    'mode': 'duplicate_filter_mode',
+    'img_num': 'max_image_number'
+}
 
 
 # 处理要修改的订阅参数
-def handle_change_list(rss: rss_class.Rss, key_to_change: str, value_to_change: str, group_id: int):
+def handle_change_list(rss: rss_class.Rss, key_to_change: str,
+                       value_to_change: str, group_id: int):
     # 暂时禁止群管理员修改 QQ / 群号，如要取消订阅可以使用 deldy 命令
-    if (key_to_change in ['qq', 'qun'] and not group_id) or key_to_change == 'mode':
-        value_to_change = handle_property(value_to_change, getattr(rss, attribute_dict[key_to_change]))
+    if (key_to_change in ['qq', 'qun']
+            and not group_id) or key_to_change == 'mode':
+        value_to_change = handle_property(
+            value_to_change, getattr(rss, attribute_dict[key_to_change]))
     elif key_to_change == 'url':
         rss.delete_file()
     elif key_to_change == 'time':
@@ -85,7 +103,8 @@ def handle_change_list(rss: rss_class.Rss, key_to_change: str, value_to_change: 
                 value_to_change = str(int(float(value_to_change)))
     elif key_to_change in ['proxy', 'tl', 'ot', 'op', 'upgroup', 'downopen']:
         value_to_change = bool(int(value_to_change))
-    elif key_to_change in ['downkey', 'wkey', 'blackkey', 'bkey'] and len(value_to_change.strip()) == 0:
+    elif key_to_change in ['downkey', 'wkey', 'blackkey', 'bkey'] and len(
+            value_to_change.strip()) == 0:
         value_to_change = None
     elif key_to_change == 'img_num':
         value_to_change = int(value_to_change)
@@ -96,7 +115,7 @@ def handle_change_list(rss: rss_class.Rss, key_to_change: str, value_to_change: 
 async def handle_rss_change(bot: Bot, event: Event, state: dict):
     change_info = unescape(state["RSS_CHANGE"])
     group_id = None
-    if event.message_type == 'group':
+    if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
     change_list = change_info.split(' ')
 
@@ -119,17 +138,19 @@ async def handle_rss_change(bot: Bot, event: Event, state: dict):
                 # 对用户输入的去重模式参数进行校验
                 mode_property_set = {'', '-1', 'link', 'title', 'image', 'or'}
                 if key_to_change == 'mode' and (
-                        set(value_to_change.split(',')) - mode_property_set or value_to_change == 'or'):
+                        set(value_to_change.split(',')) - mode_property_set
+                        or value_to_change == 'or'):
                     await RSS_CHANGE.send(f'❌ 去重模式参数错误！\n{change_dict}')
                     return
-                handle_change_list(rss, key_to_change, value_to_change, group_id)
+                handle_change_list(rss, key_to_change, value_to_change,
+                                   group_id)
             else:
                 await RSS_CHANGE.send(f'❌ 参数错误或无权修改！\n{change_dict}')
                 return
         # 参数解析完毕，写入
         rss.write_rss()
         # 加入定时任务
-        await TR.add_job(rss)
+        await tr.add_job(rss)
         if group_id:
             # 隐私考虑，群组下不展示除当前群组外的群号和QQ
             # 奇怪的逻辑，群管理能修改订阅消息，这对其他订阅者不公平。
