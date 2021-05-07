@@ -145,7 +145,7 @@ async def start(rss: rss_class.rss) -> None:
             text = re.sub(r'<video.+?></video>|<img.+?>', '', item['summary'])
             text = re.sub('<br>', '', text)
             similarity = difflib.SequenceMatcher(None, text, item['title'])
-            if similarity.quick_ratio() <= 0.1:  # 标题正文相似度
+            if similarity.ratio() <= 0.6:  # 标题正文相似度
                 item_msg += await handle_title(title=item['title'])
 
             # 处理正文
@@ -568,20 +568,20 @@ async def handle_html_tag(html, translation: bool) -> str:
     if config.blockquote:
         rss_str = re.sub('<blockquote>|</blockquote>', '', str(rss_str))
     else:
-        rss_str = re.sub('<blockquote.*>', '', str(rss_str))
+        rss_str = re.sub('<blockquote .+?\">', '', str(rss_str))
     rss_str = re.sub('<br/><br/>|<br><br>|<br>|<br/>', '\n', rss_str)
-    rss_str = re.sub('<span>|<span.+?\">|</span>', '', rss_str)
-    rss_str = re.sub('<pre.+?\">|</pre>', '', rss_str)
-    rss_str = re.sub('<p>|<p.+?\">|</p>|<b>|<b.+?\">|</b>', '', rss_str)
-    rss_str = re.sub('<div>|<div.+?\">|</div>', '', rss_str)
-    rss_str = re.sub('<div>|<div.+?\">|</div>', '', rss_str)
-    rss_str = re.sub('<iframe.+?\"/>', '', rss_str)
-    rss_str = re.sub('<i.+?\">|<i>|</i>', '', rss_str)
+    rss_str = re.sub('<span>|<span .+?\">|</span>', '', rss_str)
+    rss_str = re.sub('<pre .+?\">|</pre>', '', rss_str)
+    rss_str = re.sub('<p>|<p .+?\">|</p>|<b>|<b .+?\">|</b>', '', rss_str)
+    rss_str = re.sub('<div>|<div .+?\">|</div>', '', rss_str)
+    rss_str = re.sub('<div>|<div .+?\">|</div>', '', rss_str)
+    rss_str = re.sub('<iframe .+?\"/>', '', rss_str)
+    rss_str = re.sub('<i .+?\">|<i>|</i>', '', rss_str)
     rss_str = re.sub('<code>|</code>|<ul>|</ul>', '', rss_str)
     # 解决 issue #3
-    rss_str = re.sub('<dd.+?\">|<dd>|</dd>', '', rss_str)
-    rss_str = re.sub('<dl.+?\">|<dl>|</dl>', '', rss_str)
-    rss_str = re.sub('<dt.+?\">|<dt>|</dt>', '', rss_str)
+    rss_str = re.sub('<dd .+?\">|<dd>|</dd>', '', rss_str)
+    rss_str = re.sub('<dl .+?\">|<dl>|</dl>', '', rss_str)
+    rss_str = re.sub('<dt .+?\">|<dt>|</dt>', '', rss_str)
 
     # 删除图片、视频标签
     rss_str = re.sub(r'<video.+?></video>|<img.+?>', '', rss_str)
@@ -591,16 +591,14 @@ async def handle_html_tag(html, translation: bool) -> str:
     doc_a = html('a')
     for a in doc_a.items():
         if str(a.text()) != a.attr("href"):
-            rss_str = re.sub(re.escape(str(a)), str(
-                a.text()) + ':' + (a.attr("href")) + '\n', rss_str)
+            rss_str = rss_str.replace(str(a), f" {a.text()}: {a.attr('href')}\n")
         else:
-            rss_str = re.sub(re.escape(str(a)),
-                             (a.attr("href")) + '\n', rss_str)
-        rss_str_tl = re.sub(re.escape(str(a)), '', rss_str_tl)
+            rss_str = rss_str.replace(str(a), f" {a.attr('href')}\n")
+        rss_str_tl = rss_str_tl.replace(str(a), '')
 
     # 删除未解析成功的 a 标签
-    rss_str = re.sub('<a.+?\">|<a>|</a>', '', rss_str)
-    rss_str_tl = re.sub('<a.+?\">|<a>|</a>', '', rss_str_tl)
+    rss_str = re.sub('<a .+?\">|<a>|</a>', '', rss_str)
+    rss_str_tl = re.sub('<a .+?\">|<a>|</a>', '', rss_str_tl)
     # 去掉换行
     rss_str = re.sub('\n\n|\n\n\n', '', rss_str)
     rss_str_tl = re.sub('\n\n|\n\n\n', '', rss_str_tl)
