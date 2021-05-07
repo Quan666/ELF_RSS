@@ -73,7 +73,7 @@ async def start(rss: rss_class.Rss) -> None:
     new_rss_list = new_rss.entries
     try:
         old_rss_list = read_rss(rss.name)['entries']
-    except ValueError:
+    except KeyError:
         write_rss(name=rss.name, new_rss=new_rss, new_item=None)
         logger.info('{} 订阅第一次抓取成功！'.format(rss.name))
         return
@@ -287,7 +287,7 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                             logger.error(
                                 'RSSHub :' + rss.get_url(rsshub=rsshub_url) + ' 访问失败 ！使用备用 RSSHub 地址！')
                             continue
-                        if r.STATUS_CODE in STATUS_CODE:
+                        if r.status_code in STATUS_CODE:
                             d = feedparser.parse(r.content)
                             if d.entries:
                                 logger.info(rss.get_url(
@@ -503,8 +503,8 @@ async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
             headers = {'referer': referer}
             pic = await client.get(url, headers=headers)
             # 如果图片无法访问到,直接返回
-            if pic.STATUS_CODE not in STATUS_CODE:
-                logger.info(f'pic.status_code: {pic.STATUS_CODE}')
+            if pic.status_code not in STATUS_CODE:
+                logger.info(f'pic.status_code: {pic.status_code}')
                 return None
             if get_hash:
                 # 返回图像的指纹
@@ -654,7 +654,7 @@ def check_update(new: list, old: list) -> list:
             try:
                 if i['id'] == j['id']:
                     count = 1
-            except ValueError:
+            except KeyError:
                 if i['link'] == j['link']:
                     count = 1
         if count == 0:
