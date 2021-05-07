@@ -173,7 +173,7 @@ async def start(rss: rss_class.rss) -> None:
         except Exception as e:
             logger.error('下载种子时出错：{}'.format(e))
         # 发送消息并写入文件
-        if await sendMsg(rss=rss, msg=item_msg):
+        if await sendMsg(rss=rss, msg=item_msg, new_item=item):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
     if conn is not None:
         conn.close()
@@ -332,7 +332,7 @@ async def handle_summary(summary: str, rss: rss_class.rss) -> str:
         res_msg += await handle_html_tag(html=summary_html, translation=rss.translation)
 
     # 处理图片
-    res_msg += await handle_img(html=summary_html, img_proxy=rss.img_proxy)
+    res_msg += await handle_img(html=summary_html, img_proxy=rss.img_proxy, img_num=rss.max_image_number)
 
     return res_msg + '\n'
 
@@ -515,7 +515,7 @@ async def dowimg(url: str, proxy: bool, get_hash: bool = False) -> str:
 
 
 # 处理图片、视频
-async def handle_img(html, img_proxy: bool) -> str:
+async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     img_str = ''
     # 处理图片
     doc_img = html('img')
@@ -539,6 +539,10 @@ async def handle_img(html, img_proxy: bool) -> str:
 
     # 解决 issue36
     img_list = re.findall(r'\[img]([hH][tT]{2}[pP][sS]?://.*?)\[/img]', str(html))
+    # 只发送指定数量的图片，防止刷屏
+    if 0 < img_num < len(img_list):
+        img_list = img_list[:img_num]
+        img_str += f'\n因启用图片数量限制，目前只有 {img_num} 张图片：'
     for img_tmp in img_list:
         img_base64 = await dowimg(img_tmp, img_proxy)
         if img_base64:
@@ -703,7 +707,7 @@ def writeRss(name: str, new_rss: dict, new_item: list = None):
 
 # 发送消息,失败重试
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
-async def sendMsg(rss: rss_class, msg: str) -> bool:
+async def sendMsg(rss: rss_class, msg: str, item: dict) -> bool:
     bot, = nonebot.get_bots().values()
     try:
         if len(msg) <= 0:
@@ -713,7 +717,7 @@ async def sendMsg(rss: rss_class, msg: str) -> bool:
                 try:
                     await bot.send_msg(message_type='private', user_id=id, message=str(msg))
                 except NetworkError as e:
-                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}\n{msg}')
+                    logger.error(f"网络错误,消息发送失败,将重试 E: {e}\n链接：{item['link']}")
                 except Exception as e:
                     logger.error(f'QQ号[{id}]不合法或者不是好友 E: {e}')
 
@@ -722,7 +726,7 @@ async def sendMsg(rss: rss_class, msg: str) -> bool:
                 try:
                     await bot.send_msg(message_type='group', group_id=id, message=str(msg))
                 except NetworkError as e:
-                    logger.error(f'网络错误,消息发送失败,将重试 E: {e}\n{msg}')
+                    logger.error(f"网络错误,消息发送失败,将重试 E: {e}\n链接：{item['link']}")
                 except Exception as e:
                     logger.info(f'群号[{id}]不合法或者未加群 E: {e}')
         return True

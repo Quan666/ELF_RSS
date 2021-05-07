@@ -30,12 +30,13 @@ class rss:
     black_keyword: str = None  # 黑名单关键词
     is_open_upload_group: bool = True  # 默认开启上传到群
     duplicate_filter_mode: [str] = None  # 去重模式
+    max_image_number: int = 0  # 图片数量限制，防止消息太长刷屏
 
     # 定义构造方法
     def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
                  translation=False, only_title=False, only_pic=False, cookies: str = '', down_torrent: bool = False,
                  down_torrent_keyword: str = None, black_keyword: str = None, is_open_upload_group: bool = True,
-                 duplicate_filter_mode: str = None):
+                 duplicate_filter_mode: str = None, max_image_number: int = 0):
         self.name = name
         self.url = url
         if user_id != '-1':
@@ -60,6 +61,7 @@ class rss:
         self.black_keyword = black_keyword
         self.is_open_upload_group = is_open_upload_group
         self.duplicate_filter_mode = duplicate_filter_mode
+        self.max_image_number = max_image_number
 
     # 返回订阅链接
     def geturl(self, rsshub: str = config.rsshub) -> str:
@@ -260,5 +262,6 @@ class rss:
                f'白名单关键词：{self.down_torrent_keyword}\n'
                f'黑名单关键词：{self.black_keyword}{cookies_str}{down_msg}\n'
                f'是否上传到群：{self.is_open_upload_group}\n'
-               f'去重模式：{self.duplicate_filter_mode}{mode_msg}\n')
+               f'去重模式：{self.duplicate_filter_mode}{mode_msg}\n'
+               f'图片数量限制：{self.max_image_number}\n')
         return ret
