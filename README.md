@@ -10,6 +10,7 @@
 >
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/a6b0fae469eb48b1be73e8341353369b)](https://app.codacy.com/gh/Quan666/ELF_RSS?utm_source=github.com&utm_medium=referral&utm_content=Quan666/ELF_RSS&utm_campaign=Badge_Grade_Settings)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a6b0fae469eb48b1be73e8341353369b)](https://app.codacy.com/gh/Quan666/ELF_RSS?utm_source=github.com&utm_medium=referral&utm_content=Quan666/ELF_RSS&utm_campaign=Badge_Grade_Settings)
 [![](https://img.shields.io/badge/qq%E7%BE%A4-984827132-orange?style=flat-square)](https://jq.qq.com/?_wv=1027&k=sST08Nkd)
 
 ## 功能介绍
