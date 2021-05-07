@@ -34,6 +34,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
                              '\n代理-proxy 翻译-tl 仅title-ot，仅图片-op'
                              '\n下载种子-downopen 白名单关键词-wkey 黑名单关键词-bkey 种子上传到群-upgroup'
                              '\n去重模式-mode'
+                             '\n图片数量限制-img_num 最多一条消息只会发送指定数量的图片，防止刷屏'
                              '\n注：'
                              '\nproxy、tl、ot、op、downopen、upgroup 值为 1/0'
                              '\n去重模式分为按链接(link)、标题(title)、图片(image)判断'
@@ -65,7 +66,8 @@ attribute_dict = {'qq': 'user_id', 'qun': 'group_id', 'url': 'url', 'time': 'tim
                   'op': 'only_pic', 'upgroup': 'is_open_upload_group',
                   'downopen': 'down_torrent', 'downkey': 'down_torrent_keyword',
                   'wkey': 'down_torrent_keyword', 'blackkey': 'black_keyword',
-                  'bkey': 'black_keyword', 'mode': 'duplicate_filter_mode'}
+                  'bkey': 'black_keyword', 'mode': 'duplicate_filter_mode',
+                  'img_num': 'max_image_number'}
 
 
 # 处理要修改的订阅参数
@@ -85,6 +87,8 @@ def handle_change_list(rss: rss_class.rss, key_to_change: str, value_to_change: 
         value_to_change = bool(int(value_to_change))
     elif key_to_change in ['downkey', 'wkey', 'blackkey', 'bkey'] and len(value_to_change.strip()) == 0:
         value_to_change = None
+    elif key_to_change == 'img_num':
+        value_to_change = int(value_to_change)
     setattr(rss, attribute_dict.get(key_to_change), value_to_change)
 
 
