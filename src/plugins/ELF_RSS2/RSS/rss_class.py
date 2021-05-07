@@ -9,11 +9,11 @@ from nonebot.log import logger
 from ..config import config
 
 # 存储目录
-file_path = str(str(Path.cwd()) + os.sep + 'data' + os.sep)
+FILE_PATH = str(str(Path.cwd()) + os.sep + 'data' + os.sep)
 
 
-class rss:
-    # 定义基本属性
+class Rss:
+    # 定义为类属性，可以方便新增属性时不会无法解析配置文件
     name = ''  # 订阅名
     url = ''  # 订阅地址
     user_id = []  # 订阅用户（qq） -1 为空
@@ -32,7 +32,6 @@ class rss:
     duplicate_filter_mode: [str] = None  # 去重模式
     max_image_number: int = 0  # 图片数量限制，防止消息太长刷屏
 
-    # 定义构造方法
     def __init__(self, name: str, url: str, user_id: str, group_id: str, time='5', img_proxy=False,
                  translation=False, only_title=False, only_pic=False, cookies: str = '', down_torrent: bool = False,
                  down_torrent_keyword: str = None, black_keyword: str = None, is_open_upload_group: bool = True,
@@ -64,7 +63,7 @@ class rss:
         self.max_image_number = max_image_number
 
     # 返回订阅链接
-    def geturl(self, rsshub: str = config.rsshub) -> str:
+    def get_url(self, rsshub: str = config.rsshub) -> str:
         if re.match(u'[hH][tT]{2}[pP][sS]?://', self.url, flags=0):
             return self.url
         else:
@@ -76,15 +75,15 @@ class rss:
 
     # 读取记录
     @staticmethod
-    def readRss() -> list:
+    def read_rss() -> list:
         # 如果文件不存在
-        if not os.path.isfile(str(file_path + "rss.json")):
+        if not os.path.isfile(str(FILE_PATH + "rss.json")):
             return []
         rss_list = []
-        with codecs.open(str(file_path + "rss.json"), 'r', 'utf-8') as load_f:
+        with codecs.open(str(FILE_PATH + "rss.json"), 'r', 'utf-8') as load_f:
             rss_list_json = json.load(load_f)
             for rss_one in rss_list_json:
-                tmp_rss = rss('', '', '-1', '-1')
+                tmp_rss = Rss('', '', '-1', '-1')
                 if type(rss_one) is not str:
                     rss_one = json.dumps(rss_one)
                 tmp_rss.__dict__ = json.loads(rss_one)
@@ -92,9 +91,9 @@ class rss:
         return rss_list
 
     # 写入记录，传入rss list，不传就把当前 self 写入
-    def writeRss(self, rss_new: list = None):
+    def write_rss(self, rss_new: list = None):
         # 先读取订阅记录
-        rss_old = self.readRss()
+        rss_old = self.read_rss()
         # 把当前 self 写入
         if not rss_new:
             rss_new = [self]
@@ -114,86 +113,86 @@ class rss:
             tmp = {}
             tmp.update(rss_one.__dict__)
             rss_json.append(tmp)
-        if not os.path.isdir(file_path):
-            os.makedirs(file_path)
-        with codecs.open(str(file_path + "rss.json"), "w", 'utf-8') as dump_f:
+        if not os.path.isdir(FILE_PATH):
+            os.makedirs(FILE_PATH)
+        with codecs.open(str(FILE_PATH + "rss.json"), "w", 'utf-8') as dump_f:
             dump_f.write(json.dumps(rss_json, sort_keys=True,
                                     indent=4, ensure_ascii=False))
 
     # 查找是否存在当前订阅名 rss 要转换为 rss_
-    def findName(self, name: str):
+    def find_name(self, name: str):
         # 过滤特殊字符
         name = re.sub(r'[?*:"<>\\/|]', '_', name)
         if name == 'rss':
             name = 'rss_'
-        list = self.readRss()
+        list = self.read_rss()
         for tmp in list:
             if tmp.name == name:
                 return tmp
         return None
 
     # 查找是否存在当前订阅链接
-    def findURL(self, url: str):
-        list = self.readRss()
-        for tmp in list:
+    def find_url(self, url: str):
+        url_list = self.read_rss()
+        for tmp in url_list:
             if tmp.url == url:
                 return tmp
         return None
 
     # 添加订阅 QQ
-    def addUser(self, user: str):
+    def add_user(self, user: str):
         if str(user) in self.user_id:
             return
         self.user_id.append(str(user))
-        self.writeRss()
+        self.write_rss()
 
     # 添加订阅 群组
-    def addGroup(self, group: str):
+    def add_group(self, group: str):
         if str(group) in self.group_id:
             return
         self.group_id.append(str(group))
-        self.writeRss()
+        self.write_rss()
 
     # 删除订阅 QQ
-    def delUser(self, user: str) -> bool:
+    def delete_user(self, user: str) -> bool:
         if not str(user) in self.user_id:
             return False
         self.user_id.remove(str(user))
-        self.writeRss()
+        self.write_rss()
         return True
 
     # 删除订阅 群组
-    def delGroup(self, group: str) -> bool:
+    def delete_group(self, group: str) -> bool:
         if not str(group) in self.group_id:
             return False
         self.group_id.remove(str(group))
-        self.writeRss()
+        self.write_rss()
         return True
 
     # 删除整个订阅
-    def delRss(self, delrss):
-        rss_old = self.readRss()
+    def delete_rss(self, delrss):
+        rss_old = self.read_rss()
         rss_json = []
         for rss_one in rss_old:
             if rss_one.name != delrss.name:
                 rss_json.append(json.dumps(
                     rss_one.__dict__, ensure_ascii=False))
 
-        if not os.path.isdir(file_path):
-            os.makedirs(file_path)
-        with codecs.open(str(file_path + "rss.json"), "w", 'utf-8') as dump_f:
+        if not os.path.isdir(FILE_PATH):
+            os.makedirs(FILE_PATH)
+        with codecs.open(str(FILE_PATH + "rss.json"), "w", 'utf-8') as dump_f:
             dump_f.write(json.dumps(rss_json, sort_keys=True,
                                     indent=4, ensure_ascii=False))
         self.delete_file()
 
     # 删除订阅json文件
     def delete_file(self):
-        this_file_path = str(file_path + self.name + '.json')
+        this_file_path = str(FILE_PATH + self.name + '.json')
         if os.path.exists(this_file_path):
             os.remove(this_file_path)
 
-    def findGroup(self, group: str) -> list:
-        rss_old = self.readRss()
+    def find_group(self, group: str) -> list:
+        rss_old = self.read_rss()
         re = []
         for rss_tmp in rss_old:
             for group_tmp in rss_tmp.group_id:
@@ -204,8 +203,8 @@ class rss:
                     re.append(rss_tmp)
         return re
 
-    def findUser(self, user: str) -> list:
-        rss_old = self.readRss()
+    def find_user(self, user: str) -> list:
+        rss_old = self.read_rss()
         re = []
         for rss_tmp in rss_old:
             for group_tmp in rss_tmp.user_id:
@@ -213,7 +212,7 @@ class rss:
                     re.append(rss_tmp)
         return re
 
-    def setCookies(self, cookies_str: str) -> bool:
+    def set_cookies(self, cookies_str: str) -> bool:
         try:
             if len(cookies_str) >= 10:
                 cookies = {}
@@ -222,7 +221,7 @@ class rss:
                         name, value = line.strip().split("=")
                         cookies[name] = value
                 self.cookies = cookies
-                self.writeRss()
+                self.write_rss()
                 return True
             else:
                 self.cookies = None

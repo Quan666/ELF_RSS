@@ -13,5 +13,7 @@ def time_out(time: int):
                 return await asyncio.wait_for(method(self, *args, **kwargs), timeout=time)
             except asyncio.TimeoutError as te:
                 logger.error(f'{self.name} 检查更新超时，结束此次任务!{te}')
+
         return wrapper
+
     return decorate

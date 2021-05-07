@@ -11,12 +11,12 @@ from . import rss_class, rss_parsing, util
 
 # 检测某个rss更新 #任务体
 @util.time_out(time=300)  # 20s  任务超时时间
-async def check_update(rss: rss_class.rss):
+async def check_update(rss: rss_class.Rss):
     logger.info('{} 检查更新'.format(rss.name))
     await rss_parsing.start(rss)
 
 
-async def delJob(rss: rss_class.rss):
+async def delete_job(rss: rss_class.Rss):
     scheduler = require("nonebot_plugin_apscheduler").scheduler
     try:
         scheduler.remove_job(rss.name)
@@ -24,14 +24,14 @@ async def delJob(rss: rss_class.rss):
         logger.debug(e)
 
 
-async def addJob(rss: rss_class.rss):
-    await delJob(rss)
+async def add_job(rss: rss_class.Rss):
+    await delete_job(rss)
     # 加入订阅任务队列,加入前判断是否存在群组或用户，二者不能同时为空
     if len(rss.user_id) > 0 or len(rss.group_id) > 0:
         rss_trigger(rss)
 
 
-def rss_trigger(rss: rss_class.rss):
+def rss_trigger(rss: rss_class.Rss):
     if re.search(r'[_*/,-]', rss.time):
         my_trigger_cron(rss)
         return
@@ -61,7 +61,7 @@ def rss_trigger(rss: rss_class.rss):
 # 参考 https://www.runoob.com/linux/linux-comm-crontab.html
 
 
-def my_trigger_cron(rss: rss_class.rss):
+def my_trigger_cron(rss: rss_class.Rss):
     # 解析参数
     tmp_list = rss.time.split('_')
     times_list = ['*/5', '*', '*', '*', '*']

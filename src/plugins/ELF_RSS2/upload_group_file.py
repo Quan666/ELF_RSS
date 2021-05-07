@@ -1,3 +1,5 @@
+import re
+
 import nonebot
 from nonebot import on_command, logger
 from nonebot.adapters.cqhttp import Bot, Event
@@ -28,7 +30,7 @@ async def get_qb():
     return qb
 
 
-def getSize(size: int) -> str:
+def get_size(size: int) -> str:
     kb = 1024
     mb = kb * 1024
     gb = mb * 1024
@@ -60,7 +62,8 @@ async def check_down_status(hash: str, group_id: int):
                     path = config.qb_down_path + tmp['name']
                 else:
                     path = info['save_path'] + tmp['name']
-                await upload_group_file.send(str('{}\n大小：{}\nHash: {} \n开始上传'.format(tmp['name'], getSize(info['total_size']), hash)))
+                await upload_group_file.send(
+                    str('{}\n大小：{}\nHash: {} \n开始上传'.format(tmp['name'], get_size(info['total_size']), hash)))
                 await bot.call_api('upload_group_file', group_id=group_id, file=path, name=tmp['name'])
             except Exception:
                 continue
@@ -71,7 +74,9 @@ async def check_down_status(hash: str, group_id: int):
 
 @upload_group_file.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    hash = str(event.message)
+    hash_str = re.search('[a-f0-9]{40}', str(event.message))[0]
     if event.message_type == 'private':
-        await upload_group_file.finish('请在群聊中使用哦')
-    await check_down_status(hash=hash, group_id=event.group_id)
+        group_id = re.search('[0-9]{6,12}', str(event.message).replace(hash_str, ''))[0]
+    else:
+        group_id = event.group_id
+    await check_down_status(hash=hash_str, group_id=group_id)
