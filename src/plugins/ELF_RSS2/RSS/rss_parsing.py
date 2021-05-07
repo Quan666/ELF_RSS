@@ -173,7 +173,7 @@ async def start(rss: rss_class.rss) -> None:
         except Exception as e:
             logger.error('下载种子时出错：{}'.format(e))
         # 发送消息并写入文件
-        if await sendMsg(rss=rss, msg=item_msg, new_item=item):
+        if await sendMsg(rss=rss, msg=item_msg, item=item):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
     if conn is not None:
         conn.close()
