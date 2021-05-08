@@ -182,32 +182,34 @@ async def start(rss: rss_class.Rss) -> None:
 # 去重判断
 async def duplicate_exists(rss: rss_class.Rss, item: dict,
                            conn: sqlite3.connect) -> bool:
+    flag = False
     link = item['link'].replace("'", "''")
     title = item['title'].replace("'", "''")
     image_hash = None
     cursor = conn.cursor()
     sql = "SELECT * FROM main WHERE 1=1"
-    if 'image' in rss.duplicate_filter_mode:
-        summary = item['summary']
-        try:
-            summary_doc = Pq(summary)
-        except Exception as e:
-            logger.warning(e)
-            # 没有正文内容直接跳过
-            return False
-        img_doc = summary_doc('img')
-        # 只处理仅有一张图片的情况
-        if len(img_doc) != 1:
-            return False
-        url = img_doc.attr("src")
-        # 通过图像的指纹来判断是否实际是同一张图片
-        image_hash = await download_image(url, rss.img_proxy, get_hash=True)
-        logger.info(f'image_hash: {image_hash}')
-        sql += f" AND image_hash='{image_hash}'"
-    if 'link' in rss.duplicate_filter_mode:
-        sql += f" AND link='{link}'"
-    if 'title' in rss.duplicate_filter_mode:
-        sql += f" AND title='{title}'"
+    for mode in rss.duplicate_filter_mode:
+        if mode == 'image':
+            summary = item['summary']
+            try:
+                summary_doc = Pq(summary)
+            except Exception as e:
+                logger.warning(e)
+                # 没有正文内容直接跳过
+                continue
+            img_doc = summary_doc('img')
+            # 只处理仅有一张图片的情况
+            if len(img_doc) != 1:
+                continue
+            url = img_doc.attr("src")
+            # 通过图像的指纹来判断是否实际是同一张图片
+            image_hash = await download_image(url, rss.img_proxy, get_hash=True)
+            logger.info(f'image_hash: {image_hash}')
+            sql += f" AND image_hash='{image_hash}'"
+        if mode == 'link':
+            sql += f" AND link='{link}'"
+        if mode == 'title':
+            sql += f" AND title='{title}'"
     if 'or' in rss.duplicate_filter_mode:
         sql = sql.replace('AND', 'OR').replace('OR', 'AND', 1)
     cursor.execute(f'{sql};')
@@ -219,14 +221,14 @@ async def duplicate_exists(rss: rss_class.Rss, item: dict,
         )
         cursor.close()
         conn.commit()
-        return True
+        flag = True
     else:
         cursor.execute(
             f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
         )
         cursor.close()
         conn.commit()
-        return False
+    return flag
 
 
 # 写入单条消息
