@@ -52,7 +52,7 @@ HEADERS = {
     'Accept-Language': 'en-US,en;q=0.9',
     'Cache-Control': 'max-age=0',
     'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
     'Connection': 'keep-alive',
     'Content-Type': 'application/xml; charset=utf-8'
 }
@@ -67,8 +67,8 @@ async def start(rss: rss_class.Rss) -> None:
 
     try:
         new_rss = await get_rss(rss)
-    except TimeoutError as e:
-        logger.error(e)
+    except Exception as e:
+        logger.error(f'RSS {rss.get_url()} 抓取失败！已达最大重试次数！请检查RSS地址正确性！')
         return
     new_rss_list = new_rss.get('entries')
     try:
@@ -261,7 +261,7 @@ async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
                                               group_ids=rss.group_id,
                                               name='{}'.format(rss.name),
                                               path=FILE_PATH + os.sep +
-                                              'torrent' + os.sep,
+                                                   'torrent' + os.sep,
                                               proxy=proxy))
     return hash_list
 
@@ -522,7 +522,7 @@ async def fuck_pixiv(url: str) -> str:
 
 
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
-async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
+async def download_image_2(url: str, proxy: bool, get_hash: bool = False) -> str:
     try:
         # 默认超时时长为 5 秒,为了减少超时前图片没完成下载的发生频率,暂时先禁用后观察
         async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy),
@@ -531,10 +531,14 @@ async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
                 url = await fuck_pixiv(url=url)
             referer = re.findall('([hH][tT]{2}[pP][sS]?://.*?)/.*?', url)[0]
             headers = {'referer': referer}
-            pic = await client.get(url, headers=headers)
+            try:
+                pic = await client.get(url, headers=headers)
+            except httpx.ConnectError as e:
+                logger.error(f'有可能需要开启代理！ {e}')
+                return None
             # 如果图片无法访问到,直接返回
-            if pic.status_code not in STATUS_CODE:
-                logger.info(f'pic.status_code: {pic.status_code}')
+            if pic.status_code not in STATUS_CODE or len(pic.content) == 0:
+                logger.error(f'[{url}] pic.status_code: {pic.status_code} pic.size:{len(pic.content)}')
                 return None
             if get_hash:
                 # 返回图像的指纹
@@ -544,6 +548,14 @@ async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
     except Exception as e:
         logger.error(f'图片[{url}]下载失败,将重试 \n {e}')
         raise
+
+
+async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
+    try:
+        return await download_image_2(url=url, proxy=proxy, get_hash=get_hash)
+    except Exception as e:
+        logger.error(f'图片[{url}]下载失败！已达最大重试次数！{e}')
+        return None
 
 
 # 处理图片、视频

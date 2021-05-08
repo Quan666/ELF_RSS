@@ -7,7 +7,7 @@ from nonebot.rule import to_me
 from qbittorrent import Client
 from .config import config
 
-upload_group_file = on_command('upload_file', rule=to_me(), priority=5)
+upload_group_file = on_command('upload_file', aliases={'uploadfile'}, rule=to_me(), priority=5)
 
 
 async def get_qb():
