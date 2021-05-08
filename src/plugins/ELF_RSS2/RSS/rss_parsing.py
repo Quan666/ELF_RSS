@@ -53,7 +53,7 @@ HEADERS = {
     'Accept-Language': 'en-US,en;q=0.9',
     'Cache-Control': 'max-age=0',
     'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
     'Connection': 'keep-alive',
     'Content-Type': 'application/xml; charset=utf-8'
 }
@@ -204,7 +204,9 @@ async def duplicate_exists(rss: rss_class.Rss, item: dict,
                 continue
             url = img_doc.attr("src")
             # 通过图像的指纹来判断是否实际是同一张图片
-            image_hash = await download_image(url, rss.img_proxy, get_hash=True)
+            image_hash = await download_image(url,
+                                              rss.img_proxy,
+                                              get_hash=True)
             logger.info(f'image_hash: {image_hash}')
             sql += f" AND image_hash='{image_hash}'"
         if mode == 'link':
@@ -264,7 +266,7 @@ async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
                                               group_ids=rss.group_id,
                                               name='{}'.format(rss.name),
                                               path=FILE_PATH + os.sep +
-                                                   'torrent' + os.sep,
+                                              'torrent' + os.sep,
                                               proxy=proxy))
     return hash_list
 
@@ -523,7 +525,9 @@ async def fuck_pixiv(url: str) -> str:
 
 
 @retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
-async def download_image_2(url: str, proxy: bool, get_hash: bool = False) -> str:
+async def download_image_2(url: str,
+                           proxy: bool,
+                           get_hash: bool = False) -> str:
     try:
         # 默认超时时长为 5 秒,为了减少超时前图片没完成下载的发生频率,暂时先禁用后观察
         async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy),
@@ -539,7 +543,9 @@ async def download_image_2(url: str, proxy: bool, get_hash: bool = False) -> str
                 return None
             # 如果图片无法访问到,直接返回
             if pic.status_code not in STATUS_CODE or len(pic.content) == 0:
-                logger.error(f'[{url}] pic.status_code: {pic.status_code} pic.size:{len(pic.content)}')
+                logger.error(
+                    f'[{url}] pic.status_code: {pic.status_code} pic.size:{len(pic.content)}'
+                )
                 return None
             if get_hash:
                 # 返回图像的指纹
