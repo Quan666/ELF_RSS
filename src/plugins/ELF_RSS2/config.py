@@ -38,7 +38,7 @@ class ELFConfig(BaseConfig):
 
     max_length: int = 0  # 正文长度限制，防止消息太长刷屏
 
-    version: str = 'v2.2.2'
+    version: str = ''
 
     def __getattr__(self, name: str) -> Any:
         data = self.dict()
