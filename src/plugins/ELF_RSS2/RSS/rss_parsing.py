@@ -23,7 +23,7 @@ from google_trans_new import google_translator
 from nonebot.exception import NetworkError
 from nonebot.log import logger
 from PIL import Image
-from pyquery import PyQuery as pq
+from pyquery import PyQuery as Pq
 from retrying import retry
 
 from ..config import config
@@ -41,8 +41,7 @@ def get_proxy(open_proxy: bool) -> dict:
     return httpx.Proxy(
         url="http://" + proxy,
         # May be "TUNNEL_ONLY" or "FORWARD_ONLY". Defaults to "DEFAULT".
-        mode="TUNNEL_ONLY"
-    ) if proxy else {}
+        mode="TUNNEL_ONLY") if proxy else {}
 
 
 STATUS_CODE = [200, 301, 302]
@@ -52,7 +51,8 @@ HEADERS = {
     'Accept': '*/*',
     'Accept-Language': 'en-US,en;q=0.9',
     'Cache-Control': 'max-age=0',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
+    'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
     'Connection': 'keep-alive',
     'Content-Type': 'application/xml; charset=utf-8'
 }
@@ -70,7 +70,7 @@ async def start(rss: rss_class.Rss) -> None:
     except TimeoutError as e:
         logger.error(e)
         return
-    new_rss_list = new_rss.entries
+    new_rss_list = new_rss.get('entries')
     try:
         old_rss_list = read_rss(rss.name)['entries']
     except KeyError:
@@ -109,8 +109,8 @@ async def start(rss: rss_class.Rss) -> None:
         conn.commit()
     for item in change_rss_list:
         # 检查是否包含屏蔽词
-        if not config.showblockword:
-            match = re.findall("|".join(config.blockword), item['summary'])
+        if not config.show_black_word:
+            match = re.findall("|".join(config.black_word), item['summary'])
             if match:
                 logger.info('内含屏蔽词，已经取消推送该消息')
                 write_item(rss=rss, new_rss=new_rss, new_item=item)
@@ -190,7 +190,7 @@ async def duplicate_exists(rss: rss_class.Rss, item: dict,
     if 'image' in rss.duplicate_filter_mode:
         summary = item['summary']
         try:
-            summary_doc = pq(summary)
+            summary_doc = Pq(summary)
         except Exception as e:
             logger.warning(e)
             # 没有正文内容直接跳过
@@ -213,9 +213,9 @@ async def duplicate_exists(rss: rss_class.Rss, item: dict,
     cursor.execute(f'{sql};')
     result = cursor.fetchone()
     if result is not None:
-        id = result[0]
+        result_id = result[0]
         cursor.execute(
-            f"UPDATE main SET datetime = DATETIME('Now','LocalTime') WHERE id = {id};"
+            f"UPDATE main SET datetime = DATETIME('Now','LocalTime') WHERE id = {result_id};"
         )
         cursor.close()
         conn.commit()
@@ -242,19 +242,27 @@ async def handle_down_torrent(rss: rss_class, item: dict) -> list:
     if config.is_open_auto_down_torrent and rss.down_torrent:
         if rss.down_torrent_keyword:
             if re.search(rss.down_torrent_keyword, item['summary']):
-                return await down_torrent(rss=rss, item=item, proxy=get_proxy(rss.img_proxy))
+                return await down_torrent(rss=rss,
+                                          item=item,
+                                          proxy=get_proxy(rss.img_proxy))
         else:
-            return await down_torrent(rss=rss, item=item, proxy=get_proxy(rss.img_proxy))
+            return await down_torrent(rss=rss,
+                                      item=item,
+                                      proxy=get_proxy(rss.img_proxy))
 
 
 # 创建下载种子任务
 async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
     hash_list = []
     for tmp in item['links']:
-        if tmp['type'] == 'application/x-bittorrent' or tmp['href'].find('.torrent') > 0:
-            hash_list.append(await start_down(url=tmp['href'], group_ids=rss.group_id,
+        if tmp['type'] == 'application/x-bittorrent' or tmp['href'].find(
+                '.torrent') > 0:
+            hash_list.append(await start_down(url=tmp['href'],
+                                              group_ids=rss.group_id,
                                               name='{}'.format(rss.name),
-                                              path=FILE_PATH + os.sep + 'torrent' + os.sep, proxy=proxy))
+                                              path=FILE_PATH + os.sep +
+                                              'torrent' + os.sep,
+                                              proxy=proxy))
     return hash_list
 
 
@@ -268,42 +276,49 @@ async def get_rss(rss: rss_class.Rss) -> dict:
         cookies = None
 
     # 获取 xml
-    async with httpx.AsyncClient(proxies=get_proxy(open_proxy=rss.img_proxy), cookies=cookies,
+    async with httpx.AsyncClient(proxies=get_proxy(open_proxy=rss.img_proxy),
+                                 cookies=cookies,
                                  headers=HEADERS) as client:
+        d = None
         try:
             r = await client.get(rss.get_url())
             # 解析为 JSON
             d = feedparser.parse(r.content)
         except Exception:
             # logger.error("抓取订阅 {} 的 RSS 失败，将重试 ！ E：{}".format(rss.name, e))
-            if not re.match(u'[hH][tT]{2}[pP][sS]?://', rss.url, flags=0) and config.rsshub_backup:
+            if not re.match(u'[hH][tT]{2}[pP][sS]?://', rss.url,
+                            flags=0) and config.rsshub_backup:
                 logger.error('RSSHub :' + config.rsshub +
                              ' 访问失败 ！使用备用RSSHub 地址！')
                 for rsshub_url in list(config.rsshub_backup):
-                    async with httpx.AsyncClient(proxies=get_proxy(open_proxy=rss.img_proxy)) as client:
+                    async with httpx.AsyncClient(proxies=get_proxy(
+                            open_proxy=rss.img_proxy)) as client:
                         try:
-                            r = await client.get(rss.get_url(rsshub=rsshub_url))
+                            r = await client.get(rss.get_url(rsshub=rsshub_url)
+                                                 )
                         except Exception:
-                            logger.error(
-                                'RSSHub :' + rss.get_url(rsshub=rsshub_url) + ' 访问失败 ！使用备用 RSSHub 地址！')
+                            logger.error('RSSHub :' +
+                                         rss.get_url(rsshub=rsshub_url) +
+                                         ' 访问失败 ！使用备用 RSSHub 地址！')
                             continue
                         if r.status_code in STATUS_CODE:
                             d = feedparser.parse(r.content)
-                            if d.entries:
-                                logger.info(rss.get_url(
-                                    rsshub=rsshub_url) + ' 抓取成功！')
+                            if d.get('entries'):
+                                logger.info(
+                                    rss.get_url(rsshub=rsshub_url) + ' 抓取成功！')
                                 break
         try:
-            if d.entries:
-                pass
+            if not d:
+                raise Exception
         except Exception as e:
             if rss.cookies:
                 cookies_str = '\n如果设置了 cookies 请检查 cookies 正确性'
             else:
                 cookies_str = ''
-            e_msg = (f'{rss.name} 抓取失败！已经重试 5 次！请检查订阅地址 {rss.get_url()} {cookies_str}\n'
-                     f'如果是网络问题，请忽略该错误！E: {e}\n'
-                     f'new_rss:{d}')
+            e_msg = (
+                f'{rss.name} 抓取失败！已经重试 5 次！请检查订阅地址 {rss.get_url()} {cookies_str}\n'
+                f'如果是网络问题，请忽略该错误！E: {e}\n'
+                f'new_rss:{d}')
             logger.error(e_msg)
             raise
         return d
@@ -320,7 +335,7 @@ async def handle_summary(summary: str, rss: rss_class.Rss) -> str:
     # summary = re.sub('\n', '', summary)
     # 处理 summary 使其 HTML标签统一，方便处理
     try:
-        summary_html = pq(summary)
+        summary_html = Pq(summary)
     except Exception as e:
         logger.info('{} 没有正文内容！ {}', rss.name, e)
         return ''
@@ -330,10 +345,13 @@ async def handle_summary(summary: str, rss: rss_class.Rss) -> str:
     # 判断是否开启了 仅仅推送有图片的信息
     if not rss.only_pic:
         # 处理标签及翻译
-        res_msg += await handle_html_tag(html=summary_html, translation=rss.translation)
+        res_msg += await handle_html_tag(html=summary_html,
+                                         translation=rss.translation)
 
     # 处理图片
-    res_msg += await handle_img(html=summary_html, img_proxy=rss.img_proxy, img_num=rss.max_image_number)
+    res_msg += await handle_img(html=summary_html,
+                                img_proxy=rss.img_proxy,
+                                img_num=rss.max_image_number)
 
     return res_msg + '\n'
 
@@ -353,11 +371,12 @@ async def handle_date(date=None) -> str:
         # 时差处理，待改进
         if rss_time + 28800.0 < time.time():
             rss_time += 28800.0
-        return '日期：' + time.strftime("%m{}%d{} %H:%M:%S",
-                                     time.localtime(rss_time)).format('月', '日')
+        return '日期：' + time.strftime(
+            "%m{}%d{} %H:%M:%S", time.localtime(rss_time)).format('月', '日')
     # 没有日期的情况，以当前时间
     else:
-        return '日期：' + time.strftime("%m{}%d{} %H:%M:%S", time.localtime()).format('月', '日')
+        return '日期：' + time.strftime("%m{}%d{} %H:%M:%S",
+                                     time.localtime()).format('月', '日')
 
 
 # GIF 文件逐帧缩放
@@ -431,7 +450,8 @@ async def zip_pic(content: bytes) -> BytesIO:
         logger.info(f'Resize image to: {width} x {height}')
         # 和谐
         pim = im.load()
-        points = [[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]]
+        points = [[0, 0], [width - 1, 0], [0, height - 1],
+                  [width - 1, height - 1]]
         try:
             for point in points:
                 if file_type == 'PNG':
@@ -441,8 +461,9 @@ async def zip_pic(content: bytes) -> BytesIO:
                     if im.getcolors():
                         pim[point[0], point[1]] = random.randint(0, 255)
                     else:
-                        pim[point[0], point[1]] = (
-                            random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+                        pim[point[0], point[1]] = (random.randint(0, 255),
+                                                   random.randint(0, 255),
+                                                   random.randint(0, 255))
         except BaseException as e:
             logger.error(f'图片和谐失败！ E: {e}')
             raise
@@ -462,7 +483,11 @@ async def get_pic_base64(content: bytes) -> str:
             logger.warning("当前 GIF 只有一帧")
             im[0].save(image_buffer, format='GIF', optimize=True)
         else:
-            im[0].save(image_buffer, format='GIF', optimize=True, save_all=True, append_images=im[1:])
+            im[0].save(image_buffer,
+                       format='GIF',
+                       optimize=True,
+                       save_all=True,
+                       append_images=im[1:])
     elif type(im) == BytesIO:
         image_buffer = im
     else:
@@ -480,11 +505,15 @@ async def fuck_pixiv(url: str) -> str:
         info_list = img_id.split('-')
         async with httpx.AsyncClient(proxies={}) as client:
             try:
-                req_json = (await client.get('https://hibiapi.getloli.com/api/pixiv/illust?id=' + info_list[0])).json()
+                req_json = (await client.get(
+                    'https://hibiapi.getloli.com/api/pixiv/illust?id=' +
+                    info_list[0])).json()
                 if len(info_list) >= 2:
-                    return req_json['illust']['meta_pages'][int(info_list[1]) - 1]['image_urls']['original']
+                    return req_json['illust']['meta_pages'][
+                        int(info_list[1]) - 1]['image_urls']['original']
                 else:
-                    return req_json['illust']['meta_single_page']['original_image_url']
+                    return req_json['illust']['meta_single_page'][
+                        'original_image_url']
             except Exception as e:
                 logger.error('处理pixiv.cat链接时出现问题 ：{}'.format(e))
                 return url
@@ -496,7 +525,8 @@ async def fuck_pixiv(url: str) -> str:
 async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
     try:
         # 默认超时时长为 5 秒,为了减少超时前图片没完成下载的发生频率,暂时先禁用后观察
-        async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy), timeout=None) as client:
+        async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy),
+                                     timeout=None) as client:
             if config.close_pixiv_cat:
                 url = await fuck_pixiv(url=url)
             referer = re.findall('([hH][tT]{2}[pP][sS]?://.*?)/.*?', url)[0]
@@ -540,7 +570,8 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
                 img_str += '\n图片走丢啦: {} \n'.format(video.attr("poster"))
 
     # 解决 issue36
-    img_list = re.findall(r'\[img]([hH][tT]{2}[pP][sS]?://.*?)\[/img]', str(html))
+    img_list = re.findall(r'\[img]([hH][tT]{2}[pP][sS]?://.*?)\[/img]',
+                          str(html))
     # 只发送指定数量的图片，防止刷屏
     if 0 < img_num < len(img_list):
         img_list = img_list[:img_num]
@@ -597,7 +628,8 @@ async def handle_html_tag(html, translation: bool) -> str:
     doc_a = html('a')
     for a in doc_a.items():
         if str(a.text()) != a.attr("href"):
-            rss_str = rss_str.replace(str(a), f" {a.text()}: {a.attr('href')}\n")
+            rss_str = rss_str.replace(str(a),
+                                      f" {a.text()}: {a.attr('href')}\n")
         else:
             rss_str = rss_str.replace(str(a), f" {a.attr('href')}\n")
         rss_str_tl = rss_str_tl.replace(str(a), '')
@@ -626,7 +658,7 @@ async def handle_translation(rss_str_tl: str) -> str:
     try:
         text = emoji.demojize(rss_str_tl)
         text = re.sub(r':[A-Za-z_]*:', ' ', text)
-        if config.usebaidu:
+        if config.use_baidu:
             rss_str_tl = re.sub(r'\n', '百度翻译 ', rss_str_tl)
             rss_str_tl = unicodedata.normalize('NFC', rss_str_tl)
             text = emoji.demojize(rss_str_tl)
@@ -688,23 +720,23 @@ def read_rss(name) -> dict:
 # 写入记录
 def write_rss(name: str, new_rss: dict, new_item: list = None):
     if new_item:
-        max_length = len(new_rss.entries)
+        max_length = len(new_rss.get('entries'))
         # 防止 rss 超过设置的缓存条数
         if max_length >= config.limit:
-            LIMT = max_length + config.limit
+            limit = max_length + config.limit
         else:
-            LIMT = config.limit
+            limit = config.limit
         old = read_rss(name)
         for tmp in new_item:
             old['entries'].insert(0, tmp)
-        old['entries'] = old['entries'][0:LIMT]
+        old['entries'] = old['entries'][0:limit]
     else:
         old = new_rss
     if not os.path.isdir(FILE_PATH):
         os.makedirs(FILE_PATH)
     with codecs.open(FILE_PATH + (name + ".json"), "w", 'utf-8') as dump_f:
-        dump_f.write(json.dumps(old, sort_keys=True,
-                                indent=4, ensure_ascii=False))
+        dump_f.write(
+            json.dumps(old, sort_keys=True, indent=4, ensure_ascii=False))
 
 
 # 发送消息,失败重试
@@ -715,22 +747,26 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
         if len(msg) <= 0:
             return False
         if rss.user_id:
-            for id in rss.user_id:
+            for user_id in rss.user_id:
                 try:
-                    await bot.send_msg(message_type='private', user_id=id, message=str(msg))
+                    await bot.send_msg(message_type='private',
+                                       user_id=user_id,
+                                       message=str(msg))
                 except NetworkError as e:
                     logger.error(f"网络错误,消息发送失败,将重试 E: {e}\n链接：{item['link']}")
                 except Exception as e:
-                    logger.error(f'QQ号[{id}]不合法或者不是好友 E: {e}')
+                    logger.error(f'QQ号[{user_id}]不合法或者不是好友 E: {e}')
 
         if rss.group_id:
-            for id in rss.group_id:
+            for group_id in rss.group_id:
                 try:
-                    await bot.send_msg(message_type='group', group_id=id, message=str(msg))
+                    await bot.send_msg(message_type='group',
+                                       group_id=group_id,
+                                       message=str(msg))
                 except NetworkError as e:
                     logger.error(f"网络错误,消息发送失败,将重试 E: {e}\n链接：{item['link']}")
                 except Exception as e:
-                    logger.info(f'群号[{id}]不合法或者未加群 E: {e}')
+                    logger.info(f'群号[{group_id}]不合法或者未加群 E: {e}')
         return True
     except Exception as e:
         logger.info(f'发生错误 消息发送失败 E: {e}')

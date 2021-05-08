@@ -1,18 +1,22 @@
 from nonebot import on_command
-from nonebot import permission as SUPERUSER
-from nonebot.adapters.cqhttp import Bot, Event, permission
+from nonebot import permission as su
+from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission
 from nonebot.rule import to_me
 
 from .RSS import rss_class
 
-RSS_SHOW_ALL = on_command('showall', aliases={'selectall', '所有订阅'}, rule=to_me(), priority=5,
-                          permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
+RSS_SHOW_ALL = on_command('showall',
+                          aliases={'selectall', '所有订阅'},
+                          rule=to_me(),
+                          priority=5,
+                          permission=su.SUPERUSER
+                          | permission.GROUP_ADMIN | permission.GROUP_OWNER)
 
 
 @RSS_SHOW_ALL.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
     group_id = None
-    if event.message_type == 'group':
+    if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
     rss = rss_class.Rss('', '', '-1', '-1')
@@ -39,4 +43,3 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
     else:
         await RSS_SHOW_ALL.send('当前没有任何订阅！')
-        return

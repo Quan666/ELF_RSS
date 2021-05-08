@@ -1,17 +1,21 @@
 from nonebot import on_command
-from nonebot import permission as SUPERUSER
+from nonebot import permission as su
 from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 from nonebot.rule import to_me
-from .RSS import my_trigger as TR
+from .RSS import my_trigger as tr
 from .RSS import rss_class
 
-ADD_COOKIES = on_command('addcookies', aliases={'添加cookies'}, rule=to_me(
-), priority=5, permission=SUPERUSER.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER)
+ADD_COOKIES = on_command('add_cookies',
+                         aliases={'添加cookies'},
+                         rule=to_me(),
+                         priority=5,
+                         permission=su.SUPERUSER | permission.GROUP_ADMIN
+                         | permission.GROUP_OWNER)
 
 
 @ADD_COOKIES.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    args = str(event.message).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
+    args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
         state["ADD_COOKIES"] = unescape(args)  # 如果用户发送了参数则直接赋值
 
@@ -20,7 +24,14 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
 
 @ADD_COOKIES.got("ADD_COOKIES",
-                 prompt="请输入\n名称 cookies\n空格分割\n获取方式：\nPC端 chrome 浏览器按 F12\n找到Consle选项卡，输入:\ndocument.cookie\n输出的字符串就是了")
+                 prompt=("请输入：\n"
+                         "名称 cookies\n"
+                         "空格分割\n"
+                         "获取方式：\n"
+                         "PC端 chrome 浏览器按 F12\n"
+                         "找到Console选项卡，输入:\n"
+                         "document.cookie\n"
+                         "输出的字符串就是了"))
 async def handle_add_cookies(bot: Bot, event: Event, state: dict):
     rss_cookies = unescape(state["ADD_COOKIES"])
 
@@ -47,7 +58,9 @@ async def handle_add_cookies(bot: Bot, event: Event, state: dict):
 
     rss.name = name
     if rss.set_cookies(cookies):
-        await TR.add_job(rss)
-        await ADD_COOKIES.send('👏 {}的Cookies添加成功！\nCookies:{}\n'.format(rss.name, rss.cookies))
+        await tr.add_job(rss)
+        await ADD_COOKIES.send('👏 {}的Cookies添加成功！\nCookies:{}\n'.format(
+            rss.name, rss.cookies))
     else:
-        await ADD_COOKIES.send('👏 {}的Cookies添加失败！\nCookies:{}\n'.format(rss.name, rss.cookies))
+        await ADD_COOKIES.send('👏 {}的Cookies添加失败！\nCookies:{}\n'.format(
+            rss.name, rss.cookies))

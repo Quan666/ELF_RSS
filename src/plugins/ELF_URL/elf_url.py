@@ -10,7 +10,7 @@ URL = on_command("短链", rule=to_me(), priority=5)
 
 @URL.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    args = str(event.message).strip()
+    args = str(event.get_message()).strip()
     if args:
         state["URL"] = args
 

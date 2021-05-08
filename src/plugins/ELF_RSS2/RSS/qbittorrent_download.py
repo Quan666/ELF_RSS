@@ -18,7 +18,6 @@ from ..config import config
 # 关键词正则表达式
 # 下载开关
 
-
 DOWN_STATUS_DOWNING = 1  # 下载中
 DOWN_STATUS_UPLOADING = 2  # 上传中
 DOWN_STATUS_UPLOAD_OK = 3  # 上传完成
@@ -40,7 +39,9 @@ async def send_msg(msg: str) -> list:
     bot, = nonebot.get_bots().values()
     msg_id = []
     for group_id in config.down_status_msg_group:
-        msg_id.append(await bot.send_msg(message_type='group', group_id=int(group_id), message=msg))
+        msg_id.append(await bot.send_msg(message_type='group',
+                                         group_id=int(group_id),
+                                         message=msg))
     return msg_id
 
 
@@ -48,20 +49,26 @@ async def get_qb_client():
     try:
         qb = Client(config.qb_web_url)
         qb.login()
-    except BaseException as e:
+    except Exception as e:
         bot, = nonebot.get_bots().values()
-        msg = '❌ 无法连接到 qbittorrent ,请检查：\n1.是否启动程序\n2.是否勾选了“Web用户界面（远程控制）”\n3.连接地址、端口是否正确\nE: {}'.format(e)
+        msg = ('❌ 无法连接到 qbittorrent ,请检查：\n'
+               '1.是否启动程序\n'
+               '2.是否勾选了“Web用户界面（远程控制）”\n'
+               f'3.连接地址、端口是否正确\nE: {e}')
         logger.error(msg)
-        await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]), message=msg)
+        await bot.send_msg(message_type='private',
+                           user_id=str(list(config.superusers)[0]),
+                           message=msg)
         return None
     try:
         qb.get_default_save_path()
-    except BaseException as e:
+    except Exception as e:
         bot, = nonebot.get_bots().values()
-        msg = '❌ 无法连登录到 qbittorrent ,请检查是否勾选 “对本地主机上的客户端跳过身份验证”。\nE: {}'.format(
-            e)
+        msg = f'❌ 无法连登录到 qbittorrent ,请检查是否勾选 “对本地主机上的客户端跳过身份验证”。\nE: {e}'
         logger.error(msg)
-        await bot.send_msg(message_type='private', user_id=str(list(config.superusers)[0]), message=msg)
+        await bot.send_msg(message_type='private',
+                           user_id=str(list(config.superusers)[0]),
+                           message=msg)
         return None
     return qb
 
@@ -82,21 +89,21 @@ def get_size(size: int) -> str:
         return "%.2f KB" % float(size / kb)
 
 
-def get_torrent_b16Hash(content: bytes) -> str:
+def get_torrent_b16_hash(content: bytes) -> str:
     import magneturi
     # mangetlink = magneturi.from_torrent_file(torrentname)
-    mangetlink = magneturi.from_torrent_data(content)
+    manget_link = magneturi.from_torrent_data(content)
     # print(mangetlink)
     ch = ''
     n = 20
-    b32Hash = n * ch + mangetlink[20:52]
+    b32_hash = n * ch + manget_link[20:52]
     # print(b32Hash)
-    b16Hash = base64.b16encode(base64.b32decode(b32Hash))
-    b16Hash = b16Hash.lower()
-    b16Hash = str(b16Hash, "utf-8")
+    b16_hash = base64.b16encode(base64.b32decode(b32_hash))
+    b16_hash = b16_hash.lower()
+    b16_hash = str(b16_hash, "utf-8")
     # print("40位info hash值：" + '\n' + b16Hash)
     # print("磁力链：" + '\n' + "magnet:?xt=urn:btih:" + b16Hash)
-    return b16Hash
+    return b16_hash
 
 
 async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
@@ -112,7 +119,7 @@ async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
             try:
                 res = await client.get(url, timeout=100)
                 qb.download_from_file(res.content)
-                hash_str = get_torrent_b16Hash(res.content)
+                hash_str = get_torrent_b16_hash(res.content)
             except Exception as e:
                 await send_msg('下载种子失败,可能需要代理:{}'.format(e))
                 return None
@@ -130,14 +137,20 @@ async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
 
 
 # 种子地址，种子下载路径，群文件上传 群列表，订阅名称
-async def start_down(url: str, path: str, group_ids: list, name: str, proxy=None) -> str:
+async def start_down(url: str,
+                     path: str,
+                     group_ids: list,
+                     name: str,
+                     proxy=None) -> str:
     qb = await get_qb_client()
     if not qb:
         return
     # 获取种子 hash
     info = await get_torrent_info_from_hash(url=url, proxy=proxy)
-    await rss_trigger(hash_str=info['hash'], group_ids=group_ids,
-                      name='订阅：{}\n{}\n文件大小：{}'.format(name, info['filename'], info['size']))
+    await rss_trigger(hash_str=info['hash'],
+                      group_ids=group_ids,
+                      name='订阅：{}\n{}\n文件大小：{}'.format(name, info['filename'],
+                                                       info['size']))
     down_info[info['hash']] = {
         "status": DOWN_STATUS_DOWNING,
         "start_time": datetime.datetime.now(),  # 下载开始时间
@@ -155,8 +168,11 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
     files = qb.get_torrent_files(hash_str)
     bot, = nonebot.get_bots().values()
     if info['total_downloaded'] - info['total_size'] >= 0.000000:
-        all_time = (datetime.datetime.now() - down_info[hash_str]['start_time']).seconds
-        await send_msg(str('👏 {}\nHash: {} \n下载完成！耗时：{} s'.format(name, hash_str, str(all_time))))
+        all_time = (datetime.datetime.now() -
+                    down_info[hash_str]['start_time']).seconds
+        await send_msg(
+            str('👏 {}\nHash: {} \n下载完成！耗时：{} s'.format(name, hash_str,
+                                                       str(all_time))))
         down_info[hash_str]['status'] = DOWN_STATUS_UPLOADING
         for group_id in group_ids:
             for tmp in files:
@@ -166,8 +182,13 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
                         path = config.qb_down_path + tmp['name']
                     else:
                         path = info['save_path'] + tmp['name']
-                    await send_msg(str('{}\nHash: {} \n开始上传到群：{}'.format(name, hash_str, group_id)))
-                    await bot.call_api('upload_group_file', group_id=group_id, file=path, name=tmp['name'])
+                    await send_msg(
+                        str('{}\nHash: {} \n开始上传到群：{}'.format(
+                            name, hash_str, group_id)))
+                    await bot.call_api('upload_group_file',
+                                       group_id=group_id,
+                                       file=path,
+                                       name=tmp['name'])
                 except TimeoutError as e:
                     logger.warning(e)
                     continue
@@ -176,8 +197,11 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
         down_info[hash_str]['status'] = DOWN_STATUS_UPLOAD_OK
     else:
         await delete_msg(down_info[hash_str]['downing_tips_msg_id'])
-        msg_id = await send_msg(str('{}\nHash: {} \n下载了 {}%\n平均下载速度：{} KB/s'.format(name, hash_str, round(
-            info['total_downloaded'] / info['total_size'] * 100, 2), round(info['dl_speed_avg'] / 1024, 2))))
+        msg_id = await send_msg(
+            str('{}\nHash: {} \n下载了 {}%\n平均下载速度：{} KB/s'.format(
+                name, hash_str,
+                round(info['total_downloaded'] / info['total_size'] * 100, 2),
+                round(info['dl_speed_avg'] / 1024, 2))))
         down_info[hash_str]['downing_tips_msg_id'] = msg_id
 
 
@@ -194,8 +218,7 @@ async def rss_trigger(hash_str: str, group_ids: list, name: str):
     trigger = IntervalTrigger(
         # minutes=1,
         seconds=int(config.down_status_msg_date),
-        jitter=10
-    )
+        jitter=10)
     job_defaults = {'max_instances': 1}
     # 添加任务
     scheduler.add_job(
