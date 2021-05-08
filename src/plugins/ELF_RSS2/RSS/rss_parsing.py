@@ -109,7 +109,7 @@ async def start(rss: rss_class.Rss) -> None:
         conn.commit()
     for item in change_rss_list:
         # 检查是否包含屏蔽词
-        if not config.show_black_word:
+        if config.black_word:
             match = re.findall("|".join(config.black_word), item['summary'])
             if match:
                 logger.info('内含屏蔽词，已经取消推送该消息')
@@ -658,7 +658,7 @@ async def handle_translation(rss_str_tl: str) -> str:
     try:
         text = emoji.demojize(rss_str_tl)
         text = re.sub(r':[A-Za-z_]*:', ' ', text)
-        if config.use_baidu:
+        if config.baidu_id and config.baidu_key:
             rss_str_tl = re.sub(r'\n', '百度翻译 ', rss_str_tl)
             rss_str_tl = unicodedata.normalize('NFC', rss_str_tl)
             text = emoji.demojize(rss_str_tl)

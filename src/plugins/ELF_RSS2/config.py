@@ -21,10 +21,8 @@ class ELFConfig(BaseConfig):
     gif_zip_size: int = 6 * 1024
 
     blockquote: bool = True
-    show_black_word: bool = True
-    black_word: List[str] = ["互动抽奖", "微博抽奖平台"]
+    black_word: List[str] = []
 
-    use_baidu: bool = False
     baidu_id: str = ''
     baidu_key: str = ''
 
@@ -40,7 +38,7 @@ class ELFConfig(BaseConfig):
 
     max_length: int = 0  # 正文长度限制，防止消息太长刷屏
 
-    version: str = ''
+    version: str = 'v2.2.2'
 
     def __getattr__(self, name: str) -> Any:
         data = self.dict()
