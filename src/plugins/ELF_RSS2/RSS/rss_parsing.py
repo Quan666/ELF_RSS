@@ -68,10 +68,10 @@ async def start(rss: rss_class.Rss) -> None:
 
     try:
         new_rss = await get_rss(rss)
+        new_rss_list = new_rss.get('entries')
     except Exception as e:
         logger.error(f'RSS {rss.get_url()} 抓取失败！已达最大重试次数！请检查RSS地址正确性！')
         return
-    new_rss_list = new_rss.get('entries')
     try:
         old_rss_list = read_rss(rss.name)['entries']
     except KeyError:
@@ -568,10 +568,10 @@ async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
 async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     img_str = ''
     # 处理图片
-    doc_img = html('img')
+    doc_img = html('img').items()
     # 只发送指定数量的图片，防止刷屏
     if 0 < img_num < len(doc_img):
-        doc_img = islice(doc_img.items(), img_num)
+        doc_img = islice(doc_img, img_num)
         img_str += f'\n因启用图片数量限制，目前只有 {img_num} 张图片：'
     for img in doc_img:
         img_base64 = await download_image(img.attr("src"), img_proxy)
