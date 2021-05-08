@@ -25,6 +25,7 @@ from nonebot.log import logger
 from PIL import Image
 from pyquery import PyQuery as Pq
 from retrying import retry
+from itertools import islice
 
 from ..config import config
 from . import rss_class, translation_baidu
@@ -319,10 +320,8 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                 cookies_str = ''
             e_msg = (
                 f'{rss.name} 抓取失败！已经重试 5 次！请检查订阅地址 {rss.get_url()} {cookies_str}\n'
-                f'如果是网络问题，请忽略该错误！E: {e}\n'
-                f'new_rss:{d}')
+                f'如果是网络问题，请忽略该错误！E: {e}')
             logger.error(e_msg)
-            raise
         return d
 
 
@@ -549,7 +548,6 @@ async def download_image_2(url: str, proxy: bool, get_hash: bool = False) -> str
             return await get_pic_base64(pic.content)
     except Exception as e:
         logger.error(f'图片[{url}]下载失败,将重试 \n {e}')
-        raise
 
 
 async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
@@ -565,7 +563,11 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     img_str = ''
     # 处理图片
     doc_img = html('img')
-    for img in doc_img.items():
+    # 只发送指定数量的图片，防止刷屏
+    if 0 < img_num < len(doc_img):
+        doc_img = islice(doc_img.items(), img_num)
+        img_str += f'\n因启用图片数量限制，目前只有 {img_num} 张图片：'
+    for img in doc_img:
         img_base64 = await download_image(img.attr("src"), img_proxy)
         if img_base64:
             img_str += '[CQ:image,file=base64://' + img_base64 + ']'
@@ -586,10 +588,6 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     # 解决 issue36
     img_list = re.findall(r'\[img]([hH][tT]{2}[pP][sS]?://.*?)\[/img]',
                           str(html))
-    # 只发送指定数量的图片，防止刷屏
-    if 0 < img_num < len(img_list):
-        img_list = img_list[:img_num]
-        img_str += f'\n因启用图片数量限制，目前只有 {img_num} 张图片：'
     for img_tmp in img_list:
         img_base64 = await download_image(img_tmp, img_proxy)
         if img_base64:
