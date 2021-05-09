@@ -44,7 +44,6 @@ def rss_trigger(rss: rss_class.Rss):
         trigger=trigger,  # 触发器
         args=(rss, ),  # 函数的参数列表，注意：只有一个值时，不能省略末尾的逗号
         id=rss.name,
-        # kwargs=None,
         misfire_grace_time=30,  # 允许的误差时间，建议不要省略
         max_instances=1,  # 最大并发
         default=ThreadPoolExecutor(64),  # 最大线程

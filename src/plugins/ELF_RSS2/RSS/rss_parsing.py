@@ -22,7 +22,7 @@ import nonebot
 from google_trans_new import google_translator
 from nonebot.exception import NetworkError
 from nonebot.log import logger
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from pyquery import PyQuery as Pq
 from tenacity import retry, stop_after_attempt, stop_after_delay
 from itertools import islice
@@ -69,13 +69,13 @@ async def start(rss: rss_class.Rss) -> None:
     try:
         new_rss = await get_rss(rss)
         new_rss_list = new_rss.get('entries')
-    except Exception as e:
+    except Exception:
         logger.error(f'RSS {rss.get_url()} 抓取失败！已达最大重试次数！请检查RSS地址正确性！')
         return
     try:
         old_rss_list = read_rss(rss.name)['entries']
     except KeyError:
-        write_rss(name=rss.name, new_rss=new_rss, new_item=None)
+        write_rss(name=rss.name, new_rss=new_rss)
         logger.info('{} 订阅第一次抓取成功！'.format(rss.name))
         return
 
@@ -117,27 +117,26 @@ async def start(rss: rss_class.Rss) -> None:
                 write_item(rss=rss, new_rss=new_rss, new_item=item)
                 continue
         # 检查是否匹配关键词 使用 down_torrent_keyword 字段
-        if rss.down_torrent_keyword:
-            if not re.search(rss.down_torrent_keyword, item['summary']):
-                write_item(rss=rss, new_rss=new_rss, new_item=item)
-                continue
+        if rss.down_torrent_keyword and not re.search(rss.down_torrent_keyword,
+                                                      item['summary']):
+            write_item(rss=rss, new_rss=new_rss, new_item=item)
+            continue
         # 检查是否匹配黑名单关键词 使用 black_keyword 字段
-        if rss.black_keyword:
-            if re.search(rss.black_keyword, item['summary']):
-                write_item(rss=rss, new_rss=new_rss, new_item=item)
-                continue
+        if rss.black_keyword and re.search(rss.black_keyword, item['summary']):
+            write_item(rss=rss, new_rss=new_rss, new_item=item)
+            continue
         # 检查是否启用去重 使用 duplicate_filter_mode 字段
-        if rss.duplicate_filter_mode:
-            if await duplicate_exists(rss=rss, item=item, conn=conn):
-                write_item(rss=rss, new_rss=new_rss, new_item=item)
-                continue
+        if rss.duplicate_filter_mode and await duplicate_exists(
+                rss=rss, item=item, conn=conn):
+            write_item(rss=rss, new_rss=new_rss, new_item=item)
+            continue
         # 检查是否只推送有图片的消息
         if rss.only_pic and not re.search('<img.+?>', item['summary']):
             logger.info('已开启仅图片，该消息没有图片，将跳过')
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
 
-        item_msg = '【' + new_rss.feed.title + '】更新了!\n----------------------\n'
+        item_msg = f"【{new_rss.get('feed').get('title')}】更新了!\n----------------------\n"
         # 处理标题
         if not rss.only_title:
             # 先判断与正文相识度，避免标题正文一样，或者是标题为正文前N字等情况
@@ -160,7 +159,7 @@ async def start(rss: rss_class.Rss) -> None:
         # 处理时间
         try:
             item_msg += await handle_date(date=item['published_parsed'])
-        except Exception:
+        except KeyError:
             item_msg += await handle_date()
 
         # 处理种子
@@ -204,9 +203,11 @@ async def duplicate_exists(rss: rss_class.Rss, item: dict,
                 continue
             url = img_doc.attr("src")
             # 通过图像的指纹来判断是否实际是同一张图片
-            image_hash = await download_image(url,
-                                              rss.img_proxy,
-                                              get_hash=True)
+            content = await download_image(url, rss.img_proxy)
+            if not content:
+                continue
+            im = Image.open(BytesIO(content))
+            image_hash = imagehash.average_hash(im)
             logger.info(f'image_hash: {image_hash}')
             sql += f" AND image_hash='{image_hash}'"
         if mode == 'link':
@@ -235,7 +236,7 @@ async def duplicate_exists(rss: rss_class.Rss, item: dict,
 
 
 # 写入单条消息
-def write_item(rss: rss_class.Rss, new_rss: list, new_item: str):
+def write_item(rss: rss_class.Rss, new_rss: dict, new_item: str):
     tmp = [new_item]
     write_rss(name=rss.name, new_rss=new_rss, new_item=tmp)
 
@@ -265,8 +266,6 @@ async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
             hash_list.append(await start_down(url=tmp['href'],
                                               group_ids=rss.group_id,
                                               name='{}'.format(rss.name),
-                                              path=FILE_PATH + os.sep +
-                                              'torrent' + os.sep,
                                               proxy=proxy))
     return hash_list
 
@@ -297,10 +296,10 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                              ' 访问失败 ！使用备用RSSHub 地址！')
                 for rsshub_url in list(config.rsshub_backup):
                     async with httpx.AsyncClient(proxies=get_proxy(
-                            open_proxy=rss.img_proxy)) as client:
+                            open_proxy=rss.img_proxy)) as fork_client:
                         try:
-                            r = await client.get(rss.get_url(rsshub=rsshub_url)
-                                                 )
+                            r = await fork_client.get(
+                                rss.get_url(rsshub=rsshub_url))
                         except Exception:
                             logger.error('RSSHub :' +
                                          rss.get_url(rsshub=rsshub_url) +
@@ -383,68 +382,50 @@ async def handle_date(date=None) -> str:
                                      time.localtime()).format('月', '日')
 
 
-# GIF 文件逐帧缩放
-def extract_and_resize_frames(image: Image, resize_ratio: float = 2.0):
-    # 分析 GIF 源文件的结构模式，是全量还是差分的，根据每一帧存储的内容做区分
-    mode = analyse_image(image)['mode']
-    resize_to = (image.size[0] // resize_ratio, image.size[1] // resize_ratio)
-    # 读取到第一帧
-    image.seek(0)
-    # 获取到第一帧的调色盘，并将第一帧转换为RGBA色彩模式，为了后面处理差分帧做准备
-    p = image.getpalette()
-    last_frame = image.convert('RGBA')
-    # 处理后的所有帧
-    all_frames = []
-
+# 通过 ezgif 压缩 GIF
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
+async def resize_gif(url: str, proxy: bool, resize_ratio: int = 2) -> BytesIO:
     try:
-        while True:
-            # 如果 GIF 源文件用的是局部颜色表，每一帧有自己的局部调色盘；否则，把全局调色盘应用给新的一帧。
-            if not image.getpalette():
-                image.putpalette(p)
-            new_frame = Image.new('RGBA', image.size)
-            # 如果 GIF 源文件为差分模式，即部分帧只是存储与上一帧的差分，此时将当前抽出的帧覆盖到上一帧上作为新的一帧
-            if mode == 'partial':
-                new_frame.paste(last_frame)
-            new_frame.paste(image, (0, 0), image.convert('RGBA'))
-            new_frame.thumbnail(resize_to)
-            # 如果当前帧存在持续时间，则赋值给新的帧
-            if 'duration' in image.info:
-                new_frame.info['duration'] = image.info['duration']
-            all_frames.append(new_frame)
-            last_frame = new_frame
-            # 读取到下一帧
-            image.seek(image.tell() + 1)
-    except EOFError:
-        pass
-
-    return all_frames
-
-
-# 分析 GIF 文件的结构模式
-def analyse_image(image: Image):
-    results = {
-        'size': image.size,
-        'mode': 'full',
-    }
-    try:
-        while True:
-            if image.tile:
-                tile = image.tile[0]
-                update_region = tile[1]
-                update_region_dimensions = update_region[2:]
-                if update_region_dimensions != image.size:
-                    results['mode'] = 'partial'
-                    break
-            image.seek(image.tell() + 1)
-    except EOFError:
-        pass
-    return results
+        async with httpx.AsyncClient(proxies=get_proxy(proxy)) as client:
+            response = await client.post(url='https://s3.ezgif.com/resize',
+                                         data={"new-image-url": url},
+                                         timeout=None)
+            d = Pq(response.text)
+            next_url = d("form").attr("action")
+            file = d("form > input[type=hidden]:nth-child(1)").attr("value")
+            token = d("form > input[type=hidden]:nth-child(2)").attr("value")
+            old_width = d("form > input[type=hidden]:nth-child(3)").attr(
+                "value")
+            old_height = d("form > input[type=hidden]:nth-child(4)").attr(
+                "value")
+            data = {
+                "file": file,
+                "token": token,
+                "old_width": old_width,
+                "old_height": old_height,
+                "width": str(int(old_width) // resize_ratio),
+                "method": "gifsicle",
+                "ar": "force"
+            }
+            async with httpx.AsyncClient(
+                    proxies=get_proxy(proxy)) as fork_client:
+                response = await fork_client.post(url=next_url + "?ajax=true",
+                                                  data=data,
+                                                  timeout=None)
+                d = Pq(response.text)
+                output_img_url = "https:" + d("img:nth-child(1)").attr("src")
+                return await download_image(output_img_url)
+    except Exception as e:
+        logger.error(f'GIF 图片[{url}]压缩失败,将重试 \n {e}')
 
 
 # 图片压缩
-async def zip_pic(content: bytes) -> BytesIO:
+async def zip_pic(url: str, proxy: bool, content: bytes):
     # 打开一个 JPEG/PNG/GIF 图像文件
-    im = Image.open(BytesIO(content))
+    try:
+        im = Image.open(BytesIO(content))
+    except UnidentifiedImageError:
+        return None
     # 获得图像文件类型：
     file_type = im.format
     if file_type != 'GIF':
@@ -474,29 +455,21 @@ async def zip_pic(content: bytes) -> BytesIO:
         return im
     else:
         if len(content) > config.gif_zip_size * 1024:
-            return extract_and_resize_frames(im)
+            return await resize_gif(url, proxy)
         return BytesIO(content)
 
 
 # 将图片转化为 base64
-async def get_pic_base64(content: bytes) -> str:
-    im = await zip_pic(content)
-    if type(im) == list:
-        image_buffer = BytesIO()
-        if len(im) == 1:
-            logger.warning("当前 GIF 只有一帧")
-            im[0].save(image_buffer, format='GIF', optimize=True)
-        else:
-            im[0].save(image_buffer,
-                       format='GIF',
-                       optimize=True,
-                       save_all=True,
-                       append_images=im[1:])
-    elif type(im) == BytesIO:
-        image_buffer = im
+async def get_pic_base64(content) -> str:
+    if not content:
+        return ""
+    elif type(content) == bytes:
+        image_buffer = BytesIO(content)
+    elif type(content) == BytesIO:
+        image_buffer = content
     else:
         image_buffer = BytesIO()
-        im.save(image_buffer, format=im.format)
+        content.save(image_buffer, format=content.format)
     res = str(base64.b64encode(image_buffer.getvalue()), encoding="utf-8")
     return res
 
@@ -526,9 +499,7 @@ async def fuck_pixiv(url: str) -> str:
 
 
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def download_image_2(url: str,
-                           proxy: bool,
-                           get_hash: bool = False) -> str:
+async def download_image_detail(url: str, proxy: bool):
     try:
         # 默认超时时长为 5 秒,为了减少超时前图片没完成下载的发生频率,暂时先禁用后观察
         async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy),
@@ -548,22 +519,24 @@ async def download_image_2(url: str,
                     f'[{url}] pic.status_code: {pic.status_code} pic.size:{len(pic.content)}'
                 )
                 return None
-            if get_hash:
-                # 返回图像的指纹
-                im = Image.open(BytesIO(pic.content))
-                return imagehash.average_hash(im)
-            return await get_pic_base64(pic.content)
+            return pic.content
     except Exception as e:
         logger.error(f'图片[{url}]下载失败,将重试 \n {e}')
         raise
 
 
-async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
+async def download_image(url: str, proxy: bool = False):
     try:
-        return await download_image_2(url=url, proxy=proxy, get_hash=get_hash)
+        return await download_image_detail(url=url, proxy=proxy)
     except Exception as e:
         logger.error(f'图片[{url}]下载失败！已达最大重试次数！{e}')
         return None
+
+
+async def handle_img_combo(url: str, img_proxy: bool) -> str:
+    content = await download_image(url, img_proxy)
+    resize_content = await zip_pic(url, img_proxy, content)
+    return await get_pic_base64(resize_content)
 
 
 # 处理图片、视频
@@ -572,11 +545,12 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     # 处理图片
     doc_img = html('img').items()
     # 只发送指定数量的图片，防止刷屏
-    if 0 < img_num < len(doc_img):
+    if 0 < img_num < len(doc_img.items()):
         doc_img = islice(doc_img, img_num)
         img_str += f'\n因启用图片数量限制，目前只有 {img_num} 张图片：'
     for img in doc_img:
-        img_base64 = await download_image(img.attr("src"), img_proxy)
+        url = img.attr("src")
+        img_base64 = await handle_img_combo(url, img_proxy)
         if img_base64:
             img_str += '[CQ:image,file=base64://' + img_base64 + ']'
         else:
@@ -587,7 +561,8 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     if doc_video:
         img_str += '视频封面：'
         for video in doc_video.items():
-            img_base64 = await download_image(video.attr("poster"), img_proxy)
+            url = video.attr("poster")
+            img_base64 = await handle_img_combo(url, img_proxy)
             if img_base64:
                 img_str += '[CQ:image,file=base64://' + img_base64 + ']'
             else:
@@ -597,7 +572,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     img_list = re.findall(r'\[img]([hH][tT]{2}[pP][sS]?://.*?)\[/img]',
                           str(html))
     for img_tmp in img_list:
-        img_base64 = await download_image(img_tmp, img_proxy)
+        img_base64 = await handle_img_combo(img_tmp, img_proxy)
         if img_base64:
             img_str += '[CQ:image,file=base64://' + img_base64 + ']'
         else:
@@ -606,7 +581,8 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     # 一个网站的 RSS 源 description 标签内容格式为: 'Image: ...'
     image_search = re.search(r'Image: (https?://\S*)', str(html))
     if image_search:
-        img_base64 = await download_image(image_search.group(1), img_proxy)
+        url = image_search.group(1)
+        img_base64 = await handle_img_combo(url, img_proxy)
         if img_base64:
             img_str += '[CQ:image,file=base64://' + img_base64 + ']'
         else:
@@ -674,7 +650,6 @@ async def handle_html_tag(html, translation: bool) -> str:
 # 翻译
 async def handle_translation(rss_str_tl: str) -> str:
     translator = google_translator()
-    # rss_str_tl = re.sub(r'\n', ' ', rss_str_tl)
     try:
         text = emoji.demojize(rss_str_tl)
         text = re.sub(r':[A-Za-z_]*:', ' ', text)
@@ -719,7 +694,7 @@ def check_update(new: list, old: list) -> list:
             try:
                 if i['id'] == j['id']:
                     count = 1
-            except Exception:
+            except KeyError:
                 if i['link'] == j['link']:
                     count = 1
         if count == 1:

@@ -137,11 +137,7 @@ async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
 
 
 # 种子地址，种子下载路径，群文件上传 群列表，订阅名称
-async def start_down(url: str,
-                     path: str,
-                     group_ids: list,
-                     name: str,
-                     proxy=None) -> str:
+async def start_down(url: str, group_ids: list, name: str, proxy=None) -> str:
     qb = await get_qb_client()
     if not qb:
         return
@@ -215,10 +211,8 @@ async def delete_msg(msg_ids: list):
 async def rss_trigger(hash_str: str, group_ids: list, name: str):
     scheduler = require("nonebot_plugin_apscheduler").scheduler
     # 制作一个“time分钟/次”触发器
-    trigger = IntervalTrigger(
-        # minutes=1,
-        seconds=int(config.down_status_msg_date),
-        jitter=10)
+    trigger = IntervalTrigger(seconds=int(config.down_status_msg_date),
+                              jitter=10)
     job_defaults = {'max_instances': 1}
     # 添加任务
     scheduler.add_job(
