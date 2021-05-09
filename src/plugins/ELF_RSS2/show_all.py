@@ -14,7 +14,7 @@ RSS_SHOW_ALL = on_command('showall',
 
 
 @RSS_SHOW_ALL.handle()
-async def handle_first_receive(event: Event):
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
     group_id = None
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id

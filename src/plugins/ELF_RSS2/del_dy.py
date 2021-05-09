@@ -23,14 +23,14 @@ RSS_DELETE = on_command('deldy',
 
 
 @RSS_DELETE.handle()
-async def handle_first_receive(event: Event, state: dict):
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
         state["RSS_DELETE"] = unescape(args)  # 如果用户发送了参数则直接赋值
 
 
 @RSS_DELETE.got("RSS_DELETE", prompt="输入要删除的订阅名")
-async def handle_rss_delete(event: Event, state: dict):
+async def handle_rss_delete(bot: Bot, event: Event, state: dict):
     rss_name = unescape(state["RSS_DELETE"])
     group_id = None
     if isinstance(event, GroupMessageEvent):

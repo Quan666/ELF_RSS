@@ -14,7 +14,7 @@ ADD_COOKIES = on_command('add_cookies',
 
 
 @ADD_COOKIES.handle()
-async def handle_first_receive(event: Event, state: dict):
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
         state["ADD_COOKIES"] = unescape(args)  # 如果用户发送了参数则直接赋值
@@ -32,7 +32,7 @@ async def handle_first_receive(event: Event, state: dict):
                          "找到Console选项卡，输入:\n"
                          "document.cookie\n"
                          "输出的字符串就是了"))
-async def handle_add_cookies(state: dict):
+async def handle_add_cookies(bot: Bot, event: Event, state: dict):
     rss_cookies = unescape(state["ADD_COOKIES"])
 
     dy = rss_cookies.split(' ', 1)

@@ -15,7 +15,7 @@ RSS_SHOW = on_command('show',
 
 # 不带订阅名称默认展示当前群组或账号的订阅，带订阅名称就显示该订阅的
 @RSS_SHOW.handle()
-async def handle_first_receive(event: Event):
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
         rss_name = unescape(args)  # 如果用户发送了参数则直接赋值

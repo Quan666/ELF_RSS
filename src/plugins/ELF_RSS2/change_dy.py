@@ -21,7 +21,7 @@ RSS_CHANGE = on_command('change',
 
 
 @RSS_CHANGE.handle()
-async def handle_first_receive(event: Event, state: dict):
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.get_message()).strip()
     if args:
         state["RSS_CHANGE"] = unescape(args)  # 如果用户发送了参数则直接赋值
@@ -112,7 +112,7 @@ def handle_change_list(rss: rss_class.Rss, key_to_change: str,
 
 
 @RSS_CHANGE.got("RSS_CHANGE", prompt='')
-async def handle_rss_change(event: Event, state: dict):
+async def handle_rss_change(bot: Bot, event: Event, state: dict):
     change_info = unescape(state["RSS_CHANGE"])
     group_id = None
     if isinstance(event, GroupMessageEvent):

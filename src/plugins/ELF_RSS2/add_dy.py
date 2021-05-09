@@ -15,7 +15,7 @@ RSS_ADD = on_command('add',
 
 
 @RSS_ADD.handle()
-async def handle_first_receive(event: Event, state: dict):
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
         state["RSS_ADD"] = unescape(args)  # 如果用户发送了参数则直接赋值
@@ -29,7 +29,7 @@ async def handle_first_receive(event: Event, state: dict):
     prompt=
     "请输入\n名称 [订阅地址]\n空格分割、[]表示可选\n私聊默认订阅到当前账号，群聊默认订阅到当前群组\n更多信息可通过 change 命令修改"
 )
-async def handle_rss_add(event: Event, state: dict):
+async def handle_rss_add(bot: Bot, event: Event, state: dict):
     rss_dy_link = unescape(state["RSS_ADD"])
     user_id = event.get_user_id()
     group_id = None
