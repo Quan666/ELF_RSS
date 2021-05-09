@@ -9,14 +9,14 @@ URL = on_command("短链", rule=to_me(), priority=5)
 
 
 @URL.handle()
-async def handle_first_receive(event: Event, state: dict):
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.get_message()).strip()
     if args:
         state["URL"] = args
 
 
 @URL.got("URL", prompt="输入你想要缩短的链接")
-async def handle_url(state: dict):
+async def handle_url(bot: Bot, event: Event, state: dict):
     link = state["URL"]
     uri = await get_uri_of_url(link)
     await URL.finish(uri)

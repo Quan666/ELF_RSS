@@ -12,14 +12,14 @@ ONE_READ = on_command('阅后即焚',
 
 
 @ONE_READ.handle()
-async def handle_first_receive(event: Event, state: dict):
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
         state["ONE_READ"] = args  # 如果用户发送了参数则直接赋值
 
 
 @ONE_READ.got("ONE_READ", prompt="发送“阅后即焚”信息")
-async def handle_city(state: dict):
+async def handle_city(bot: Bot, event: Event, state: dict):
     txt = state["ONE_READ"]
     re = await get_once_read(txt)
     await ONE_READ.finish(re)

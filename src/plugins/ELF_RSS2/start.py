@@ -35,7 +35,7 @@ async def start():
         logger.debug(e)
 
 
-async def check_first_connect(event: Event) -> bool:
+async def check_first_connect(bot: Bot, event: Event, state: dict) -> bool:
     if isinstance(event, LifecycleMetaEvent) and not config.is_start:
         config.is_start = True
         return True
@@ -46,6 +46,6 @@ start_metaevent = on_metaevent(rule=check_first_connect, block=True)
 
 
 @start_metaevent.handle()
-async def _():
+async def _(bot: Bot, event: Event, state: dict):
     """ 启动时发送启动成功信息 """
     await start()

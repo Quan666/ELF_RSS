@@ -86,7 +86,7 @@ async def check_down_status(hash_str: str, group_id: int):
 
 
 @upload_group_file.handle()
-async def handle_first_receive(event: Event):
+async def handle_first_receive(bot: Bot, event: Event, state: dict):
     hash_str = re.search('[a-f0-9]{40}', str(event.get_message()))[0]
     group_id = None
     if isinstance(event, PrivateMessageEvent):
