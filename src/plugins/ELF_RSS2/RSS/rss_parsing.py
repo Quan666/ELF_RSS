@@ -24,7 +24,8 @@ from nonebot.exception import NetworkError
 from nonebot.log import logger
 from PIL import Image
 from pyquery import PyQuery as Pq
-from retrying import retry
+from tenacity import retry, stop_after_attempt, stop_after_delay
+from itertools import islice
 
 from ..config import config
 from . import rss_class, translation_baidu
@@ -52,7 +53,7 @@ HEADERS = {
     'Accept-Language': 'en-US,en;q=0.9',
     'Cache-Control': 'max-age=0',
     'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36',
     'Connection': 'keep-alive',
     'Content-Type': 'application/xml; charset=utf-8'
 }
@@ -67,10 +68,10 @@ async def start(rss: rss_class.Rss) -> None:
 
     try:
         new_rss = await get_rss(rss)
+        new_rss_list = new_rss.get('entries')
     except Exception as e:
         logger.error(f'RSS {rss.get_url()} 抓取失败！已达最大重试次数！请检查RSS地址正确性！')
         return
-    new_rss_list = new_rss.get('entries')
     try:
         old_rss_list = read_rss(rss.name)['entries']
     except KeyError:
@@ -203,7 +204,9 @@ async def duplicate_exists(rss: rss_class.Rss, item: dict,
                 continue
             url = img_doc.attr("src")
             # 通过图像的指纹来判断是否实际是同一张图片
-            image_hash = await download_image(url, rss.img_proxy, get_hash=True)
+            image_hash = await download_image(url,
+                                              rss.img_proxy,
+                                              get_hash=True)
             logger.info(f'image_hash: {image_hash}')
             sql += f" AND image_hash='{image_hash}'"
         if mode == 'link':
@@ -263,13 +266,13 @@ async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
                                               group_ids=rss.group_id,
                                               name='{}'.format(rss.name),
                                               path=FILE_PATH + os.sep +
-                                                   'torrent' + os.sep,
+                                              'torrent' + os.sep,
                                               proxy=proxy))
     return hash_list
 
 
 # 获取 RSS 并解析为 json ，失败重试
-@retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_rss(rss: rss_class.Rss) -> dict:
     # 判断是否使用cookies
     if rss.cookies:
@@ -319,8 +322,7 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                 cookies_str = ''
             e_msg = (
                 f'{rss.name} 抓取失败！已经重试 5 次！请检查订阅地址 {rss.get_url()} {cookies_str}\n'
-                f'如果是网络问题，请忽略该错误！E: {e}\n'
-                f'new_rss:{d}')
+                f'如果是网络问题，请忽略该错误！E: {e}')
             logger.error(e_msg)
             raise
         return d
@@ -523,8 +525,10 @@ async def fuck_pixiv(url: str) -> str:
         return url
 
 
-@retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
-async def download_image_2(url: str, proxy: bool, get_hash: bool = False) -> str:
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
+async def download_image_2(url: str,
+                           proxy: bool,
+                           get_hash: bool = False) -> str:
     try:
         # 默认超时时长为 5 秒,为了减少超时前图片没完成下载的发生频率,暂时先禁用后观察
         async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy),
@@ -540,7 +544,9 @@ async def download_image_2(url: str, proxy: bool, get_hash: bool = False) -> str
                 return None
             # 如果图片无法访问到,直接返回
             if pic.status_code not in STATUS_CODE or len(pic.content) == 0:
-                logger.error(f'[{url}] pic.status_code: {pic.status_code} pic.size:{len(pic.content)}')
+                logger.error(
+                    f'[{url}] pic.status_code: {pic.status_code} pic.size:{len(pic.content)}'
+                )
                 return None
             if get_hash:
                 # 返回图像的指纹
@@ -564,8 +570,12 @@ async def download_image(url: str, proxy: bool, get_hash: bool = False) -> str:
 async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     img_str = ''
     # 处理图片
-    doc_img = html('img')
-    for img in doc_img.items():
+    doc_img = html('img').items()
+    # 只发送指定数量的图片，防止刷屏
+    if 0 < img_num < len(doc_img):
+        doc_img = islice(doc_img, img_num)
+        img_str += f'\n因启用图片数量限制，目前只有 {img_num} 张图片：'
+    for img in doc_img:
         img_base64 = await download_image(img.attr("src"), img_proxy)
         if img_base64:
             img_str += '[CQ:image,file=base64://' + img_base64 + ']'
@@ -586,10 +596,6 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     # 解决 issue36
     img_list = re.findall(r'\[img]([hH][tT]{2}[pP][sS]?://.*?)\[/img]',
                           str(html))
-    # 只发送指定数量的图片，防止刷屏
-    if 0 < img_num < len(img_list):
-        img_list = img_list[:img_num]
-        img_str += f'\n因启用图片数量限制，目前只有 {img_num} 张图片：'
     for img_tmp in img_list:
         img_base64 = await download_image(img_tmp, img_proxy)
         if img_base64:
@@ -754,7 +760,7 @@ def write_rss(name: str, new_rss: dict, new_item: list = None):
 
 
 # 发送消息,失败重试
-@retry(stop_max_attempt_number=5, stop_max_delay=30 * 1000)
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
     bot, = nonebot.get_bots().values()
     try:
