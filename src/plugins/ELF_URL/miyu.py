@@ -18,7 +18,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 @MIYU.got("MIYU", prompt="发送“密语”信息，及密码，空格分割")
 async def handle_city(bot: Bot, event: Event, state: dict):
     txt = state["MIYU"]
-    miyu_list = txt.split(' ')
+    miyu_list = txt.split(" ")
     if len(miyu_list) < 2:
         await MIYU.reject("发送“密语”信息，及密码，空格分割")
 
@@ -27,10 +27,10 @@ async def handle_city(bot: Bot, event: Event, state: dict):
 
 
 async def get_miyu(message: str, passwd: str) -> str:
-    api = 'https://ii1.fun/cipher/insert'
+    api = "https://ii1.fun/cipher/insert"
     data = {"message": message, "passwd": passwd}
-    headers = {'Content-Type': 'application/json'}
+    headers = {"Content-Type": "application/json"}
     async with AsyncClient(proxies={}, headers=headers) as client:
         data_json = await client.post(api, data=json.dumps(data))
         data_json = data_json.json()
-    return '' + data_json['data']['shortUrl']
+    return "" + data_json["data"]["shortUrl"]

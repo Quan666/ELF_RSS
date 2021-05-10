@@ -5,12 +5,13 @@ from nonebot.rule import to_me
 
 from .RSS import rss_class
 
-RSS_SHOW_ALL = on_command('showall',
-                          aliases={'selectall', '所有订阅'},
-                          rule=to_me(),
-                          priority=5,
-                          permission=su.SUPERUSER
-                          | permission.GROUP_ADMIN | permission.GROUP_OWNER)
+RSS_SHOW_ALL = on_command(
+    "showall",
+    aliases={"selectall", "所有订阅"},
+    rule=to_me(),
+    priority=5,
+    permission=su.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER,
+)
 
 
 @RSS_SHOW_ALL.handle()
@@ -19,11 +20,11 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
-    rss = rss_class.Rss('', '', '-1', '-1')
+    rss = rss_class.Rss("", "", "-1", "-1")
     if group_id:
         rss_list = rss.find_group(group=str(group_id))
         if not rss_list:
-            await RSS_SHOW_ALL.send('当前群组没有任何订阅！')
+            await RSS_SHOW_ALL.send("当前群组没有任何订阅！")
             return
     else:
         rss_list = rss.read_rss()
@@ -32,14 +33,14 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             await RSS_SHOW_ALL.send(str(rss_list[0]))
         else:
             flag = 0
-            info = ''
+            info = ""
             for rss_tmp in rss_list:
                 if flag % 5 == 0 and flag != 0:
                     await RSS_SHOW_ALL.send(str(info[:-2]))
-                    info = ''
-                info += 'Name：{}\nURL：{}\n\n'.format(rss_tmp.name, rss_tmp.url)
+                    info = ""
+                info += "Name：{}\nURL：{}\n\n".format(rss_tmp.name, rss_tmp.url)
                 flag += 1
-            await RSS_SHOW_ALL.send(info + '共 {} 条订阅'.format(flag))
+            await RSS_SHOW_ALL.send(info + "共 {} 条订阅".format(flag))
 
     else:
-        await RSS_SHOW_ALL.send('当前没有任何订阅！')
+        await RSS_SHOW_ALL.send("当前没有任何订阅！")

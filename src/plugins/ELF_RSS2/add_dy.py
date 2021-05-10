@@ -6,12 +6,13 @@ from nonebot.rule import to_me
 from .RSS import rss_class
 from .RSS import my_trigger as tr
 
-RSS_ADD = on_command('add',
-                     aliases={'添加订阅', 'sub'},
-                     rule=to_me(),
-                     priority=5,
-                     permission=su.SUPERUSER | permission.GROUP_ADMIN
-                     | permission.GROUP_OWNER)
+RSS_ADD = on_command(
+    "add",
+    aliases={"添加订阅", "sub"},
+    rule=to_me(),
+    priority=5,
+    permission=su.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER,
+)
 
 
 @RSS_ADD.handle()
@@ -26,8 +27,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
 @RSS_ADD.got(
     "RSS_ADD",
-    prompt=
-    "请输入\n名称 [订阅地址]\n空格分割、[]表示可选\n私聊默认订阅到当前账号，群聊默认订阅到当前群组\n更多信息可通过 change 命令修改"
+    prompt="请输入\n名称 [订阅地址]\n空格分割、[]表示可选\n私聊默认订阅到当前账号，群聊默认订阅到当前群组\n更多信息可通过 change 命令修改",
 )
 async def handle_rss_add(bot: Bot, event: Event, state: dict):
     rss_dy_link = unescape(state["RSS_ADD"])
@@ -36,25 +36,25 @@ async def handle_rss_add(bot: Bot, event: Event, state: dict):
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
-    dy = rss_dy_link.split(' ')
+    dy = rss_dy_link.split(" ")
 
-    rss = rss_class.Rss(name='', url='', user_id='-1', group_id='-1')
+    rss = rss_class.Rss(name="", url="", user_id="-1", group_id="-1")
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅
     try:
         name = dy[0]
     except IndexError:
-        await RSS_ADD.send('❌ 输入的订阅名为空！')
+        await RSS_ADD.send("❌ 输入的订阅名为空！")
         return
 
     async def add_group_or_user(group_id, user_id):
         if group_id:
             rss.add_group(group=str(group_id))
             await tr.add_job(rss)
-            await RSS_ADD.send('👏 订阅到当前群组成功！')
+            await RSS_ADD.send("👏 订阅到当前群组成功！")
         else:
             rss.add_user(user=user_id)
             await tr.add_job(rss)
-            await RSS_ADD.send('👏 订阅到当前账号成功！')
+            await RSS_ADD.send("👏 订阅到当前账号成功！")
 
     if rss.find_name(name=name):
         rss = rss.find_name(name=name)
@@ -64,7 +64,7 @@ async def handle_rss_add(bot: Bot, event: Event, state: dict):
     try:
         url = dy[1]
     except IndexError:
-        await RSS_ADD.send('❌ 输入的订阅地址为空！')
+        await RSS_ADD.send("❌ 输入的订阅地址为空！")
         return
 
     # 去除判断，订阅链接不再唯一，可不同名同链接
