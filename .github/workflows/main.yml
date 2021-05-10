@@ -26,16 +26,19 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Black Code Formatter
-        id: format
-        # You may pin to the exact commit or the version.
-        # uses: lgeiger/black-action@4379f39aa4b6a3bb1cceb46a7665b9c26647d82d
+        id: check_format
         uses: lgeiger/black-action@v1.0.1
         with:
-#           args: ". --check"
-          args: "."
+          args: ". --check"
           
+      - name: Black Code Formatter
+        if: steps.check_format.conclusion == 'failure'
+        uses: lgeiger/black-action@v1.0.1
+        with:
+          args: "."
+        
       - name: Commit files
-        if: steps.format.outputs.reformatted
+        if: steps.check_format.conclusion == 'failure'
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -43,7 +46,7 @@ jobs:
           Co-authored-by: $ <$+$@users.noreply.github.com>'
           
       - name: Push changes
-        if: steps.format.outputs.reformatted
+        if: steps.check_format.conclusion == 'failure'
         uses: ad-m/github-push-action@v0.5.0
         with:
           github_token: $
