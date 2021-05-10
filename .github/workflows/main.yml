@@ -46,9 +46,14 @@ jobs:
           git commit -a -m 'Automated dotnet-format update
           Co-authored-by: $ <$+$@users.noreply.github.com>'
           
-      - name: Push changes
+      - name: Create Pull Request
         if: steps.check_format.outcome != 'success'
-        uses: ad-m/github-push-action@v0.5.0
+        uses: peter-evans/create-pull-request@v3
         with:
-          github_token: $
-          branch: $
+          title: '[Bot] Automated PR to fix formatting errors'
+          body: |
+            Automated PR to fix formatting errors
+          committer: GitHub <noreply@github.com>
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          # 对应的上传分支
+          branch: ${{ github_ref }}
