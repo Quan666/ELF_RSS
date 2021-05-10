@@ -669,7 +669,10 @@ async def handle_translation(rss_str_tl: str) -> str:
 def check_update(new: list, old: list) -> list:
     old_id_list = [i.get("id") for i in old]
     old_link_list = [i.get("link") for i in old]
-    temp = [i for i in new if not (i.get("id") in old_id_list or i.get("link") in old_link_list)]
+    temp = [
+        i for i in new
+        if not (i.get("id") in old_id_list or i.get("link") in old_link_list)
+    ]
     # 因为最新的消息会在最上面，所以要反转处理
     result = []
     for t in temp:
