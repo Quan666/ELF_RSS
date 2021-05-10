@@ -28,6 +28,7 @@ jobs:
       - name: Black Code Formatter
         id: check_format
         uses: lgeiger/black-action@v1.0.1
+        continue-on-error: true
         with:
           args: ". --check"
           
