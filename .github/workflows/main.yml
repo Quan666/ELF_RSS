@@ -50,6 +50,7 @@ jobs:
         if: steps.check_format.outcome != 'success'
         uses: ad-m/github-push-action@v0.5.0
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}"
           branch: $GITHUB_REF
 #       - name: Create Pull Request
 #         if: steps.check_format.outcome != 'success'
