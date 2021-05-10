@@ -540,7 +540,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     # 处理图片
     doc_img = html('img').items()
     # 只发送指定数量的图片，防止刷屏
-    if 0 < img_num < len(doc_img.items()):
+    if 0 < img_num < len(list(doc_img.items())):
         doc_img = islice(doc_img, img_num)
         img_str += f'\n因启用图片数量限制，目前只有 {img_num} 张图片：'
     for img in doc_img:
