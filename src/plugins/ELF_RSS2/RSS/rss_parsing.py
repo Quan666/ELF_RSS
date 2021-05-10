@@ -25,7 +25,6 @@ from nonebot.log import logger
 from PIL import Image, UnidentifiedImageError
 from pyquery import PyQuery as Pq
 from tenacity import retry, stop_after_attempt, stop_after_delay
-from itertools import islice
 
 from ..config import config
 from . import rss_class, translation_baidu
@@ -560,11 +559,12 @@ async def handle_img_combo(url: str, img_proxy: bool) -> str:
 async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     img_str = ""
     # 处理图片
-    doc_img = html("img").items()
+    doc_img = list(html("img").items())
     # 只发送指定数量的图片，防止刷屏
-    if 0 < img_num < len(list(doc_img)):
+    if 0 < img_num < len(doc_img):
         img_str += f"\n因启用图片数量限制，目前只有 {img_num} 张图片："
-    for img in islice(doc_img, img_num):
+        doc_img = doc_img[:img_num]
+    for img in doc_img:
         url = img.attr("src")
         img_str += await handle_img_combo(url, img_proxy)
 
