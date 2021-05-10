@@ -550,7 +550,10 @@ async def download_image(url: str, proxy: bool = False):
 async def handle_img_combo(url: str, img_proxy: bool) -> str:
     content = await download_image(url, img_proxy)
     resize_content = await zip_pic(url, img_proxy, content)
-    return await get_pic_base64(resize_content)
+    img_base64 = await get_pic_base64(resize_content)
+    if img_base64:
+        return f"[CQ:image,file=base64://{img_base64}]"
+    return f"\n图片走丢啦: {url}\n"
 
 
 # 处理图片、视频
@@ -559,16 +562,11 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     # 处理图片
     doc_img = html("img").items()
     # 只发送指定数量的图片，防止刷屏
-    if 0 < img_num < len(list(doc_img.items())):
-        doc_img = islice(doc_img, img_num)
+    if 0 < img_num < len(list(doc_img)):
         img_str += f"\n因启用图片数量限制，目前只有 {img_num} 张图片："
-    for img in doc_img:
+    for img in islice(doc_img, img_num):
         url = img.attr("src")
-        img_base64 = await handle_img_combo(url, img_proxy)
-        if img_base64:
-            img_str += "[CQ:image,file=base64://" + img_base64 + "]"
-        else:
-            img_str += "\n图片走丢啦: {} \n".format(img.attr("src"))
+        img_str += await handle_img_combo(url, img_proxy)
 
     # 处理视频
     doc_video = html("video")
@@ -576,30 +574,18 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
         img_str += "视频封面："
         for video in doc_video.items():
             url = video.attr("poster")
-            img_base64 = await handle_img_combo(url, img_proxy)
-            if img_base64:
-                img_str += "[CQ:image,file=base64://" + img_base64 + "]"
-            else:
-                img_str += "\n图片走丢啦: {} \n".format(video.attr("poster"))
+            img_str += await handle_img_combo(url, img_proxy)
 
     # 解决 issue36
     img_list = re.findall(r"\[img]([hH][tT]{2}[pP][sS]?://.*?)\[/img]", str(html))
     for img_tmp in img_list:
-        img_base64 = await handle_img_combo(img_tmp, img_proxy)
-        if img_base64:
-            img_str += "[CQ:image,file=base64://" + img_base64 + "]"
-        else:
-            img_str += "\n图片走丢啦: {} \n".format(img_tmp)
+        img_str += await handle_img_combo(img_tmp, img_proxy)
 
     # 一个网站的 RSS 源 description 标签内容格式为: 'Image: ...'
     image_search = re.search(r"Image: (https?://\S*)", str(html))
     if image_search:
         url = image_search.group(1)
-        img_base64 = await handle_img_combo(url, img_proxy)
-        if img_base64:
-            img_str += "[CQ:image,file=base64://" + img_base64 + "]"
-        else:
-            img_str += "\n图片走丢啦: {} \n".format(image_search)
+        img_str += await handle_img_combo(url, img_proxy)
 
     return img_str
 
