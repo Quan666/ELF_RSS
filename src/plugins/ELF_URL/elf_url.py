@@ -23,16 +23,16 @@ async def handle_url(bot: Bot, event: Event, state: dict):
 
 
 async def get_uri_of_url(url: str) -> str:
-    api = 'https://oy.mk/api/insert'
+    api = "https://oy.mk/api/insert"
     async with httpx.AsyncClient(proxies={}) as client:
         try:
-            url = quote(url, 'utf-8')
-            res = await client.get(f'{api}?url={url}')
+            url = quote(url, "utf-8")
+            res = await client.get(f"{api}?url={url}")
             res = res.json()
-            if res['code'] != 200:
+            if res["code"] != 200:
                 raise httpx.HTTPStatusError
-            return res['data']['url']
+            return res["data"]["url"]
         except httpx.HTTPStatusError as e:
-            msg = f'获取短链出错：{e}'
+            msg = f"获取短链出错：{e}"
             logger.error(msg)
             return msg

@@ -12,14 +12,15 @@ from .RSS import my_trigger as tr
 
 SCHEDULER = require("nonebot_plugin_apscheduler").scheduler
 # 存储目录
-FILE_PATH = str(str(Path.cwd()) + os.sep + 'data' + os.sep)
+FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
-RSS_DELETE = on_command('deldy',
-                        aliases={'drop', '删除订阅'},
-                        rule=to_me(),
-                        priority=5,
-                        permission=su.SUPERUSER | permission.GROUP_ADMIN
-                        | permission.GROUP_OWNER)
+RSS_DELETE = on_command(
+    "deldy",
+    aliases={"drop", "删除订阅"},
+    rule=to_me(),
+    priority=5,
+    permission=su.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER,
+)
 
 
 @RSS_DELETE.handle()
@@ -36,20 +37,20 @@ async def handle_rss_delete(bot: Bot, event: Event, state: dict):
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
-    rss = rss_class.Rss('', '', '-1', '-1')
+    rss = rss_class.Rss("", "", "-1", "-1")
     if rss.find_name(name=rss_name):
         rss = rss.find_name(name=rss_name)
     else:
-        await RSS_DELETE.send('❌ 删除失败！不存在该订阅！')
+        await RSS_DELETE.send("❌ 删除失败！不存在该订阅！")
         return
 
     if group_id:
         if rss.delete_group(group=group_id):
             await tr.add_job(rss)
-            await RSS_DELETE.send('👏 当前群组取消订阅 {} 成功！'.format(rss.name))
+            await RSS_DELETE.send("👏 当前群组取消订阅 {} 成功！".format(rss.name))
         else:
-            await RSS_DELETE.send('❌ 当前群组没有订阅： {} ！'.format(rss.name))
+            await RSS_DELETE.send("❌ 当前群组没有订阅： {} ！".format(rss.name))
     else:
         rss.delete_rss(rss)
         await tr.delete_job(rss)
-        await RSS_DELETE.send('👏 订阅 {} 删除成功！'.format(rss.name))
+        await RSS_DELETE.send("👏 订阅 {} 删除成功！".format(rss.name))

@@ -30,20 +30,32 @@ def baidu_translate(content):
     appid = config.baidu_id
     secret_key = config.baidu_key
     http_client = None
-    my_url = '/api/trans/vip/translate'
+    my_url = "/api/trans/vip/translate"
     q = content
-    from_lang = 'auto'  # 源语言
-    to_lang = 'zh'  # 翻译后的语言
+    from_lang = "auto"  # 源语言
+    to_lang = "zh"  # 翻译后的语言
     salt = random.randint(32768, 65536)
     sign = str(appid) + str(q) + str(salt) + str(secret_key)
     sign = hashlib.md5(sign.encode()).hexdigest()
-    my_url = my_url + '?appid=' + str(appid) + '&q=' + urllib.parse.quote(
-        q) + '&from=' + from_lang + '&to=' + to_lang + '&salt=' + str(
-            salt) + '&sign=' + sign
+    my_url = (
+        my_url
+        + "?appid="
+        + str(appid)
+        + "&q="
+        + urllib.parse.quote(q)
+        + "&from="
+        + from_lang
+        + "&to="
+        + to_lang
+        + "&salt="
+        + str(salt)
+        + "&sign="
+        + sign
+    )
 
     try:
-        http_client = http.client.HTTPConnection('api.fanyi.baidu.com')
-        http_client.request('GET', my_url)
+        http_client = http.client.HTTPConnection("api.fanyi.baidu.com")
+        http_client.request("GET", my_url)
         # response是HTTPResponse对象
         response = http_client.getresponse()
         json_response = response.read().decode("utf-8")  # 获得返回的结果，结果为json格式
@@ -52,16 +64,16 @@ def baidu_translate(content):
         return dst  # 打印结果
     except Exception as e:
         logger.error(e)
-        return '翻译失败：{}'.format(e)
+        return "翻译失败：{}".format(e)
     finally:
         if http_client:
             http_client.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     while True:
         print("请输入要翻译的内容,如果退出输入q")
         input_content = input()
-        if input_content == 'q':
+        if input_content == "q":
             break
         baidu_translate(input_content)
