@@ -32,7 +32,7 @@ jobs:
         uses: lgeiger/black-action@v1.0.1
         with:
 #           args: ". --check"
-          args: ". --check"
+          args: "."
           
       - name: Commit files
         if: steps.format.outputs.reformatted
