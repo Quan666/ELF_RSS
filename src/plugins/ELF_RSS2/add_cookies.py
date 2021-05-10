@@ -41,7 +41,7 @@ async def handle_add_cookies(bot: Bot, event: Event, state: dict):
     # 判断是否有该名称订阅
     try:
         name = dy[0]
-    except KeyError:
+    except IndexError:
         await ADD_COOKIES.send('❌ 输入的订阅名为空！')
         return
 
@@ -52,7 +52,7 @@ async def handle_add_cookies(bot: Bot, event: Event, state: dict):
 
     try:
         cookies = dy[1]
-    except KeyError:
+    except IndexError:
         await ADD_COOKIES.send('❌ 输入的cookies为空！')
         return
 

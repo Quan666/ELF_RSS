@@ -66,15 +66,13 @@ async def start(rss: rss_class.Rss) -> None:
     # 检查更新
     # 对更新的 RSS 记录列表进行处理，当发送成功后才写入，成功一条写一条
 
-    try:
-        new_rss = await get_rss(rss)
-        new_rss_list = new_rss.get('entries')
-    except Exception:
+    new_rss = await get_rss(rss)
+    new_rss_list = new_rss.get('entries')
+    if not new_rss_list:
         logger.error(f'RSS {rss.get_url()} 抓取失败！已达最大重试次数！请检查RSS地址正确性！')
         return
-    try:
-        old_rss_list = read_rss(rss.name)['entries']
-    except KeyError:
+    old_rss_list = read_rss(rss.name).get('entries')
+    if not old_rss_list:
         write_rss(name=rss.name, new_rss=new_rss)
         logger.info('{} 订阅第一次抓取成功！'.format(rss.name))
         return
@@ -157,10 +155,7 @@ async def start(rss: rss_class.Rss) -> None:
         item_msg += await handle_source(source=item['link'])
 
         # 处理时间
-        try:
-            item_msg += await handle_date(date=item['published_parsed'])
-        except KeyError:
-            item_msg += await handle_date()
+        item_msg += await handle_date(date=item.get('published_parsed'))
 
         # 处理种子
         try:
@@ -320,8 +315,8 @@ async def get_rss(rss: rss_class.Rss) -> dict:
             else:
                 cookies_str = ''
             e_msg = (
-                f'{rss.name} 抓取失败！已经重试 5 次！请检查订阅地址 {rss.get_url()} {cookies_str}\n'
-                f'如果是网络问题，请忽略该错误！E: {e}')
+                f'{rss.name} 抓取失败！将重试最多 5 次！请检查订阅地址 {rss.get_url()} {cookies_str}\nE: {e}'
+            )
             logger.error(e_msg)
             raise
         return d
@@ -672,34 +667,14 @@ async def handle_translation(rss_str_tl: str) -> str:
 
 # 检查更新
 def check_update(new: list, old: list) -> list:
-    a = new
-    b = old
-    c = []
-    for i in a:
-        count = 0
-        for j in b:
-            try:
-                if i['id'] == j['id']:
-                    count = 1
-            except KeyError:
-                if i['link'] == j['link']:
-                    count = 1
-        if count == 0:
-            c.insert(0, i)
-    tmp = c.copy()
-    for i in tmp:
-        count = 0
-        for j in b:
-            # 当 item 不存在 id 时，使用 link
-            try:
-                if i['id'] == j['id']:
-                    count = 1
-            except KeyError:
-                if i['link'] == j['link']:
-                    count = 1
-        if count == 1:
-            c.remove(i)
-    return c
+    old_id_list = [i.get("id") for i in old]
+    old_link_list = [i.get("link") for i in old]
+    temp = [i for i in new if not (i.get("id") in old_id_list or i.get("link") in old_link_list)]
+    # 因为最新的消息会在最上面，所以要反转处理
+    result = []
+    for t in temp:
+        result.insert(0, t)
+    return result
 
 
 # 读取记录

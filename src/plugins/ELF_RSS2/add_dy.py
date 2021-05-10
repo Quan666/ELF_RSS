@@ -42,7 +42,7 @@ async def handle_rss_add(bot: Bot, event: Event, state: dict):
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅
     try:
         name = dy[0]
-    except KeyError:
+    except IndexError:
         await RSS_ADD.send('❌ 输入的订阅名为空！')
         return
 
@@ -63,7 +63,7 @@ async def handle_rss_add(bot: Bot, event: Event, state: dict):
 
     try:
         url = dy[1]
-    except KeyError:
+    except IndexError:
         await RSS_ADD.send('❌ 输入的订阅地址为空！')
         return
 
