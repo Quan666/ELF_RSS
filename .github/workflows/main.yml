@@ -5,8 +5,8 @@ name: CI
 # Controls when the action will run. 
 on:
   # Triggers the workflow on push or pull request events but only for the 2.0 branch
-  push:
-    branches: [ 2.0,dev ]
+#   push:
+#     branches: [ 2.0,dev ]
   pull_request:
     branches: [ 2.0,dev ]
 
@@ -51,7 +51,7 @@ jobs:
         uses: ad-m/github-push-action@v0.5.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}"
-          branch: $GITHUB_REF
+          branch: ${{ github.head_ref }}
 #       - name: Create Pull Request
 #         if: steps.check_format.outcome != 'success'
 #         uses: peter-evans/create-pull-request@v3
