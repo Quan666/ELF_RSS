@@ -30,8 +30,9 @@ async def get_uri_of_url(url: str) -> str:
             res = await client.get(f'{api}?url={url}')
             res = res.json()
             if res['code'] != 200:
-                raise Exception('获取短链错误')
+                raise httpx.HTTPStatusError
             return res['data']['url']
-        except Exception as e:
-            logger.error(e)
-            return f'获取短链出错：{e}'
+        except httpx.HTTPStatusError as e:
+            msg = f'获取短链出错：{e}'
+            logger.error(msg)
+            return msg
