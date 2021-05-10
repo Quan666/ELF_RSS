@@ -32,13 +32,13 @@ jobs:
           args: ". --check"
           
       - name: Black Code Formatter
-        if: steps.check_format.outcome == 'failure'
+        if: steps.check_format.outcome != 'success'
         uses: lgeiger/black-action@v1.0.1
         with:
           args: "."
         
       - name: Commit files
-        if: steps.check_format.outcome == 'failure'
+        if: steps.check_format.outcome != 'success'
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -46,7 +46,7 @@ jobs:
           Co-authored-by: $ <$+$@users.noreply.github.com>'
           
       - name: Push changes
-        if: steps.check_format.outcome == 'failure'
+        if: steps.check_format.outcome != 'success'
         uses: ad-m/github-push-action@v0.5.0
         with:
           github_token: $
