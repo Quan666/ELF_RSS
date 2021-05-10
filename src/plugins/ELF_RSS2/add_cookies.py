@@ -25,9 +25,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
 
 @ADD_COOKIES.got(
-    "ADD_COOKIES",
+    'ADD_COOKIES',
     prompt=(
-        "请输入：\n"
+        '请输入：\n'
         "名称 cookies\n"
         "空格分割\n"
         "获取方式：\n"
