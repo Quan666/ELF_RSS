@@ -47,10 +47,10 @@ async def handle_rss_delete(bot: Bot, event: Event, state: dict):
     if group_id:
         if rss.delete_group(group=group_id):
             await tr.add_job(rss)
-            await RSS_DELETE.send("👏 当前群组取消订阅 {} 成功！".format(rss.name))
+            await RSS_DELETE.send(f"👏 当前群组取消订阅 {rss.name} 成功！")
         else:
-            await RSS_DELETE.send("❌ 当前群组没有订阅： {} ！".format(rss.name))
+            await RSS_DELETE.send(f"❌ 当前群组没有订阅： {rss.name} ！")
     else:
         rss.delete_rss(rss)
         await tr.delete_job(rss)
-        await RSS_DELETE.send("👏 订阅 {} 删除成功！".format(rss.name))
+        await RSS_DELETE.send(f"👏 订阅 {rss.name} 删除成功！")

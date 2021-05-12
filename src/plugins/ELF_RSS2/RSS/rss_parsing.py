@@ -11,6 +11,7 @@ import re
 import sqlite3
 import time
 import imagehash
+import tenacity
 import unicodedata
 from io import BytesIO
 from pathlib import Path
@@ -69,21 +70,28 @@ async def start(rss: rss_class.Rss) -> None:
     # 检查更新
     # 对更新的 RSS 记录列表进行处理，当发送成功后才写入，成功一条写一条
 
-    new_rss = await get_rss(rss)
-    new_rss_list = new_rss.get("entries")
-    if not new_rss_list:
-        logger.error(f"RSS {rss.get_url()} 抓取失败！已达最大重试次数！请检查RSS地址正确性！")
+    try:
+        new_rss = await get_rss(rss)
+        new_rss_list = new_rss.get("entries")
+    except tenacity.RetryError as e:
+        if rss.cookies:
+            cookies_str = "\n如果设置了 cookies 请检查 cookies 正确性"
+        else:
+            cookies_str = ""
+        logger.error(
+            f"{rss.name}[{rss.get_url()}]抓取失败！已达最大重试次数！请检查订阅地址！{cookies_str}\nE: {e}"
+        )
         return
     old_rss_list = read_rss(rss.name).get("entries")
     if not old_rss_list:
         write_rss(name=rss.name, new_rss=new_rss)
-        logger.info("{} 订阅第一次抓取成功！".format(rss.name))
+        logger.info(f"{rss.name} 第一次抓取成功！")
         return
 
     change_rss_list = check_update(new=new_rss_list, old=old_rss_list)
     if len(change_rss_list) <= 0:
         # 没有更新，返回
-        logger.info("{} 没有新信息".format(rss.name))
+        logger.info(f"{rss.name} 没有新信息")
         return
     # 检查是否启用去重 使用 duplicate_filter_mode 字段
     conn = None
@@ -158,7 +166,7 @@ async def start(rss: rss_class.Rss) -> None:
                     item_msg += f"magnet:?xt=urn:btih:{h}\n"
                 item_msg = item_msg[:-1]
         except Exception as e:
-            logger.error("下载种子时出错：{}".format(e))
+            logger.error(f"下载种子时出错：{e}")
         # 发送消息并写入文件
         if await send_msg(rss=rss, msg=item_msg, item=item):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
@@ -283,7 +291,7 @@ async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
                 await start_down(
                     url=tmp["href"],
                     group_ids=rss.group_id,
-                    name="{}".format(rss.name),
+                    name=rss.name,
                     proxy=proxy,
                 )
             )
@@ -337,11 +345,7 @@ async def get_rss(rss: rss_class.Rss) -> dict:
             if not d:
                 raise Exception
         except Exception as e:
-            if rss.cookies:
-                cookies_str = "\n如果设置了 cookies 请检查 cookies 正确性"
-            else:
-                cookies_str = ""
-            e_msg = f"{rss.name} 抓取失败！将重试最多 5 次！请检查订阅地址 {rss.get_url()} {cookies_str}\nE: {e}"
+            e_msg = f"{rss.name} 抓取失败！将重试最多 5 次！\nE: {e}"
             logger.error(e_msg)
             raise
         return d
@@ -400,14 +404,10 @@ async def handle_date(date=None) -> str:
         # 时差处理，待改进
         if rss_time + 28800.0 < time.time():
             rss_time += 28800.0
-        return "日期：" + time.strftime(
-            "%m{}%d{} %H:%M:%S", time.localtime(rss_time)
-        ).format("月", "日")
+        return "日期：" + time.strftime(f"%m月%d日 %H:%M:%S", time.localtime(rss_time))
     # 没有日期的情况，以当前时间
     else:
-        return "日期：" + time.strftime("%m{}%d{} %H:%M:%S", time.localtime()).format(
-            "月", "日"
-        )
+        return "日期：" + time.strftime(f"%m月%d日 %H:%M:%S", time.localtime())
 
 
 # 通过 ezgif 压缩 GIF
@@ -523,7 +523,7 @@ async def fuck_pixiv(url: str) -> str:
                 else:
                     return req_json["illust"]["meta_single_page"]["original_image_url"]
             except Exception as e:
-                logger.error("处理pixiv.cat链接时出现问题 ：{}".format(e))
+                logger.error(f"处理pixiv.cat链接时出现问题 ：{e}")
                 return url
     else:
         return url

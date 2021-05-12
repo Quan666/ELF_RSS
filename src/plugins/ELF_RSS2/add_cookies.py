@@ -51,7 +51,7 @@ async def handle_add_cookies(bot: Bot, event: Event, state: dict):
         return
 
     if not rss.find_name(name=name):
-        await ADD_COOKIES.send("❌ 不存在该订阅: {}".format(name))
+        await ADD_COOKIES.send(f"❌ 不存在该订阅: {name}")
         return
     rss = rss.find_name(name=name)
 
@@ -64,10 +64,6 @@ async def handle_add_cookies(bot: Bot, event: Event, state: dict):
     rss.name = name
     if rss.set_cookies(cookies):
         await tr.add_job(rss)
-        await ADD_COOKIES.send(
-            "👏 {}的Cookies添加成功！\nCookies:{}\n".format(rss.name, rss.cookies)
-        )
+        await ADD_COOKIES.send(f"👏 {rss.name}的Cookies添加成功！\nCookies:{rss.cookies}\n")
     else:
-        await ADD_COOKIES.send(
-            "👏 {}的Cookies添加失败！\nCookies:{}\n".format(rss.name, rss.cookies)
-        )
+        await ADD_COOKIES.send(f"👏 {rss.name}的Cookies添加失败！\nCookies:{rss.cookies}\n")
