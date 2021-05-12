@@ -197,7 +197,8 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
     else:
         await delete_msg(down_info[hash_str]["downing_tips_msg_id"])
         msg_id = await send_msg(
-            f"{name}\nHash: {hash_str} \n"
+            f"{name}\n"
+            f"Hash: {hash_str} \n"
             f"下载了 {round(info['total_downloaded'] / info['total_size'] * 100, 2)}%\n"
             f"平均下载速度：{round(info['dl_speed_avg'] / 1024, 2)} KB/s"
         )
