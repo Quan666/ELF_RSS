@@ -89,36 +89,15 @@ async def start(rss: rss_class.Rss) -> None:
     conn = None
     if rss.duplicate_filter_mode:
         conn = sqlite3.connect(FILE_PATH + "cache.db")
-        cursor = conn.cursor()
-        # 用来去重的 sqlite3 数据表如果不存在就创建一个
-        cursor.execute(
-            """
-        CREATE TABLE IF NOT EXISTS main (
-            "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            "link" TEXT,
-            "title" TEXT,
-            "image_hash" TEXT,
-            "datetime" TEXT DEFAULT (DATETIME('Now', 'LocalTime'))
-        );
-        """
-        )
-        cursor.close()
-        conn.commit()
-        cursor = conn.cursor()
-        # 移除超过 config.db_cache_expire 天没重复过的记录
-        cursor.execute(
-            f"DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-{config.db_cache_expire} Day');"
-        )
-        cursor.close()
-        conn.commit()
+        await cache_db_manage(conn)
     for item in change_rss_list:
         # 检查是否包含屏蔽词
-        if config.black_word:
-            match = re.findall("|".join(config.black_word), item["summary"])
-            if match:
-                logger.info("内含屏蔽词，已经取消推送该消息")
-                write_item(rss=rss, new_rss=new_rss, new_item=item)
-                continue
+        if config.black_word and re.findall(
+            "|".join(config.black_word), item["summary"]
+        ):
+            logger.info("内含屏蔽词，已经取消推送该消息")
+            write_item(rss=rss, new_rss=new_rss, new_item=item)
+            continue
         # 检查是否匹配关键词 使用 down_torrent_keyword 字段
         if rss.down_torrent_keyword and not re.search(
             rss.down_torrent_keyword, item["summary"]
@@ -185,6 +164,32 @@ async def start(rss: rss_class.Rss) -> None:
             write_item(rss=rss, new_rss=new_rss, new_item=item)
     if conn is not None:
         conn.close()
+
+
+# 对去重数据库进行管理
+async def cache_db_manage(conn: sqlite3.connect) -> None:
+    cursor = conn.cursor()
+    # 用来去重的 sqlite3 数据表如果不存在就创建一个
+    cursor.execute(
+        """
+    CREATE TABLE IF NOT EXISTS main (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "link" TEXT,
+        "title" TEXT,
+        "image_hash" TEXT,
+        "datetime" TEXT DEFAULT (DATETIME('Now', 'LocalTime'))
+    );
+    """
+    )
+    cursor.close()
+    conn.commit()
+    cursor = conn.cursor()
+    # 移除超过 config.db_cache_expire 天没重复过的记录
+    cursor.execute(
+        f"DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-{config.db_cache_expire} Day');"
+    )
+    cursor.close()
+    conn.commit()
 
 
 # 去重判断
