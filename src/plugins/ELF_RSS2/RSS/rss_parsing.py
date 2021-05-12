@@ -89,36 +89,15 @@ async def start(rss: rss_class.Rss) -> None:
     conn = None
     if rss.duplicate_filter_mode:
         conn = sqlite3.connect(FILE_PATH + "cache.db")
-        cursor = conn.cursor()
-        # 用来去重的 sqlite3 数据表如果不存在就创建一个
-        cursor.execute(
-            """
-        CREATE TABLE IF NOT EXISTS main (
-            "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            "link" TEXT,
-            "title" TEXT,
-            "image_hash" TEXT,
-            "datetime" TEXT DEFAULT (DATETIME('Now', 'LocalTime'))
-        );
-        """
-        )
-        cursor.close()
-        conn.commit()
-        cursor = conn.cursor()
-        # 移除超过 config.db_cache_expire 天没重复过的记录
-        cursor.execute(
-            f"DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-{config.db_cache_expire} Day');"
-        )
-        cursor.close()
-        conn.commit()
+        await cache_db_manage(conn)
     for item in change_rss_list:
         # 检查是否包含屏蔽词
-        if config.black_word:
-            match = re.findall("|".join(config.black_word), item["summary"])
-            if match:
-                logger.info("内含屏蔽词，已经取消推送该消息")
-                write_item(rss=rss, new_rss=new_rss, new_item=item)
-                continue
+        if config.black_word and re.findall(
+            "|".join(config.black_word), item["summary"]
+        ):
+            logger.info("内含屏蔽词，已经取消推送该消息")
+            write_item(rss=rss, new_rss=new_rss, new_item=item)
+            continue
         # 检查是否匹配关键词 使用 down_torrent_keyword 字段
         if rss.down_torrent_keyword and not re.search(
             rss.down_torrent_keyword, item["summary"]
@@ -143,20 +122,26 @@ async def start(rss: rss_class.Rss) -> None:
 
         item_msg = f"【{new_rss.get('feed').get('title')}】更新了!\n----------------------\n"
         # 处理标题
+        title = item["title"]
+        if not config.blockquote:
+            title = re.sub(r" - 转发 .*", "", title)
         if not rss.only_title:
             # 先判断与正文相识度，避免标题正文一样，或者是标题为正文前N字等情况
-
-            # 处理item['summary']只有图片的情况
-            text = re.sub(r"<video.+?></video>|<img.+?>", "", item["summary"])
-            text = re.sub("<br>", "", text)
-            similarity = difflib.SequenceMatcher(None, text, item["title"])
-            if similarity.ratio() <= 0.6:  # 标题正文相似度
-                item_msg += await handle_title(title=item["title"])
-
-            # 处理正文
-            item_msg += await handle_summary(summary=item["summary"], rss=rss)
+            try:
+                summary_html = Pq(item["summary"])
+                if not config.blockquote:
+                    summary_html.remove("blockquote")
+                similarity = difflib.SequenceMatcher(None, summary_html.text(), title)
+                # 标题正文相似度
+                if similarity.ratio() <= 0.6:
+                    item_msg += await handle_title(title=title)
+                # 处理正文
+                item_msg += await handle_summary(summary=item["summary"], rss=rss)
+            except Exception as e:
+                logger.info(f"{rss.name} 没有正文内容！ E: {e}")
+                item_msg += await handle_title(title=title)
         else:
-            item_msg += await handle_title(title=item["title"])
+            item_msg += await handle_title(title=title)
 
         # 处理来源
         item_msg += await handle_source(source=item["link"])
@@ -179,6 +164,32 @@ async def start(rss: rss_class.Rss) -> None:
             write_item(rss=rss, new_rss=new_rss, new_item=item)
     if conn is not None:
         conn.close()
+
+
+# 对去重数据库进行管理
+async def cache_db_manage(conn: sqlite3.connect) -> None:
+    cursor = conn.cursor()
+    # 用来去重的 sqlite3 数据表如果不存在就创建一个
+    cursor.execute(
+        """
+    CREATE TABLE IF NOT EXISTS main (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "link" TEXT,
+        "title" TEXT,
+        "image_hash" TEXT,
+        "datetime" TEXT DEFAULT (DATETIME('Now', 'LocalTime'))
+    );
+    """
+    )
+    cursor.close()
+    conn.commit()
+    cursor = conn.cursor()
+    # 移除超过 config.db_cache_expire 天没重复过的记录
+    cursor.execute(
+        f"DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-{config.db_cache_expire} Day');"
+    )
+    cursor.close()
+    conn.commit()
 
 
 # 去重判断
@@ -338,7 +349,7 @@ async def get_rss(rss: rss_class.Rss) -> dict:
 
 # 处理标题
 async def handle_title(title: str) -> str:
-    return "标题：" + title + "\n"
+    return f"标题：{title}\n"
 
 
 # 处理正文，图片放后面
@@ -349,10 +360,18 @@ async def handle_summary(summary: str, rss: rss_class.Rss) -> str:
     try:
         summary_html = Pq(summary)
     except Exception as e:
-        logger.info("{} 没有正文内容！ {}", rss.name, e)
+        logger.info(f"{rss.name} 没有正文内容！ E: {e}")
         return ""
     # 最终消息初始化
     res_msg = ""
+
+    # 判断是否保留转发内容，保留的话只去掉标签，留下里面的内容
+    if config.blockquote:
+        blockquote_html = summary_html("blockquote")
+        for blockquote in blockquote_html.items():
+            blockquote.replace_with(blockquote.html())
+    else:
+        summary_html.remove("blockquote")
 
     # 判断是否开启了 仅仅推送有图片的信息
     if not rss.only_pic:
@@ -594,13 +613,9 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
 async def handle_html_tag(html, translation: bool) -> str:
     # issue36 处理md标签
     rss_str = re.sub(r"\[img][hH][tT]{2}[pP][sS]?://.*?\[/img]", "", str(html))
-    rss_str = re.sub(r"(\[.*?=.*?])|(\[/.*?])", "", str(rss_str))
+    rss_str = re.sub(r"(\[.*?=.*?])|(\[/.*?])", "", rss_str)
 
     # 处理一些 HTML 标签
-    if config.blockquote:
-        rss_str = re.sub("<blockquote>|</blockquote>", "", str(rss_str))
-    else:
-        rss_str = re.sub('<blockquote .+?">', "", str(rss_str))
     rss_str = re.sub("<br/><br/>|<br><br>|<br>|<br/>", "\n", rss_str)
     rss_str = re.sub('<span>|<span .+?">|</span>', "", rss_str)
     rss_str = re.sub('<pre .+?">|</pre>', "", rss_str)
