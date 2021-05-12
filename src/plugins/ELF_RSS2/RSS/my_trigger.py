@@ -12,7 +12,7 @@ from . import rss_class, rss_parsing, util
 # 检测某个rss更新 #任务体
 @util.time_out(time=300)  # 20s  任务超时时间
 async def check_update(rss: rss_class.Rss):
-    logger.info("{} 检查更新".format(rss.name))
+    logger.info(f"{rss.name} 检查更新")
     await rss_parsing.start(rss)
 
 
@@ -50,7 +50,7 @@ def rss_trigger(rss: rss_class.Rss):
         processpool=ProcessPoolExecutor(8),  # 最大进程
         coalesce=True,  # 积攒的任务是否只跑一次，是否合并所有错过的Job
     )
-    logger.info("定时任务 {} 添加成功".format(rss.name))
+    logger.info(f"定时任务 {rss.name} 添加成功")
 
 
 # cron 表达式
@@ -75,7 +75,7 @@ def my_trigger_cron(rss: rss_class.Rss):
             timezone="Asia/Shanghai",
         )
     except Exception as e:
-        logger.error("创建定时器错误！cron:{} E：{}".format(times_list, e))
+        logger.error(f"创建定时器错误！cron:{times_list} E：{e}")
         return
     scheduler = require("nonebot_plugin_apscheduler").scheduler
 
@@ -91,4 +91,4 @@ def my_trigger_cron(rss: rss_class.Rss):
         processpool=ProcessPoolExecutor(8),  # 最大进程
         coalesce=True,  # 积攒的任务是否只跑一次，是否合并所有错过的Job
     )
-    logger.info("定时任务 {} 添加成功".format(rss.name))
+    logger.info(f"定时任务 {rss.name} 添加成功")

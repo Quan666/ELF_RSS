@@ -64,7 +64,7 @@ def baidu_translate(content):
         return dst  # 打印结果
     except Exception as e:
         logger.error(e)
-        return "翻译失败：{}".format(e)
+        return f"翻译失败：{e}"
     finally:
         if http_client:
             http_client.close()

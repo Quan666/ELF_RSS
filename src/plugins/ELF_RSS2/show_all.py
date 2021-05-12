@@ -38,9 +38,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
                 if flag % 5 == 0 and flag != 0:
                     await RSS_SHOW_ALL.send(str(info[:-2]))
                     info = ""
-                info += "Name：{}\nURL：{}\n\n".format(rss_tmp.name, rss_tmp.url)
+                info += f"Name：{rss_tmp.name}\nURL：{rss_tmp.url}\n\n"
                 flag += 1
-            await RSS_SHOW_ALL.send(info + "共 {} 条订阅".format(flag))
+            await RSS_SHOW_ALL.send(f"{info}共 {flag} 条订阅")
 
     else:
         await RSS_SHOW_ALL.send("当前没有任何订阅！")

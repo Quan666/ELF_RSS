@@ -126,7 +126,7 @@ async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
                 qb.download_from_file(res.content)
                 hash_str = get_torrent_b16_hash(res.content)
             except Exception as e:
-                await send_msg("下载种子失败,可能需要代理:{}".format(e))
+                await send_msg(f"下载种子失败,可能需要代理:{e}")
                 return None
 
     while not info:
@@ -151,7 +151,7 @@ async def start_down(url: str, group_ids: list, name: str, proxy=None) -> str:
     await rss_trigger(
         hash_str=info["hash"],
         group_ids=group_ids,
-        name="订阅：{}\n{}\n文件大小：{}".format(name, info["filename"], info["size"]),
+        name=f"订阅：{name}\n{info['filename']}\n文件大小：{info['size']}",
     )
     down_info[info["hash"]] = {
         "status": DOWN_STATUS_DOWNING,
@@ -171,9 +171,7 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
     (bot,) = nonebot.get_bots().values()
     if info["total_downloaded"] - info["total_size"] >= 0.000000:
         all_time = (datetime.datetime.now() - down_info[hash_str]["start_time"]).seconds
-        await send_msg(
-            str("👏 {}\nHash: {} \n下载完成！耗时：{} s".format(name, hash_str, str(all_time)))
-        )
+        await send_msg(f"👏 {name}\nHash: {hash_str} \n下载完成！耗时：{all_time} s")
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOADING
         for group_id in group_ids:
             for tmp in files:
@@ -183,9 +181,7 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
                         path = config.qb_down_path + tmp["name"]
                     else:
                         path = info["save_path"] + tmp["name"]
-                    await send_msg(
-                        str("{}\nHash: {} \n开始上传到群：{}".format(name, hash_str, group_id))
-                    )
+                    await send_msg(f"{name}\nHash: {hash_str} \n开始上传到群：{group_id}")
                     await bot.call_api(
                         "upload_group_file",
                         group_id=group_id,
@@ -201,14 +197,9 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
     else:
         await delete_msg(down_info[hash_str]["downing_tips_msg_id"])
         msg_id = await send_msg(
-            str(
-                "{}\nHash: {} \n下载了 {}%\n平均下载速度：{} KB/s".format(
-                    name,
-                    hash_str,
-                    round(info["total_downloaded"] / info["total_size"] * 100, 2),
-                    round(info["dl_speed_avg"] / 1024, 2),
-                )
-            )
+            f"{name}\nHash: {hash_str} \n"
+            f"下载了 {round(info['total_downloaded'] / info['total_size'] * 100, 2)}%\n"
+            f"平均下载速度：{round(info['dl_speed_avg'] / 1024, 2)} KB/s"
         )
         down_info[hash_str]["downing_tips_msg_id"] = msg_id
 
@@ -234,4 +225,4 @@ async def rss_trigger(hash_str: str, group_ids: list, name: str):
         misfire_grace_time=60,  # 允许的误差时间，建议不要省略
         job_defaults=job_defaults,
     )
-    await send_msg(str("👏 {}\nHash: {} \n下载任务添加成功！".format(name, hash_str)))
+    await send_msg(f"👏 {name}\nHash: {hash_str} \n下载任务添加成功！")
