@@ -45,7 +45,12 @@ async def handle_rss_delete(bot: Bot, event: Event, state: dict):
         return
 
     if group_id:
-        if rss.delete_group(group=group_id):
+        flag = rss.delete_group(group=group_id)
+        if flag == "delete":
+            rss.delete_rss(rss)
+            await tr.delete_job(rss)
+            await RSS_DELETE.send(f"👏 当前群组取消订阅 {rss.name} 成功！")
+        elif flag:
             await tr.add_job(rss)
             await RSS_DELETE.send(f"👏 当前群组取消订阅 {rss.name} 成功！")
         else:
