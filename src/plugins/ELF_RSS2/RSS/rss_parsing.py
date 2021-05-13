@@ -139,7 +139,7 @@ async def start(rss: rss_class.Rss) -> None:
                 summary_html = Pq(item["summary"])
                 if not config.blockquote:
                     summary_html.remove("blockquote")
-                similarity = difflib.SequenceMatcher(None, summary_html.text(), title)
+                similarity = difflib.SequenceMatcher(None, summary_html.text()[:len(title)], title)
                 # 标题正文相似度
                 if similarity.ratio() <= 0.6:
                     item_msg += await handle_title(title=title)
