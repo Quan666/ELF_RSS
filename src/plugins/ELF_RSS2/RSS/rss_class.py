@@ -182,8 +182,6 @@ class Rss:
         if not str(group) in self.group_id:
             return False
         self.group_id.remove(str(group))
-        if not self.group_id and not self.user_id:
-            return "delete"
         self.write_rss()
         return True
 
