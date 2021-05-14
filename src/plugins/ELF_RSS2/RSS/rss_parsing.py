@@ -620,7 +620,7 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub(r"(\[.*?=.*?])|(\[/.*?])", "", rss_str)
 
     # 处理一些 HTML 标签
-    rss_str = re.sub("<br/><br/>|<br><br>|<br>|<br/>", "\n", rss_str)
+    rss_str = re.sub("<br ?/?><br ?/?>|<br ?/?>|<hr ?/?>", "\n", rss_str)
     rss_str = re.sub('<span>|<span .+?">|</span>', "", rss_str)
     rss_str = re.sub('<pre .+?">|</pre>', "", rss_str)
     rss_str = re.sub('<p>|<p .+?">|</p>|<b>|<b .+?">|</b>', "", rss_str)
@@ -629,6 +629,7 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub('<iframe .+?"/>', "", rss_str)
     rss_str = re.sub('<i .+?">|<i>|</i>', "", rss_str)
     rss_str = re.sub("<code>|</code>|<ul>|</ul>", "", rss_str)
+    rss_str = re.sub('<font .+?">|</font>', "", rss_str)
     # 解决 issue #3
     rss_str = re.sub('<dd .+?">|<dd>|</dd>', "", rss_str)
     rss_str = re.sub('<dl .+?">|<dl>|</dl>', "", rss_str)
