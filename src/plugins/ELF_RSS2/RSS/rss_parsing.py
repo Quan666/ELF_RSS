@@ -123,8 +123,10 @@ async def start(rss: rss_class.Rss) -> None:
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
         # 检查是否只推送有图片的消息
-        if rss.only_pic and not re.search("<img.+?>", item["summary"]):
-            logger.info("已开启仅图片，该消息没有图片，将跳过")
+        if (rss.only_pic or rss.only_has_pic) and not re.search(
+            r"<img.+?>|\[img]", item["summary"]
+        ):
+            logger.info(f"{rss.name} 已开启仅图片/仅含有图片，该消息没有图片，将跳过")
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
 

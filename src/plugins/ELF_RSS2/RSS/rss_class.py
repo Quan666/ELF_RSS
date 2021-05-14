@@ -24,6 +24,7 @@ class Rss:
     translation = False  # 翻译
     only_title = False  # 仅标题
     only_pic = False  # 仅图片
+    only_has_pic = False  # 仅含有图片
     cookies = ""
     down_torrent: bool = False  # 是否下载种子
     down_torrent_keyword: str = None  # 过滤关键字，支持正则
@@ -43,6 +44,7 @@ class Rss:
         translation=False,
         only_title=False,
         only_pic=False,
+        only_has_pic=False,
         cookies: str = "",
         down_torrent: bool = False,
         down_torrent_keyword: str = None,
@@ -66,6 +68,7 @@ class Rss:
         self.translation = translation
         self.only_title = only_title
         self.only_pic = only_pic
+        self.only_has_pic = only_has_pic
         if len(cookies) <= 0 or cookies is None:
             self.cookies = None
         else:
@@ -276,6 +279,7 @@ class Rss:
             f"翻译：{self.translation}\n"
             f"仅标题：{self.only_title}\n"
             f"仅图片：{self.only_pic}\n"
+            f"仅含有图片：{self.only_has_pic}\n"
             f"下载种子：{self.down_torrent}\n"
             f"白名单关键词：{self.down_torrent_keyword}\n"
             f"黑名单关键词：{self.black_keyword}{cookies_str}{down_msg}\n"

@@ -34,12 +34,13 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             "\ntest qq=,123,234 qun=-1"
             "\n对应参数:"
             "\n订阅链接-url QQ-qq 群-qun 更新频率-time"
-            "\n代理-proxy 翻译-tl 仅title-ot，仅图片-op"
+            "\n代理-proxy 翻译-tl 仅title-ot，仅图片-op，仅含有图片-ohp"
             "\n下载种子-downopen 白名单关键词-wkey 黑名单关键词-bkey 种子上传到群-upgroup"
             "\n去重模式-mode"
             "\n图片数量限制-img_num 最多一条消息只会发送指定数量的图片，防止刷屏"
             "\n注："
-            "\nproxy、tl、ot、op、downopen、upgroup 值为 1/0"
+            "\n仅含有图片不同于仅图片，除了图片还会发送正文中的其他文本信息"
+            "\nproxy、tl、ot、op、ohp、downopen、upgroup 值为 1/0"
             "\n去重模式分为按链接(link)、标题(title)、图片(image)判断"
             "\n其中 image 模式,出于性能考虑以及避免误伤情况发生,生效对象限定为只带 1 张图片的消息,"
             "\n此外,如果属性中带有 or 说明判断逻辑是任一匹配即去重,默认为全匹配"
@@ -74,6 +75,7 @@ attribute_dict = {
     "tl": "translation",
     "ot": "only_title",
     "op": "only_pic",
+    "ohp": "only_has_pic",
     "upgroup": "is_open_upload_group",
     "downopen": "down_torrent",
     "downkey": "down_torrent_keyword",
@@ -102,7 +104,7 @@ def handle_change_list(
                 value_to_change = "1"
             else:
                 value_to_change = str(int(float(value_to_change)))
-    elif key_to_change in ["proxy", "tl", "ot", "op", "upgroup", "downopen"]:
+    elif key_to_change in ["proxy", "tl", "ot", "op", "ohp", "upgroup", "downopen"]:
         value_to_change = bool(int(value_to_change))
     elif (
         key_to_change in ["downkey", "wkey", "blackkey", "bkey"]
