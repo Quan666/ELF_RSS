@@ -99,10 +99,8 @@ class Rss:
     # 读取记录
     @staticmethod
     def read_rss() -> list:
-        rss_list = [rss for rss_list in Rss.read_rss_map().values()
-                    for rss in rss_list]
+        rss_list = [rss for rss_list in Rss.read_rss_map().values() for rss in rss_list]
         return rss_list
-
 
     @staticmethod
     def read_rss_map(file_name: str = None) -> Dict[str, List["Rss"]]:
@@ -116,19 +114,20 @@ class Rss:
         Returns:
             Dict[str, list]: {rss 文件路径: rss 订阅列表}
         """
+
         def look_up_files(root_, dir_=""):
-            """ rss 文件遍历 """
+            """rss 文件遍历"""
             _file_abs_path_list = []
             for _root, _dirs, _files in os.walk(os.path.join(root_, dir_)):
                 for _dir in _dirs:
                     _file_abs_path_list.extend(look_up_files(_root, _dir))
                 _file_abs_path_list.extend(
-                    [(_root, f) for f in _files
-                     if os.path.splitext(f)[-1] == ".json"])
+                    [(_root, f) for f in _files if os.path.splitext(f)[-1] == ".json"]
+                )
                 return _file_abs_path_list
 
         def _read_rss(file_):
-            """ 读取 rss 记录 """
+            """读取 rss 记录"""
             rss_list = []
             with codecs.open(file_, "r", "utf-8") as load_f:
                 rss_list_json = json.load(load_f)
@@ -147,8 +146,7 @@ class Rss:
             if not os.path.exists(to_load_rss_file):
                 logger.warning(f"No such RSS file as: {file_name}")
             else:
-                rss_list_map[to_load_rss_file].extend(
-                    _read_rss(to_load_rss_file))
+                rss_list_map[to_load_rss_file].extend(_read_rss(to_load_rss_file))
             return rss_list_map
 
         if os.path.isfile(BASE_RSS_FILE):
@@ -169,7 +167,6 @@ class Rss:
             rss_list_map[rss_file].extend(_read_rss(rss_file))
         return rss_list_map
 
-
     # 写入记录，传入rss list，不传就把当前 self 写入
     def write_rss(self, rss_new: list = None):
         # 把当前 self 写入
@@ -188,16 +185,16 @@ class Rss:
                     break
             else:
                 # 没找到已存在的订阅则追加到 rss.json
-                rss_old = self.read_rss_map(
-                    to_update_rss_file)[to_update_rss_file]
+                rss_old = self.read_rss_map(to_update_rss_file)[to_update_rss_file]
                 rss_old.append(tmp_new)
 
         rss_json = [rss_one.__dict__ for rss_one in rss_new]
         if not os.path.isdir(FILE_PATH):
             os.makedirs(FILE_PATH)
         with codecs.open(to_update_rss_file, "w", "utf-8") as dump_f:
-            dump_f.write(json.dumps(
-                rss_json, sort_keys=True, indent=4, ensure_ascii=False))
+            dump_f.write(
+                json.dumps(rss_json, sort_keys=True, indent=4, ensure_ascii=False)
+            )
 
     # 查找是否存在当前订阅名 rss 要转换为 rss_
     def find_name(self, name: str):
@@ -268,8 +265,9 @@ class Rss:
         if not os.path.isdir(FILE_PATH):
             os.makedirs(FILE_PATH)
         with codecs.open(to_update_rss_file, "w", "utf-8") as dump_f:
-            dump_f.write(json.dumps(
-                rss_json, sort_keys=True, indent=4, ensure_ascii=False))
+            dump_f.write(
+                json.dumps(rss_json, sort_keys=True, indent=4, ensure_ascii=False)
+            )
         self.delete_file()
 
     # 删除订阅json文件
