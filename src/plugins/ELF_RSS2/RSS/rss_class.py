@@ -150,14 +150,7 @@ class Rss:
             return rss_list_map
 
         if os.path.isfile(BASE_RSS_FILE):
-            rss_list_map[BASE_RSS_FILE].extend(_read_rss(BASE_RSS_FILE))
-        else:
-            logger.debug(f"No such RSS file as: {BASE_RSS_FILE}")
-
-        if not os.path.exists(RSS_DROPIN_DIR):
-            logger.debug(f"No such RSS Dropin as: {RSS_DROPIN_DIR}")
-            os.mkdir(RSS_DROPIN_DIR)
-            return rss_list_map
+            Rss.transfer_dropins()
 
         rss_file_list = look_up_files(RSS_DROPIN_DIR)
 
@@ -166,6 +159,41 @@ class Rss:
             logger.debug(f"Loading rss from: {rss_file}")
             rss_list_map[rss_file].extend(_read_rss(rss_file))
         return rss_list_map
+
+    @staticmethod
+    def transfer_dropins():
+        """读取 `rss.json` 并分文件写入 `data/rss.d/`
+
+        1. 按 Rss.url 的前缀分组，创建并写入 `data/rss.d/<rss.url前缀>.json`
+        2. 备份原 `rss.json` 为 `rss.json.bak`
+        """
+        if not os.path.exists(BASE_RSS_FILE):
+            return
+        if not os.path.exists(RSS_DROPIN_DIR):
+            logger.debug(f"No such RSS Dropin as: {RSS_DROPIN_DIR}")
+            os.mkdir(RSS_DROPIN_DIR)
+
+        rss_list = Rss.read_rss_map(BASE_RSS_FILE)[BASE_RSS_FILE]
+        to_write_rss_file_map = collections.defaultdict(list)
+        reg = re.compile(r"(?<=\/)[^/\\]+?(?=\/)")
+        for rss in rss_list:
+            matched_cases = reg.findall(rss.url.lower())
+            to_write_file_name = matched_cases[0] if matched_cases else "default.json"
+            to_write_rss_file_map[to_write_file_name].append(rss)
+
+        for file, _rss_list in to_write_rss_file_map.items():
+            with codecs.open(
+                os.path.join(RSS_DROPIN_DIR, f"{file}.json"), "w", "utf-8"
+            ) as dump_f:
+                dump_f.write(
+                    json.dumps(
+                        [_rss.__dict__ for _rss in _rss_list],
+                        sort_keys=True,
+                        indent=4,
+                        ensure_ascii=False,
+                    )
+                )
+        os.rename(BASE_RSS_FILE, f"{BASE_RSS_FILE}.bak")
 
     # 写入记录，传入rss list，不传就把当前 self 写入
     def write_rss(self, rss_new: list = None):
