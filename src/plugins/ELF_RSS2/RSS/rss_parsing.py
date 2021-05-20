@@ -642,12 +642,13 @@ async def handle_html_tag(html, translation: bool) -> str:
     # <a> 标签处理
     doc_a = html("a")
     for a in doc_a.items():
-        a_str = re.search(r"<a.+?</a>", str(a))[0]
         if str(a.text()) != a.attr("href"):
-            rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
+            rss_str = rss_str.replace(
+                str(a.outer_html()), f" {a.text()}: {a.attr('href')}\n"
+            )
         else:
-            rss_str = rss_str.replace(a_str, f" {a.attr('href')}\n")
-        rss_str_tl = rss_str_tl.replace(a_str, "")
+            rss_str = rss_str.replace(str(a.outer_html()), f" {a.attr('href')}\n")
+        rss_str_tl = rss_str_tl.replace(str(a.outer_html()), "")
 
     # 删除未解析成功的 a 标签
     rss_str = re.sub('<a .+?">|<a>|</a>', "", rss_str)
