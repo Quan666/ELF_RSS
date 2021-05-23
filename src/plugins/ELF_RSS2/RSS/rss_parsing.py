@@ -617,10 +617,12 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
 async def handle_html_tag(html, translation: bool) -> str:
     # issue36 处理md标签
     rss_str = re.sub(r"\[img][hH][tT]{2}[pP][sS]?://.*?\[/img]", "", str(html))
-    rss_str = re.sub(r"(\[.*?=.*?])|(\[/.*?])", "", rss_str)
+    markdown_tag_list = re.findall(r"\[/(\w+)]", rss_str)
+    for tag in markdown_tag_list:
+        rss_str = re.sub(rf"\[{tag}]|\[/{tag}]", "", rss_str)
 
     # 处理一些 HTML 标签
-    rss_str = re.sub("<br ?/?><br ?/?>|<br ?/?>|<hr ?/?>", "\n", rss_str)
+    rss_str = re.sub("<(br|hr) ?/?>", "\n", rss_str)
     rss_str = re.sub('<span>|<span .+?">|</span>', "", rss_str)
     rss_str = re.sub('<pre .+?">|</pre>', "", rss_str)
     rss_str = re.sub('<p>|<p .+?">|</p>|<b>|<b .+?">|</b>', "", rss_str)
@@ -630,6 +632,7 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub('<i .+?">|<i>|</i>', "", rss_str)
     rss_str = re.sub("<code>|</code>|<ul>|</ul>", "", rss_str)
     rss_str = re.sub('<font .+?">|</font>', "", rss_str)
+    rss_str = re.sub("</?(table|tr|th|td)>", "", rss_str)
     # 解决 issue #3
     rss_str = re.sub('<dd .+?">|<dd>|</dd>', "", rss_str)
     rss_str = re.sub('<dl .+?">|<dl>|</dl>', "", rss_str)
@@ -654,8 +657,9 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub('<a .+?">|<a>|</a>', "", rss_str)
     rss_str_tl = re.sub('<a .+?">|<a>|</a>', "", rss_str_tl)
     # 去掉换行
-    rss_str = re.sub("\n\n|\n\n\n", "", rss_str)
-    rss_str_tl = re.sub("\n\n|\n\n\n", "", rss_str_tl)
+    while re.search("\n\n", rss_str) or re.search("\n\n", rss_str_tl):
+        rss_str = re.sub("\n\n", "", rss_str)
+        rss_str_tl = re.sub("\n\n", "", rss_str_tl)
 
     if 0 < config.max_length < len(rss_str):
         rss_str = rss_str[: config.max_length] + "..."
