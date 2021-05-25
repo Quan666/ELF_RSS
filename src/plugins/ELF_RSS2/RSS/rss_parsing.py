@@ -326,7 +326,7 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                 not re.match("[hH][tT]{2}[pP][sS]?://", rss.url, flags=0)
                 and config.rsshub_backup
             ):
-                logger.error("RSSHub :" + config.rsshub + " 访问失败 ！使用备用RSSHub 地址！")
+                logger.warning("RSSHub :" + config.rsshub + " 访问失败 ！将使用备用RSSHub 地址！")
                 for rsshub_url in list(config.rsshub_backup):
                     async with httpx.AsyncClient(
                         proxies=get_proxy(open_proxy=rss.img_proxy)
@@ -334,10 +334,10 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                         try:
                             r = await fork_client.get(rss.get_url(rsshub=rsshub_url))
                         except Exception:
-                            logger.error(
+                            logger.warning(
                                 "RSSHub :"
                                 + rss.get_url(rsshub=rsshub_url)
-                                + " 访问失败 ！使用备用 RSSHub 地址！"
+                                + " 访问失败 ！将使用备用 RSSHub 地址！"
                             )
                             continue
                         if r.status_code in STATUS_CODE:
@@ -348,9 +348,8 @@ async def get_rss(rss: rss_class.Rss) -> dict:
         try:
             if not d:
                 raise Exception
-        except Exception as e:
-            e_msg = f"{rss.name} 抓取失败！将重试最多 5 次！\nE: {e}"
-            logger.error(e_msg)
+        except Exception:
+            logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
             raise
         return d
 
@@ -552,7 +551,7 @@ async def download_image_detail(url: str, proxy: bool):
             # 如果图片无法访问到,直接返回
             if pic.status_code not in STATUS_CODE or len(pic.content) == 0:
                 logger.error(
-                    f"[{url}] pic.status_code: {pic.status_code} pic.size:{len(pic.content)}"
+                    f"[{url}] pic.status_code: {pic.status_code} pic.size: {len(pic.content)}"
                 )
                 return None
             return pic.content
@@ -583,7 +582,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     img_str = ""
     # 处理图片
     doc_img = list(html("img").items())
-    # 只发送指定数量的图片，防止刷屏
+    # 只发送限定数量的图片，防止刷屏
     if 0 < img_num < len(doc_img):
         img_str += f"\n因启用图片数量限制，目前只有 {img_num} 张图片："
         doc_img = doc_img[:img_num]
