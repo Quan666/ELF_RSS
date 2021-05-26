@@ -37,7 +37,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             "\n代理-proxy 翻译-tl 仅title-ot，仅图片-op，仅含有图片-ohp"
             "\n下载种子-downopen 白名单关键词-wkey 黑名单关键词-bkey 种子上传到群-upgroup"
             "\n去重模式-mode"
-            "\n图片数量限制-img_num 最多一条消息只会发送指定数量的图片，防止刷屏"
+            "\n图片数量限制-img_num 只发送限定数量的图片，防止刷屏"
             "\n注："
             "\n仅含有图片不同于仅图片，除了图片还会发送正文中的其他文本信息"
             "\nproxy、tl、ot、op、ohp、downopen、upgroup 值为 1/0"

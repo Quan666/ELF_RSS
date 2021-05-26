@@ -326,7 +326,7 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                 not re.match("[hH][tT]{2}[pP][sS]?://", rss.url, flags=0)
                 and config.rsshub_backup
             ):
-                logger.error("RSSHub :" + config.rsshub + " 访问失败 ！使用备用RSSHub 地址！")
+                logger.warning("RSSHub :" + config.rsshub + " 访问失败 ！将使用备用RSSHub 地址！")
                 for rsshub_url in list(config.rsshub_backup):
                     async with httpx.AsyncClient(
                         proxies=get_proxy(open_proxy=rss.img_proxy)
@@ -334,10 +334,10 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                         try:
                             r = await fork_client.get(rss.get_url(rsshub=rsshub_url))
                         except Exception:
-                            logger.error(
+                            logger.warning(
                                 "RSSHub :"
                                 + rss.get_url(rsshub=rsshub_url)
-                                + " 访问失败 ！使用备用 RSSHub 地址！"
+                                + " 访问失败 ！将使用备用 RSSHub 地址！"
                             )
                             continue
                         if r.status_code in STATUS_CODE:
@@ -348,9 +348,8 @@ async def get_rss(rss: rss_class.Rss) -> dict:
         try:
             if not d:
                 raise Exception
-        except Exception as e:
-            e_msg = f"{rss.name} 抓取失败！将重试最多 5 次！\nE: {e}"
-            logger.error(e_msg)
+        except Exception:
+            logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
             raise
         return d
 
@@ -552,7 +551,7 @@ async def download_image_detail(url: str, proxy: bool):
             # 如果图片无法访问到,直接返回
             if pic.status_code not in STATUS_CODE or len(pic.content) == 0:
                 logger.error(
-                    f"[{url}] pic.status_code: {pic.status_code} pic.size:{len(pic.content)}"
+                    f"[{url}] pic.status_code: {pic.status_code} pic.size: {len(pic.content)}"
                 )
                 return None
             return pic.content
@@ -583,7 +582,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     img_str = ""
     # 处理图片
     doc_img = list(html("img").items())
-    # 只发送指定数量的图片，防止刷屏
+    # 只发送限定数量的图片，防止刷屏
     if 0 < img_num < len(doc_img):
         img_str += f"\n因启用图片数量限制，目前只有 {img_num} 张图片："
         doc_img = doc_img[:img_num]
@@ -594,7 +593,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     # 处理视频
     doc_video = html("video")
     if doc_video:
-        img_str += "视频封面："
+        img_str += "\n视频封面："
         for video in doc_video.items():
             url = video.attr("poster")
             img_str += await handle_img_combo(url, img_proxy)
@@ -622,24 +621,25 @@ async def handle_html_tag(html, translation: bool) -> str:
         rss_str = re.sub(rf"\[{tag}]|\[/{tag}]", "", rss_str)
 
     # 处理一些 HTML 标签
-    rss_str = re.sub("<(br|hr) ?/?>", "\n", rss_str)
+    rss_str = re.sub('<(br|hr) ?/?>|<br .+?"/>', "\n", rss_str)
     rss_str = re.sub('<span>|<span .+?">|</span>', "", rss_str)
     rss_str = re.sub('<pre .+?">|</pre>', "", rss_str)
     rss_str = re.sub('<p>|<p .+?">|</p>|<b>|<b .+?">|</b>', "", rss_str)
-    rss_str = re.sub('<div>|<div .+?">|</div>', "", rss_str)
-    rss_str = re.sub('<div>|<div .+?">|</div>', "", rss_str)
+    rss_str = re.sub('<div>|<div .+?"/?>|</div>', "", rss_str)
     rss_str = re.sub('<iframe .+?"/>', "", rss_str)
     rss_str = re.sub('<i .+?">|<i>|</i>', "", rss_str)
     rss_str = re.sub("<code>|</code>|<ul>|</ul>", "", rss_str)
     rss_str = re.sub('<font .+?">|</font>', "", rss_str)
     rss_str = re.sub("</?(table|tr|th|td)>", "", rss_str)
+    rss_str = re.sub(r"</?h\d>", "", rss_str)
+    rss_str = re.sub("</?strong>", "", rss_str)
     # 解决 issue #3
     rss_str = re.sub('<dd .+?">|<dd>|</dd>', "", rss_str)
     rss_str = re.sub('<dl .+?">|<dl>|</dl>', "", rss_str)
     rss_str = re.sub('<dt .+?">|<dt>|</dt>', "", rss_str)
 
     # 删除图片、视频标签
-    rss_str = re.sub(r"<video.+?></video>|<img.+?>", "", rss_str)
+    rss_str = re.sub(r'<video .+?"?/>|</video>|<img.+?>', "", rss_str)
 
     rss_str_tl = rss_str  # 翻译用副本
     # <a> 标签处理
