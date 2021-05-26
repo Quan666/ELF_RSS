@@ -593,7 +593,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     # 处理视频
     doc_video = html("video")
     if doc_video:
-        img_str += "视频封面："
+        img_str += "\n视频封面："
         for video in doc_video.items():
             url = video.attr("poster")
             img_str += await handle_img_combo(url, img_proxy)
@@ -614,6 +614,8 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
 
 # HTML标签等处理
 async def handle_html_tag(html, translation: bool) -> str:
+    # 删除图片、视频标签
+    html.remove("img").remove("video")
     # issue36 处理md标签
     rss_str = re.sub(r"\[img][hH][tT]{2}[pP][sS]?://.*?\[/img]", "", str(html))
     markdown_tag_list = re.findall(r"\[/(\w+)]", rss_str)
@@ -621,12 +623,11 @@ async def handle_html_tag(html, translation: bool) -> str:
         rss_str = re.sub(rf"\[{tag}]|\[/{tag}]", "", rss_str)
 
     # 处理一些 HTML 标签
-    rss_str = re.sub("<(br|hr) ?/?>", "\n", rss_str)
+    rss_str = re.sub('<(br|hr) ?/?>|<br .+?"/>', "\n", rss_str)
     rss_str = re.sub('<span>|<span .+?">|</span>', "", rss_str)
     rss_str = re.sub('<pre .+?">|</pre>', "", rss_str)
     rss_str = re.sub('<p>|<p .+?">|</p>|<b>|<b .+?">|</b>', "", rss_str)
-    rss_str = re.sub('<div>|<div .+?">|</div>', "", rss_str)
-    rss_str = re.sub('<div>|<div .+?">|</div>', "", rss_str)
+    rss_str = re.sub('<div>|<div .+?"/?>|</div>', "", rss_str)
     rss_str = re.sub('<iframe .+?"/>', "", rss_str)
     rss_str = re.sub('<i .+?">|<i>|</i>', "", rss_str)
     rss_str = re.sub("<code>|</code>|<ul>|</ul>", "", rss_str)
@@ -636,9 +637,6 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub('<dd .+?">|<dd>|</dd>', "", rss_str)
     rss_str = re.sub('<dl .+?">|<dl>|</dl>', "", rss_str)
     rss_str = re.sub('<dt .+?">|<dt>|</dt>', "", rss_str)
-
-    # 删除图片、视频标签
-    rss_str = re.sub(r"<video.+?></video>|<img.+?>", "", rss_str)
 
     rss_str_tl = rss_str  # 翻译用副本
     # <a> 标签处理
