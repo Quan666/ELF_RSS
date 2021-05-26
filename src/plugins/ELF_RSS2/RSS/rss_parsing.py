@@ -621,22 +621,29 @@ async def handle_html_tag(html, translation: bool) -> str:
         rss_str = re.sub(rf"\[{tag}]|\[/{tag}]", "", rss_str)
 
     # 处理一些 HTML 标签
-    rss_str = re.sub('<(br|hr) ?/?>|<br .+?"/>', "\n", rss_str)
-    rss_str = re.sub('<span>|<span .+?">|</span>', "", rss_str)
+    rss_str = re.sub('<br .+?"/>|<(br|hr) ?/?>', "\n", rss_str)
+    rss_str = re.sub('<span .+?">|</?span>', "", rss_str)
     rss_str = re.sub('<pre .+?">|</pre>', "", rss_str)
-    rss_str = re.sub('<p>|<p .+?">|</p>|<b>|<b .+?">|</b>', "", rss_str)
-    rss_str = re.sub('<div>|<div .+?"/?>|</div>', "", rss_str)
+    rss_str = re.sub('<[pbi] .+?">|</?[pbi]>', "", rss_str)
+    rss_str = re.sub('<div .+?"/?>|</?div>', "", rss_str)
     rss_str = re.sub('<iframe .+?"/>', "", rss_str)
-    rss_str = re.sub('<i .+?">|<i>|</i>', "", rss_str)
-    rss_str = re.sub("<code>|</code>|<ul>|</ul>", "", rss_str)
+    rss_str = re.sub("</?(code|strong)>", "", rss_str)
     rss_str = re.sub('<font .+?">|</font>', "", rss_str)
     rss_str = re.sub("</?(table|tr|th|td)>", "", rss_str)
     rss_str = re.sub(r"</?h\d>", "", rss_str)
-    rss_str = re.sub("</?strong>", "", rss_str)
     # 解决 issue #3
-    rss_str = re.sub('<dd .+?">|<dd>|</dd>', "", rss_str)
-    rss_str = re.sub('<dl .+?">|<dl>|</dl>', "", rss_str)
-    rss_str = re.sub('<dt .+?">|<dt>|</dt>', "", rss_str)
+    rss_str = re.sub('<dd .+?">|</?dd>', "", rss_str)
+    rss_str = re.sub('<dl .+?">|</?dl>', "", rss_str)
+    rss_str = re.sub('<dt .+?">|</?dt>', "", rss_str)
+
+    # 有序/无序列表 标签处理
+    for ul in html("ul").items():
+        for li in ul("li").items():
+            rss_str = rss_str.replace(li.outer_html(), f"- {li.text()}")
+    for ol in html("ol").items():
+        for index, li in enumerate(ol("li").items()):
+            rss_str = rss_str.replace(li.outer_html(), f"{index + 1}. {li.text()}")
+    rss_str = re.sub("</?(ul|ol)>", "", rss_str)
 
     # 删除图片、视频标签
     rss_str = re.sub(r'<video .+?"?/>|</video>|<img.+?>', "", rss_str)
@@ -647,11 +654,11 @@ async def handle_html_tag(html, translation: bool) -> str:
     for a in doc_a.items():
         if str(a.text()) != a.attr("href"):
             rss_str = rss_str.replace(
-                str(a.outer_html()), f" {a.text()}: {a.attr('href')}\n"
+                a.outer_html(), f" {a.text()}: {a.attr('href')}\n"
             )
         else:
-            rss_str = rss_str.replace(str(a.outer_html()), f" {a.attr('href')}\n")
-        rss_str_tl = rss_str_tl.replace(str(a.outer_html()), "")
+            rss_str = rss_str.replace(a.outer_html(), f" {a.attr('href')}\n")
+        rss_str_tl = rss_str_tl.replace(a.outer_html(), "")
 
     # 删除未解析成功的 a 标签
     rss_str = re.sub('<a .+?">|<a>|</a>', "", rss_str)
