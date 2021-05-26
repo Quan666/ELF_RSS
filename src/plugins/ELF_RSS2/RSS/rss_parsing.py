@@ -631,6 +631,8 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub("<code>|</code>|<ul>|</ul>", "", rss_str)
     rss_str = re.sub('<font .+?">|</font>', "", rss_str)
     rss_str = re.sub("</?(table|tr|th|td)>", "", rss_str)
+    rss_str = re.sub(r"</?h\d>", "", rss_str)
+    rss_str = re.sub("</?strong>", "", rss_str)
     # 解决 issue #3
     rss_str = re.sub('<dd .+?">|<dd>|</dd>', "", rss_str)
     rss_str = re.sub('<dl .+?">|<dl>|</dl>', "", rss_str)
