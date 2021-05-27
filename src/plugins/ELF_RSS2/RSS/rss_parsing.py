@@ -397,6 +397,10 @@ async def handle_summary(summary: str, rss: rss_class.Rss) -> str:
     if not rss.only_pic:
         # 处理标签及翻译
         res_msg += await handle_html_tag(html=summary_html, translation=rss.translation)
+        # 移除指定内容
+        if rss.content_to_remove:
+            for pattern in rss.content_to_remove:
+                res_msg = re.sub(pattern, "", res_msg)
 
     # 处理图片
     res_msg += await handle_img(
