@@ -29,7 +29,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     else:
         await RSS_CHANGE.send(
             "请输入要修改的订阅"
-            "\n订阅名 属性=,值"
+            "\n订阅名 属性=值"
             "\n如:"
             "\ntest qq=,123,234 qun=-1"
             "\n对应参数:"
