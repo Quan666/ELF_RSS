@@ -127,10 +127,10 @@ async def handle_rss_change(bot: Bot, event: Event, state: dict):
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
     # 参数特殊处理：正文待移除内容
-    rm_list_exist = re.search("rm_list='.+' ", change_info)
+    rm_list_exist = re.search(" rm_list='.+'", change_info)
     rm_list = None
     if rm_list_exist:
-        rm_list_str = rm_list_exist[0].rstrip().replace("rm_list=", "")
+        rm_list_str = rm_list_exist[0].lstrip().replace("rm_list=", "")
         rm_list = [i.strip("'") for i in rm_list_str.split("','")]
         change_info = change_info.replace(rm_list_exist[0], "")
     change_list = change_info.split(" ")
