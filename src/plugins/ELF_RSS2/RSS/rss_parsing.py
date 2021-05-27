@@ -117,11 +117,12 @@ async def start(rss: rss_class.Rss) -> None:
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
         # 检查是否启用去重 使用 duplicate_filter_mode 字段
-        if rss.duplicate_filter_mode and await duplicate_exists(
-            rss=rss, item=item, conn=conn
-        ):
-            write_item(rss=rss, new_rss=new_rss, new_item=item)
-            continue
+        tuple_temp = None
+        if rss.duplicate_filter_mode:
+            tuple_temp = await duplicate_exists(rss=rss, item=item, conn=conn)
+            if tuple_temp[0]:
+                write_item(rss=rss, new_rss=new_rss, new_item=item)
+                continue
         # 检查是否只推送有图片的消息
         if (rss.only_pic or rss.only_has_pic) and not re.search(
             r"<img.+?>|\[img]", item["summary"]
@@ -174,8 +175,26 @@ async def start(rss: rss_class.Rss) -> None:
         # 发送消息并写入文件
         if await send_msg(rss=rss, msg=item_msg, item=item):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
+            if tuple_temp:
+                await insert_into_cache_db(
+                    conn=conn, item=item, image_hash=tuple_temp[1]
+                )
     if conn is not None:
         conn.close()
+
+
+# 消息发送后存入去重数据库
+async def insert_into_cache_db(
+    conn: sqlite3.connect, item: dict, image_hash: str
+) -> None:
+    cursor = conn.cursor()
+    link = item["link"].replace("'", "''")
+    title = item["title"].replace("'", "''")
+    cursor.execute(
+        f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
+    )
+    cursor.close()
+    conn.commit()
 
 
 # 对去重数据库进行管理
@@ -207,7 +226,7 @@ async def cache_db_manage(conn: sqlite3.connect) -> None:
 # 去重判断
 async def duplicate_exists(
     rss: rss_class.Rss, item: dict, conn: sqlite3.connect
-) -> bool:
+) -> tuple:
     flag = False
     link = item["link"].replace("'", "''")
     title = item["title"].replace("'", "''")
@@ -252,13 +271,7 @@ async def duplicate_exists(
         cursor.close()
         conn.commit()
         flag = True
-    else:
-        cursor.execute(
-            f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
-        )
-        cursor.close()
-        conn.commit()
-    return flag
+    return flag, image_hash
 
 
 # 写入单条消息
