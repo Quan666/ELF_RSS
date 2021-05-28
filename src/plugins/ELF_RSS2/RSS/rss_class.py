@@ -153,14 +153,6 @@ class Rss:
                 return feed
         return None
 
-    # 查找是否存在当前订阅链接
-    def find_url(self, url: str):
-        url_list = self.read_rss()
-        for tmp in url_list:
-            if tmp.url == url:
-                return tmp
-        return None
-
     # 添加订阅 QQ
     def add_user(self, user: str):
         if str(user) in self.user_id:
@@ -174,14 +166,6 @@ class Rss:
             return
         self.group_id.append(str(group))
         self.write_rss()
-
-    # 删除订阅 QQ
-    def delete_user(self, user: str) -> bool:
-        if not str(user) in self.user_id:
-            return False
-        self.user_id.remove(str(user))
-        self.write_rss()
-        return True
 
     # 删除订阅 群组
     def delete_group(self, group: str) -> bool:

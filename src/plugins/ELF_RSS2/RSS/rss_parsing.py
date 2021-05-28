@@ -113,7 +113,10 @@ async def start(rss: rss_class.Rss) -> None:
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
         # 检查是否匹配黑名单关键词 使用 black_keyword 字段
-        if rss.black_keyword and re.search(rss.black_keyword, item["summary"]):
+        if rss.black_keyword and (
+            re.search(rss.black_keyword, item["title"])
+            or re.search(rss.black_keyword, item["summary"])
+        ):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
         # 检查是否启用去重 使用 duplicate_filter_mode 字段
