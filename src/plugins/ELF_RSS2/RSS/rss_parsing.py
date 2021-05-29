@@ -427,10 +427,10 @@ async def handle_date(date=None) -> str:
         # 时差处理，待改进
         if rss_time + 28800.0 < time.time():
             rss_time += 28800.0
-        return "日期：" + time.strftime(f"%m月%d日 %H:%M:%S", time.localtime(rss_time))
+        return "日期：" + time.strftime("%m月%d日 %H:%M:%S", time.localtime(rss_time))
     # 没有日期的情况，以当前时间
     else:
-        return "日期：" + time.strftime(f"%m月%d日 %H:%M:%S", time.localtime())
+        return "日期：" + time.strftime("%m月%d日 %H:%M:%S", time.localtime())
 
 
 # 通过 ezgif 压缩 GIF
@@ -514,9 +514,9 @@ async def zip_pic(url: str, proxy: bool, content: bytes):
 async def get_pic_base64(content) -> str:
     if not content:
         return ""
-    elif type(content) == bytes:
+    elif isinstance(content, bytes):
         image_buffer = BytesIO(content)
-    elif type(content) == BytesIO:
+    elif isinstance(content, BytesIO):
         image_buffer = content
     else:
         image_buffer = BytesIO()
@@ -640,6 +640,15 @@ async def handle_html_tag(html, translation: bool) -> str:
     for tag in markdown_tag_list:
         rss_str = re.sub(rf"\[{tag}]|\[/{tag}]", "", rss_str)
 
+    # 有序/无序列表 标签处理
+    for ul in html("ul").items():
+        for li in ul("li").items():
+            rss_str = rss_str.replace(li.outer_html(), f"- {li.text()}")
+    for ol in html("ol").items():
+        for index, li in enumerate(ol("li").items()):
+            rss_str = rss_str.replace(li.outer_html(), f"{index + 1}. {li.text()}")
+    rss_str = re.sub("</?(ul|ol)>", "", rss_str)
+
     # 处理一些 HTML 标签
     rss_str = re.sub('<br .+?"/>|<(br|hr) ?/?>', "\n", rss_str)
     rss_str = re.sub('<span .+?">|</?span>', "", rss_str)
@@ -651,27 +660,20 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub('<font .+?">|</font>', "", rss_str)
     rss_str = re.sub("</?(table|tr|th|td)>", "", rss_str)
     rss_str = re.sub(r"</?h\d>", "", rss_str)
+
     # 解决 issue #3
     rss_str = re.sub('<dd .+?">|</?dd>', "", rss_str)
     rss_str = re.sub('<dl .+?">|</?dl>', "", rss_str)
     rss_str = re.sub('<dt .+?">|</?dt>', "", rss_str)
 
-    # 有序/无序列表 标签处理
-    for ul in html("ul").items():
-        for li in ul("li").items():
-            rss_str = rss_str.replace(li.outer_html(), f"- {li.text()}")
-    for ol in html("ol").items():
-        for index, li in enumerate(ol("li").items()):
-            rss_str = rss_str.replace(li.outer_html(), f"{index + 1}. {li.text()}")
-    rss_str = re.sub("</?(ul|ol)>", "", rss_str)
-
     # 删除图片、视频标签
     rss_str = re.sub(r'<video .+?"?/>|</video>|<img.+?>', "", rss_str)
 
-    rss_str_tl = rss_str  # 翻译用副本
+    # 翻译用副本
+    rss_str_tl = rss_str
+
     # <a> 标签处理
-    doc_a = html("a")
-    for a in doc_a.items():
+    for a in html("a").items():
         if str(a.text()) != a.attr("href"):
             rss_str = rss_str.replace(
                 a.outer_html(), f" {a.text()}: {a.attr('href')}\n"
@@ -680,9 +682,6 @@ async def handle_html_tag(html, translation: bool) -> str:
             rss_str = rss_str.replace(a.outer_html(), f" {a.attr('href')}\n")
         rss_str_tl = rss_str_tl.replace(a.outer_html(), "")
 
-    # 删除未解析成功的 a 标签
-    rss_str = re.sub('<a .+?">|<a>|</a>', "", rss_str)
-    rss_str_tl = re.sub('<a .+?">|<a>|</a>', "", rss_str_tl)
     # 去掉换行
     while re.search("\n\n", rss_str) or re.search("\n\n", rss_str_tl):
         rss_str = re.sub("\n\n", "", rss_str)
@@ -691,6 +690,7 @@ async def handle_html_tag(html, translation: bool) -> str:
     if 0 < config.max_length < len(rss_str):
         rss_str = rss_str[: config.max_length] + "..."
         rss_str_tl = rss_str_tl[: config.max_length] + "..."
+
     # 翻译
     if translation:
         return rss_str + await handle_translation(rss_str_tl=rss_str_tl)

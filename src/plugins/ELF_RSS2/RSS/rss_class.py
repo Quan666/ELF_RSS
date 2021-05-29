@@ -105,7 +105,7 @@ class Rss:
             rss_list_json = json.load(load_f)
             for rss_one in rss_list_json:
                 tmp_rss = Rss("", "", "-1", "-1")
-                if type(rss_one) is not str:
+                if not isinstance(rss_one, str):
                     rss_one = json.dumps(rss_one)
                 tmp_rss.__dict__ = json.loads(rss_one)
                 rss_list.append(tmp_rss)
@@ -121,10 +121,10 @@ class Rss:
 
         for tmp_new in rss_new:
             flag = True
-            for i_old in range(0, len(rss_old)):
+            for index, i_old in enumerate(rss_old):
                 # 如果有记录 就修改记录,没有就添加
-                if rss_old[i_old].name == tmp_new.name:
-                    rss_old[i_old] = tmp_new
+                if i_old.name == tmp_new.name:
+                    rss_old[index] = tmp_new
                     flag = False
                     break
             if flag:
