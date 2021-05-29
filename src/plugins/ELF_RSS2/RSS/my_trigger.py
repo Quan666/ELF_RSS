@@ -61,9 +61,9 @@ def my_trigger_cron(rss: rss_class.Rss):
     # 解析参数
     tmp_list = rss.time.split("_")
     times_list = ["*/5", "*", "*", "*", "*"]
-    for i in range(0, len(tmp_list)):
-        if tmp_list[i]:
-            times_list[i] = tmp_list[i]
+    for index, value in enumerate(tmp_list):
+        if value:
+            times_list[index] = value
     try:
         # 制作一个触发器
         trigger = CronTrigger(

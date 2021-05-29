@@ -427,10 +427,10 @@ async def handle_date(date=None) -> str:
         # 时差处理，待改进
         if rss_time + 28800.0 < time.time():
             rss_time += 28800.0
-        return "日期：" + time.strftime(f"%m月%d日 %H:%M:%S", time.localtime(rss_time))
+        return "日期：" + time.strftime("%m月%d日 %H:%M:%S", time.localtime(rss_time))
     # 没有日期的情况，以当前时间
     else:
-        return "日期：" + time.strftime(f"%m月%d日 %H:%M:%S", time.localtime())
+        return "日期：" + time.strftime("%m月%d日 %H:%M:%S", time.localtime())
 
 
 # 通过 ezgif 压缩 GIF
@@ -514,9 +514,9 @@ async def zip_pic(url: str, proxy: bool, content: bytes):
 async def get_pic_base64(content) -> str:
     if not content:
         return ""
-    elif type(content) == bytes:
+    elif isinstance(content, bytes):
         image_buffer = BytesIO(content)
-    elif type(content) == BytesIO:
+    elif isinstance(content, BytesIO):
         image_buffer = content
     else:
         image_buffer = BytesIO()
