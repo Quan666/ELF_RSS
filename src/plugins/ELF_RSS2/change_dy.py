@@ -52,7 +52,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             "\n要将该参数设为空使用 rm_list='-1'"
             "\nQQ、群号、去重模式前加英文逗号表示追加,-1设为空"
             "\n各个属性空格分割"
-            "\n详细：https://oy.mk/ckL"
+            "\n详细：http://oy.mk/cUm"
         )
 
 
