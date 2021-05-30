@@ -256,9 +256,9 @@ async def duplicate_exists(
                 continue
             im = Image.open(BytesIO(content))
             image_hash = imagehash.average_hash(im)
-            # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤加个后缀来区分
+            # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤直接跳过
             if im.format == "GIF":
-                image_hash += ".gif"
+                continue
             logger.info(f"image_hash: {image_hash}")
             sql += f" AND image_hash='{image_hash}'"
         if mode == "link":
