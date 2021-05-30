@@ -55,5 +55,5 @@ start_metaevent = on_metaevent(rule=check_first_connect, block=True)
 
 @start_metaevent.handle()
 async def _(bot: Bot, event: Event, state: dict):
-    """启动时发送启动成功信息"""
+    # 启动时发送启动成功信息
     await start()
