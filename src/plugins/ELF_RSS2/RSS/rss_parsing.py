@@ -688,10 +688,10 @@ async def handle_html_tag(html, translation: bool) -> str:
     # 删除图片、视频标签
     rss_str = re.sub(r'<video .+?"?/>|</video>|<img.+?>', "", rss_str)
 
-    # 去掉换行
+    # 去掉多余换行
     while re.search("\n\n", rss_str) or re.search("\n\n", rss_str_tl):
-        rss_str = re.sub("\n\n", "", rss_str)
-        rss_str_tl = re.sub("\n\n", "", rss_str_tl)
+        rss_str = re.sub("\n\n", "\n", rss_str)
+        rss_str_tl = re.sub("\n\n", "\n", rss_str_tl)
 
     if 0 < config.max_length < len(rss_str):
         rss_str = rss_str[: config.max_length] + "..."
