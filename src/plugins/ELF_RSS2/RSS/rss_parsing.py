@@ -649,13 +649,15 @@ async def handle_html_tag(html, translation: bool) -> str:
     for ul in html("ul").items():
         for li in ul("li").items():
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
-            rss_str = rss_str.replace(str(li), f"\n- {li_str_search.group(1)}")
+            rss_str = rss_str.replace(str(li), f"\n- {li_str_search.group(1)}").replace(
+                "\\n", "\n"
+            )
     for ol in html("ol").items():
         for index, li in enumerate(ol("li").items()):
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
             rss_str = rss_str.replace(
                 str(li), f"\n{index + 1}. {li_str_search.group(1)}"
-            )
+            ).replace("\\n", "\n")
     rss_str = re.sub("</?(ul|ol)>", "", rss_str)
 
     # 翻译用副本
