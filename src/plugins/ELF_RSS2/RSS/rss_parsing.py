@@ -649,13 +649,15 @@ async def handle_html_tag(html, translation: bool) -> str:
     for ul in html("ul").items():
         for li in ul("li").items():
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
-            rss_str = rss_str.replace(str(li), f"\n- {li_str_search.group(1)}")
+            rss_str = rss_str.replace(str(li), f"\n- {li_str_search.group(1)}").replace(
+                "\\n", "\n"
+            )
     for ol in html("ol").items():
         for index, li in enumerate(ol("li").items()):
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
             rss_str = rss_str.replace(
                 str(li), f"\n{index + 1}. {li_str_search.group(1)}"
-            )
+            ).replace("\\n", "\n")
     rss_str = re.sub("</?(ul|ol)>", "", rss_str)
 
     # 翻译用副本
@@ -747,9 +749,14 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 
 # 检查更新
 async def check_update(new: list, old: list) -> list:
-    old_hash_list = [dict_hash(i) for i in old]
-    # 对比本地消息缓存和获取到的消息
-    temp = [i for i in new if dict_hash(i) not in old_hash_list]
+    old_hash_list = [dict_hash(i) if not i.get("hash") else i.get("hash") for i in old]
+    # 对比本地消息缓存和获取到的消息，新的存入 hash ，随着检查更新的次数增多，逐步替换原来没存 hash 的缓存记录
+    temp = []
+    for i in new:
+        hash_temp = dict_hash(i)
+        if hash_temp not in old_hash_list:
+            i["hash"] = hash_temp
+            temp.append(i)
     # 将结果进行去重，避免消息重复发送
     temp = [value for index, value in enumerate(temp) if value not in temp[index + 1 :]]
     # 因为最新的消息会在最上面，所以要反转处理（主要是为了那些缺失 published_parsed 的消息）
