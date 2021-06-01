@@ -100,6 +100,7 @@ async def start(rss: rss_class.Rss) -> None:
     if rss.duplicate_filter_mode:
         conn = sqlite3.connect(FILE_PATH + "cache.db")
         await cache_db_manage(conn)
+    item_count = 0
     for item in change_rss_list:
         # 检查是否包含屏蔽词
         if config.black_word and re.findall(
@@ -180,10 +181,15 @@ async def start(rss: rss_class.Rss) -> None:
         # 发送消息并写入文件
         if await send_msg(rss=rss, msg=item_msg, item=item):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
+            item_count += 1
             if tuple_temp:
                 await insert_into_cache_db(
                     conn=conn, item=item, image_hash=tuple_temp[1]
                 )
+    if item_count > 0:
+        logger.info(f"{rss.name} 新消息推送完毕，共计：{item_count}")
+    else:
+        logger.info(f"{rss.name} 没有新信息")
     if conn is not None:
         conn.close()
 
@@ -261,7 +267,7 @@ async def duplicate_exists(
             # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤直接跳过
             if im.format == "GIF":
                 continue
-            logger.info(f"image_hash: {image_hash}")
+            logger.debug(f"image_hash: {image_hash}")
             sql += f" AND image_hash='{image_hash}'"
         if mode == "link":
             sql += f" AND link='{link}'"
@@ -293,15 +299,7 @@ async def handle_down_torrent(rss: rss_class, item: dict) -> list:
     if not rss.is_open_upload_group:
         rss.group_id = []
     if config.is_open_auto_down_torrent and rss.down_torrent:
-        if rss.down_torrent_keyword:
-            if re.search(rss.down_torrent_keyword, item["summary"]):
-                return await down_torrent(
-                    rss=rss, item=item, proxy=get_proxy(rss.img_proxy)
-                )
-        else:
-            return await down_torrent(
-                rss=rss, item=item, proxy=get_proxy(rss.img_proxy)
-            )
+        return await down_torrent(rss=rss, item=item, proxy=get_proxy(rss.img_proxy))
 
 
 # 创建下载种子任务
@@ -487,7 +485,7 @@ async def zip_pic(url: str, proxy: bool, content: bytes):
         # 对图像文件进行缩小处理
         im.thumbnail((config.zip_size, config.zip_size))
         width, height = im.size
-        logger.info(f"Resize image to: {width} x {height}")
+        logger.debug(f"Resize image to: {width} x {height}")
         # 和谐
         pim = im.load()
         points = [[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]]
