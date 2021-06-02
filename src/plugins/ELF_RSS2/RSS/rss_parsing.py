@@ -658,9 +658,6 @@ async def handle_html_tag(html, translation: bool) -> str:
             ).replace("\\n", "\n")
     rss_str = re.sub("</?(ul|ol)>", "", rss_str)
 
-    # 翻译用副本
-    rss_str_tl = rss_str
-
     # <a> 标签处理
     for a in html("a").items():
         a_str = re.search(r"<a.+?</a>", str(a))[0]
@@ -668,7 +665,6 @@ async def handle_html_tag(html, translation: bool) -> str:
             rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
         else:
             rss_str = rss_str.replace(a_str, f" {a.attr('href')}\n")
-        rss_str_tl = rss_str_tl.replace(a_str, "")
 
     # 处理一些 HTML 标签
     rss_str = re.sub('<br .+?"/>|<(br|hr) ?/?>', "\n", rss_str)
@@ -691,17 +687,15 @@ async def handle_html_tag(html, translation: bool) -> str:
     rss_str = re.sub(r'<video .+?"?/>|</video>|<img.+?>', "", rss_str)
 
     # 去掉多余换行
-    while re.search("\n\n", rss_str) or re.search("\n\n", rss_str_tl):
+    while re.search("\n\n", rss_str):
         rss_str = re.sub("\n\n", "\n", rss_str)
-        rss_str_tl = re.sub("\n\n", "\n", rss_str_tl)
 
     if 0 < config.max_length < len(rss_str):
         rss_str = rss_str[: config.max_length] + "..."
-        rss_str_tl = rss_str_tl[: config.max_length] + "..."
 
-    # 翻译
+    # 翻译处理后的正文
     if translation:
-        return rss_str + await handle_translation(rss_str_tl=rss_str_tl)
+        return rss_str + await handle_translation(rss_str_tl=rss_str)
     else:
         return rss_str
 
