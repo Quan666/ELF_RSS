@@ -647,7 +647,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
 # HTML标签等处理
 async def handle_html_tag(html) -> str:
     # issue 36 处理 bbcode
-    rss_str = re.sub(r"\[url=.+?]\[img].+?\[/img]\[/url]", "", str(html))
+    rss_str = re.sub(r"(\[url=.+?])?\[img].+?\[/img](\[/url])?", "", str(html))
     rss_str = re.sub(r"\[align=.+?]|\[/align]", "", rss_str)
     rss_str = re.sub(r"\[backcolor=.+?]|\[/backcolor]", "", rss_str)
     rss_str = re.sub(r"\[font=.+?]|\[/font]", "", rss_str)
