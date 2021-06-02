@@ -683,6 +683,8 @@ async def handle_html_tag(html) -> str:
                 str(li), f"\n{index + 1}. {li_str_search.group(1)}"
             ).replace("\\n", "\n")
     rss_str = re.sub("</?(ul|ol)>", "", rss_str)
+    # 处理没有被 ul / ol 标签包围的 li 标签
+    rss_str = rss_str.replace("<li>", "- ").replace("</li>", "")
 
     # <a> 标签处理
     for a in new_html("a").items():
