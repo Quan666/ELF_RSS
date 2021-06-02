@@ -660,13 +660,18 @@ async def handle_html_tag(html) -> str:
     rss_str = re.sub(r"\[font=.+?]|\[/font]", "", rss_str, flags=re.I)
     rss_str = re.sub(r"\[size=\d+]|\[/size]", "", rss_str, flags=re.I)
     rss_str = re.sub(r"\[/?u]", "", rss_str, flags=re.I)
+
     # 去掉结尾被截断的信息
     rss_str = re.sub(
         r"(\[[^]]+|\[img][^\[\]]+) \.\.\n?</p>", "</p>", rss_str, flags=re.I
     )
-    parser = bbcode.Parser()
-    parser.escape_html = False
-    rss_str = parser.format(rss_str).replace("&lt;/p&gt;", "")
+
+    # 检查正文是否为 bbcode ，没有成对的标签也当作不是，从而不进行处理
+    bbcode_search = re.search(r"\[/(\w+)]", rss_str)
+    if bbcode_search and re.search(rf"\[{bbcode_search.group(1)}", rss_str):
+        parser = bbcode.Parser()
+        parser.escape_html = False
+        rss_str = parser.format(rss_str).replace("&lt;/p&gt;", "")
 
     new_html = Pq(rss_str)
     # 有序/无序列表 标签处理
