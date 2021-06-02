@@ -154,6 +154,8 @@ async def start(rss: rss_class.Rss) -> None:
                 # 标题正文相似度
                 if similarity.ratio() <= 0.6:
                     item_msg += await handle_title(title=title)
+                    if rss.translation:
+                        item_msg += await handle_translation(content=title)
                 # 处理正文
                 item_msg += await handle_summary(summary=item["summary"], rss=rss)
             except Exception as e:
@@ -161,6 +163,8 @@ async def start(rss: rss_class.Rss) -> None:
                 item_msg += await handle_title(title=title)
         else:
             item_msg += await handle_title(title=title)
+            if rss.translation:
+                item_msg += await handle_translation(content=title)
 
         # 处理来源
         item_msg += await handle_source(source=item["link"])
@@ -402,11 +406,15 @@ async def handle_summary(summary: str, rss: rss_class.Rss) -> str:
     # 判断是否开启了 仅仅推送有图片的信息
     if not rss.only_pic:
         # 处理标签及翻译
-        res_msg += await handle_html_tag(html=summary_html, translation=rss.translation)
+        summary_text = await handle_html_tag(html=summary_html)
         # 移除指定内容
         if rss.content_to_remove:
             for pattern in rss.content_to_remove:
-                res_msg = re.sub(pattern, "", res_msg)
+                summary_text = re.sub(pattern, "", summary_text)
+        res_msg += summary_text
+        # 翻译处理后的正文
+        if rss.translation:
+            res_msg += await handle_translation(content=summary_text)
 
     # 处理图片
     res_msg += await handle_img(
@@ -636,7 +644,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
 
 
 # HTML标签等处理
-async def handle_html_tag(html, translation: bool) -> str:
+async def handle_html_tag(html) -> str:
     # issue36 处理md标签
     rss_str = re.sub(r"\[img][hH][tT]{2}[pP][sS]?://.*?\[/img]", "", str(html))
     markdown_tag_list = re.findall(r"\[/(\w+)]", rss_str)
@@ -693,23 +701,19 @@ async def handle_html_tag(html, translation: bool) -> str:
     if 0 < config.max_length < len(rss_str):
         rss_str = rss_str[: config.max_length] + "..."
 
-    # 翻译处理后的正文
-    if translation:
-        return rss_str + await handle_translation(rss_str_tl=rss_str)
-    else:
-        return rss_str
+    return rss_str
 
 
 # 翻译
-async def handle_translation(rss_str_tl: str) -> str:
+async def handle_translation(content: str) -> str:
     translator = google_translator()
     try:
-        text = emoji.demojize(rss_str_tl)
+        text = emoji.demojize(content)
         text = re.sub(r":[A-Za-z_]*:", " ", text)
         if config.baidu_id and config.baidu_key:
-            rss_str_tl = re.sub(r"\n", "百度翻译 ", rss_str_tl)
-            rss_str_tl = unicodedata.normalize("NFC", rss_str_tl)
-            text = emoji.demojize(rss_str_tl)
+            content = re.sub(r"\n", "百度翻译 ", content)
+            content = unicodedata.normalize("NFC", content)
+            text = emoji.demojize(content)
             text = re.sub(r":[A-Za-z_]*:", " ", text)
             text = "\n翻译(BaiduAPI)：\n" + str(
                 translation_baidu.baidu_translate(re.escape(text))
