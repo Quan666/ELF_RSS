@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+import bbcode
 import codecs
 import difflib
 import hashlib
@@ -629,7 +630,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
             url = video.attr("poster")
             img_str += await handle_img_combo(url, img_proxy)
 
-    # 解决 issue36
+    # 解决 issue 36
     img_list = re.findall(r"\[img]([hH][tT]{2}[pP][sS]?://.*?)\[/img]", str(html))
     for img_tmp in img_list:
         img_str += await handle_img_combo(img_tmp, img_proxy)
@@ -645,11 +646,14 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
 
 # HTML标签等处理
 async def handle_html_tag(html) -> str:
-    # issue36 处理md标签
-    rss_str = re.sub(r"\[img][hH][tT]{2}[pP][sS]?://.*?\[/img]", "", str(html))
-    markdown_tag_list = re.findall(r"\[/(\w+)]", rss_str)
-    for tag in markdown_tag_list:
-        rss_str = re.sub(rf"\[{tag}]|\[/{tag}]", "", rss_str)
+    # issue 36 处理 bbcode
+    rss_str = re.sub(r"\[url=.+?]\[img].+?\[/img]\[/url]", "", str(html))
+    rss_str = re.sub(r"\[align=.+?]|\[/align]", "", rss_str)
+    rss_str = re.sub(r"\[backcolor=.+?]|\[/backcolor]", "", rss_str)
+    rss_str = re.sub(r"\[font=.+?]|\[/font]", "", rss_str)
+    rss_str = re.sub(r"\[size=\d+]|\[/size]", "", rss_str)
+    parser = bbcode.Parser()
+    rss_str = parser.format(rss_str)
 
     # 有序/无序列表 标签处理
     for ul in html("ul").items():
