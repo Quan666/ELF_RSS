@@ -429,6 +429,9 @@ async def handle_summary(summary: str, rss: rss_class.Rss) -> str:
 async def handle_source(source: str) -> str:
     # 缩短 pixiv 链接
     str_link = re.sub("https://www.pixiv.net/artworks/", "https://pixiv.net/i/", source)
+    # issue 36 处理链接
+    if re.search(r"^//", source):
+        str_link = str_link.replace("//", "https://")
     return "链接：" + str_link + "\n"
 
 
@@ -578,7 +581,7 @@ async def download_image_detail(url: str, proxy: bool):
             try:
                 pic = await client.get(url, headers=headers)
             except httpx.ConnectError as e:
-                logger.error(f"有可能需要开启代理！ {e}")
+                logger.error(f"图片[{url}]下载失败,有可能需要开启代理！ \n{e}")
                 return None
             # 如果图片无法访问到,直接返回
             if pic.status_code not in STATUS_CODE or len(pic.content) == 0:
@@ -588,7 +591,7 @@ async def download_image_detail(url: str, proxy: bool):
                 return None
             return pic.content
     except Exception as e:
-        logger.error(f"图片[{url}]下载失败,将重试 \n {e}")
+        logger.error(f"图片[{url}]下载失败,将重试 \n{e}")
         raise
 
 
@@ -631,7 +634,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
             img_str += await handle_img_combo(url, img_proxy)
 
     # 解决 issue 36
-    img_list = re.findall(r"\[img]([hH][tT]{2}[pP][sS]?://.*?)\[/img]", str(html))
+    img_list = re.findall(r"\[img](.+?)\[/img]", str(html), flags=re.I)
     for img_tmp in img_list:
         img_str += await handle_img_combo(img_tmp, img_proxy)
 
@@ -646,23 +649,34 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
 
 # HTML标签等处理
 async def handle_html_tag(html) -> str:
-    # issue 36 处理 bbcode
-    rss_str = re.sub(r"(\[url=.+?])?\[img].+?\[/img](\[/url])?", "", str(html))
-    rss_str = re.sub(r"\[align=.+?]|\[/align]", "", rss_str)
-    rss_str = re.sub(r"\[backcolor=.+?]|\[/backcolor]", "", rss_str)
-    rss_str = re.sub(r"\[font=.+?]|\[/font]", "", rss_str)
-    rss_str = re.sub(r"\[size=\d+]|\[/size]", "", rss_str)
-    parser = bbcode.Parser()
-    rss_str = parser.format(rss_str)
+    rss_str = str(html)
 
+    # issue 36 处理 bbcode
+    rss_str = re.sub(
+        r"(\[url=.+?])?\[img].+?\[/img](\[/url])?", "", rss_str, flags=re.I
+    )
+    rss_str = re.sub(r"\[align=.+?]|\[/align]", "", rss_str, flags=re.I)
+    rss_str = re.sub(r"\[backcolor=.+?]|\[/backcolor]", "", rss_str, flags=re.I)
+    rss_str = re.sub(r"\[font=.+?]|\[/font]", "", rss_str, flags=re.I)
+    rss_str = re.sub(r"\[size=\d+]|\[/size]", "", rss_str, flags=re.I)
+    rss_str = re.sub(r"\[/?u]", "", rss_str, flags=re.I)
+    # 去掉结尾被截断的信息
+    rss_str = re.sub(
+        r"(\[[^]]+|\[img][^\[\]]+) \.\.\n?</p>", "</p>", rss_str, flags=re.I
+    )
+    parser = bbcode.Parser()
+    parser.escape_html = False
+    rss_str = parser.format(rss_str).replace("&lt;/p&gt;", "")
+
+    new_html = Pq(rss_str)
     # 有序/无序列表 标签处理
-    for ul in html("ul").items():
+    for ul in new_html("ul").items():
         for li in ul("li").items():
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
             rss_str = rss_str.replace(str(li), f"\n- {li_str_search.group(1)}").replace(
                 "\\n", "\n"
             )
-    for ol in html("ol").items():
+    for ol in new_html("ol").items():
         for index, li in enumerate(ol("li").items()):
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
             rss_str = rss_str.replace(
@@ -671,7 +685,7 @@ async def handle_html_tag(html) -> str:
     rss_str = re.sub("</?(ul|ol)>", "", rss_str)
 
     # <a> 标签处理
-    for a in html("a").items():
+    for a in new_html("a").items():
         a_str = re.search(r"<a.+?</a>", str(a))[0]
         if str(a.text()) != a.attr("href"):
             rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
