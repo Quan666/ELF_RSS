@@ -160,7 +160,7 @@ async def start(rss: rss_class.Rss) -> None:
                     None, summary_html.text()[: len(title)], title
                 )
                 # 标题正文相似度
-                if similarity.ratio() <= 0.6:
+                if rss.only_pic or similarity.ratio() <= 0.6:
                     item_msg += await handle_title(title=title)
                     if rss.translation:
                         item_msg += await handle_translation(content=title)
@@ -602,6 +602,8 @@ async def download_image_detail(url: str, proxy: bool):
 
 
 async def download_image(url: str, proxy: bool = False):
+    if re.search(r"^//", url):
+        url = url.replace("//", "https://")
     try:
         return await download_image_detail(url=url, proxy=proxy)
     except Exception as e:
@@ -610,6 +612,8 @@ async def download_image(url: str, proxy: bool = False):
 
 
 async def handle_img_combo(url: str, img_proxy: bool) -> str:
+    if re.search(r"^//", url):
+        url = url.replace("//", "https://")
     content = await download_image(url, img_proxy)
     resize_content = await zip_pic(url, img_proxy, content)
     img_base64 = await get_pic_base64(resize_content)
