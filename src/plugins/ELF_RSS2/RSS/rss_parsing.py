@@ -103,36 +103,43 @@ async def start(rss: rss_class.Rss) -> None:
         await cache_db_manage(conn)
     item_count = 0
     for item in change_rss_list:
+        summary = (
+            item["content"][0].get("value") if item.get("content") else item["summary"]
+        )
         # 检查是否包含屏蔽词
-        if config.black_word and re.findall(
-            "|".join(config.black_word), item["summary"]
-        ):
+        if config.black_word and re.findall("|".join(config.black_word), summary):
             logger.info("内含屏蔽词，已经取消推送该消息")
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
         # 检查是否匹配关键词 使用 down_torrent_keyword 字段
         if rss.down_torrent_keyword and not re.search(
-            rss.down_torrent_keyword, item["summary"]
+            rss.down_torrent_keyword, summary
         ):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
         # 检查是否匹配黑名单关键词 使用 black_keyword 字段
         if rss.black_keyword and (
             re.search(rss.black_keyword, item["title"])
-            or re.search(rss.black_keyword, item["summary"])
+            or re.search(rss.black_keyword, summary)
         ):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             continue
         # 检查是否启用去重 使用 duplicate_filter_mode 字段
         tuple_temp = None
         if rss.duplicate_filter_mode:
-            tuple_temp = await duplicate_exists(rss=rss, item=item, conn=conn)
+            tuple_temp = await duplicate_exists(
+                rss=rss,
+                conn=conn,
+                link=item["link"],
+                title=item["title"],
+                summary=summary,
+            )
             if tuple_temp[0]:
                 write_item(rss=rss, new_rss=new_rss, new_item=item)
                 continue
         # 检查是否只推送有图片的消息
         if (rss.only_pic or rss.only_has_pic) and not re.search(
-            r"<img.+?>|\[img]", item["summary"]
+            r"<img.+?>|\[img]", summary
         ):
             logger.info(f"{rss.name} 已开启仅图片/仅含有图片，该消息没有图片，将跳过")
             write_item(rss=rss, new_rss=new_rss, new_item=item)
@@ -146,7 +153,7 @@ async def start(rss: rss_class.Rss) -> None:
         if not rss.only_title:
             # 先判断与正文相识度，避免标题正文一样，或者是标题为正文前N字等情况
             try:
-                summary_html = Pq(item["summary"])
+                summary_html = Pq(summary)
                 if not config.blockquote:
                     summary_html.remove("blockquote")
                 similarity = difflib.SequenceMatcher(
@@ -158,7 +165,7 @@ async def start(rss: rss_class.Rss) -> None:
                     if rss.translation:
                         item_msg += await handle_translation(content=title)
                 # 处理正文
-                item_msg += await handle_summary(summary=item["summary"], rss=rss)
+                item_msg += await handle_summary(summary=summary, rss=rss)
             except Exception as e:
                 logger.info(f"{rss.name} 没有正文内容！ E: {e}")
                 item_msg += await handle_title(title=title)
@@ -241,17 +248,16 @@ async def cache_db_manage(conn: sqlite3.connect) -> None:
 
 # 去重判断
 async def duplicate_exists(
-    rss: rss_class.Rss, item: dict, conn: sqlite3.connect
+    rss: rss_class.Rss, conn: sqlite3.connect, link: str, title: str, summary: str
 ) -> tuple:
     flag = False
-    link = item["link"].replace("'", "''")
-    title = item["title"].replace("'", "''")
+    link = link.replace("'", "''")
+    title = title.replace("'", "''")
     image_hash = None
     cursor = conn.cursor()
     sql = "SELECT * FROM main WHERE 1=1"
     for mode in rss.duplicate_filter_mode:
         if mode == "image":
-            summary = item["summary"]
             try:
                 summary_doc = Pq(summary)
             except Exception as e:
@@ -637,12 +643,6 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
     img_list = re.findall(r"\[img](.+?)\[/img]", str(html), flags=re.I)
     for img_tmp in img_list:
         img_str += await handle_img_combo(img_tmp, img_proxy)
-
-    # 一个网站的 RSS 源 description 标签内容格式为: 'Image: ...'
-    image_search = re.search(r"Image: (https?://\S*)", str(html))
-    if image_search:
-        url = image_search.group(1)
-        img_str += await handle_img_combo(url, img_proxy)
 
     return img_str
 
