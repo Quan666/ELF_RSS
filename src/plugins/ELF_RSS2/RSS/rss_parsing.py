@@ -661,9 +661,11 @@ async def handle_html_tag(html) -> str:
     )
     rss_str = re.sub(r"\[align=.+?]|\[/align]", "", rss_str, flags=re.I)
     rss_str = re.sub(r"\[backcolor=.+?]|\[/backcolor]", "", rss_str, flags=re.I)
+    rss_str = re.sub(r"\[color=.+?]|\[/color]", "", rss_str, flags=re.I)
     rss_str = re.sub(r"\[font=.+?]|\[/font]", "", rss_str, flags=re.I)
-    rss_str = re.sub(r"\[size=\d+]|\[/size]", "", rss_str, flags=re.I)
-    rss_str = re.sub(r"\[/?u]", "", rss_str, flags=re.I)
+    rss_str = re.sub(r"\[size=.+?]|\[/size]", "", rss_str, flags=re.I)
+    rss_str = re.sub(r"\[table=.+?]|\[/table]", "", rss_str, flags=re.I)
+    rss_str = re.sub(r"\[/?(b|u|tr|td)]", "", rss_str, flags=re.I)
 
     # 去掉结尾被截断的信息
     rss_str = re.sub(
