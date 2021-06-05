@@ -18,6 +18,7 @@ import unicodedata
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Any
+from html import unescape as html_unescape
 
 import emoji
 import feedparser
@@ -659,13 +660,22 @@ async def handle_html_tag(html) -> str:
     rss_str = re.sub(
         r"(\[url=.+?])?\[img].+?\[/img](\[/url])?", "", rss_str, flags=re.I
     )
-    rss_str = re.sub(r"\[align=.+?]|\[/align]", "", rss_str, flags=re.I)
-    rss_str = re.sub(r"\[backcolor=.+?]|\[/backcolor]", "", rss_str, flags=re.I)
-    rss_str = re.sub(r"\[color=.+?]|\[/color]", "", rss_str, flags=re.I)
-    rss_str = re.sub(r"\[font=.+?]|\[/font]", "", rss_str, flags=re.I)
-    rss_str = re.sub(r"\[size=.+?]|\[/size]", "", rss_str, flags=re.I)
-    rss_str = re.sub(r"\[table=.+?]|\[/table]", "", rss_str, flags=re.I)
-    rss_str = re.sub(r"\[/?(b|u|tr|td)]", "", rss_str, flags=re.I)
+    bbcode_tags = [
+        "align",
+        "backcolor",
+        "color",
+        "font",
+        "size",
+        "table",
+        "url",
+        "b",
+        "u",
+        "tr",
+        "td",
+    ]
+    for i in bbcode_tags:
+        rss_str = re.sub(rf"\[{i}=.+?]", "", rss_str, flags=re.I)
+        rss_str = re.sub(rf"\[/?{i}]", "", rss_str, flags=re.I)
 
     # 去掉结尾被截断的信息
     rss_str = re.sub(
@@ -699,8 +709,8 @@ async def handle_html_tag(html) -> str:
 
     # <a> 标签处理
     for a in new_html("a").items():
-        a_str = re.search(r"<a.+?</a>", str(a))[0]
-        if str(a.text()) != a.attr("href"):
+        a_str = re.search(r"<a.+?</a>", html_unescape(str(a)))[0]
+        if a.text() and str(a.text()) != a.attr("href"):
             rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
         else:
             rss_str = rss_str.replace(a_str, f" {a.attr('href')}\n")
