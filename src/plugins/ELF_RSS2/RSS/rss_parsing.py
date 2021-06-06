@@ -654,7 +654,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
 
 # HTML标签等处理
 async def handle_html_tag(html) -> str:
-    rss_str = str(html)
+    rss_str = html_unescape(str(html))
 
     # issue 36 处理 bbcode
     rss_str = re.sub(
@@ -687,7 +687,7 @@ async def handle_html_tag(html) -> str:
     if bbcode_search and re.search(rf"\[{bbcode_search.group(1)}", rss_str):
         parser = bbcode.Parser()
         parser.escape_html = False
-        rss_str = parser.format(rss_str).replace("&lt;/p&gt;", "")
+        rss_str = parser.format(rss_str)
 
     new_html = Pq(rss_str)
     # 有序/无序列表 标签处理
