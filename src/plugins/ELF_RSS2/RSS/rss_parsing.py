@@ -716,21 +716,34 @@ async def handle_html_tag(html) -> str:
             rss_str = rss_str.replace(a_str, f" {a.attr('href')}\n")
 
     # 处理一些 HTML 标签
-    rss_str = re.sub('<br .+?"/>|<(br|hr) ?/?>', "\n", rss_str)
-    rss_str = re.sub('<span .+?">|</?span>', "", rss_str)
-    rss_str = re.sub('<pre .+?">|</?pre>', "", rss_str)
-    rss_str = re.sub('<[pbi] .+?">|</?[pbi]>', "", rss_str)
-    rss_str = re.sub('<div .+?"/?>|</?div>', "", rss_str)
-    rss_str = re.sub('<iframe .+?"/>', "", rss_str)
-    rss_str = re.sub("</?(code|strong)>", "", rss_str)
-    rss_str = re.sub('<font .+?">|</font>', "", rss_str)
-    rss_str = re.sub("</?(table|tr|th|td)>", "", rss_str)
-    rss_str = re.sub(r"</?h\d>", "\n", rss_str)
+    html_tags = [
+        "b",
+        "i",
+        "p",
+        "code",
+        "del",
+        "div",
+        "dd",
+        "dl",
+        "dt",
+        "font",
+        "iframe",
+        "pre",
+        "span",
+        "strong",
+        "sub",
+        "table",
+        "td",
+        "th",
+        "tr",
+    ]
+    # 直接去掉标签，留下内部文本信息
+    for i in html_tags:
+        rss_str = re.sub(rf'<{i} .+?"/?>', "", rss_str)
+        rss_str = re.sub(rf"</?{i}>", "", rss_str)
 
-    # 解决 issue #3
-    rss_str = re.sub('<dd .+?">|</?dd>', "", rss_str)
-    rss_str = re.sub('<dl .+?">|</?dl>', "", rss_str)
-    rss_str = re.sub('<dt .+?">|</?dt>', "", rss_str)
+    rss_str = re.sub('<br .+?"/>|<(br|hr) ?/?>', "\n", rss_str)
+    rss_str = re.sub(r"</?h\d>", "\n", rss_str)
 
     # 删除图片、视频标签
     rss_str = re.sub(r'<video .+?"?/>|</video>|<img.+?>', "", rss_str)
