@@ -721,6 +721,7 @@ async def handle_html_tag(html) -> str:
         "i",
         "p",
         "code",
+        "del",
         "div",
         "dd",
         "dl",
