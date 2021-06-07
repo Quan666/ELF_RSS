@@ -31,6 +31,7 @@ from PIL import Image, UnidentifiedImageError
 from pyquery import PyQuery as Pq
 from tenacity import retry, stop_after_attempt, stop_after_delay
 
+from .routes.Parsing import ParsingRss
 from ..config import config
 from . import rss_class, translation_baidu
 from .qbittorrent_download import start_down
@@ -91,6 +92,10 @@ async def start(rss: rss_class.Rss) -> None:
         write_rss(name=rss.name, new_rss=new_rss)
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
+
+    pr = ParsingRss(rss=rss)
+    await pr.start(new_data=new_rss_list,old_data=old_rss_list)
+    return
 
     change_rss_list = await check_update(new=new_rss_list, old=old_rss_list)
     if len(change_rss_list) <= 0:
