@@ -853,8 +853,7 @@ def write_rss(name: str, new_rss: dict, new_item: list = None):
         dump_f.write(json.dumps(old, sort_keys=True, indent=4, ensure_ascii=False))
 
 
-# 发送消息,失败重试
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
+# 发送消息
 async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
     (bot,) = nonebot.get_bots().values()
     try:
