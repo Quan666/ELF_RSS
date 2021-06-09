@@ -237,42 +237,46 @@ class Rss:
             return False
 
     def __str__(self) -> str:
-        if self.cookies:
-            cookies_str = "\ncookies:True"
-        else:
-            cookies_str = ""
-        if not config.is_open_auto_down_torrent:
-            down_msg = "\n种子自动下载功能未打开"
-        else:
-            down_msg = ""
         mode_name = {"link": "链接", "title": "标题", "image": "图片"}
-        if not self.duplicate_filter_mode:
-            mode_msg = "\n未启用去重模式"
-        else:
+        if self.duplicate_filter_mode:
             delimiter = "、"
             if "or" in self.duplicate_filter_mode:
                 delimiter = " 或 "
             mode_msg = (
                 "\n已启用去重模式，"
-                f"{delimiter.join(mode_name[i] for i in self.duplicate_filter_mode if i != 'or')}相同时去重"
+                f"{delimiter.join(mode_name[i] for i in self.duplicate_filter_mode if i != 'or')} 相同时去重"
             )
-        ret = (
-            f"名称：{self.name}\n"
-            f"订阅地址：{self.url}\n"
-            f"订阅QQ：{self.user_id}\n"
-            f"订阅群：{self.group_id}\n"
-            f"更新时间：{self.time}\n"
-            f"代理：{self.img_proxy}\n"
-            f"翻译：{self.translation}\n"
-            f"仅标题：{self.only_title}\n"
-            f"仅图片：{self.only_pic}\n"
-            f"仅含有图片：{self.only_has_pic}\n"
-            f"下载种子：{self.down_torrent}\n"
-            f"白名单关键词：{self.down_torrent_keyword}\n"
-            f"黑名单关键词：{self.black_keyword}{cookies_str}{down_msg}\n"
-            f"是否上传到群：{self.is_open_upload_group}\n"
-            f"去重模式：{self.duplicate_filter_mode}{mode_msg}\n"
-            f"图片数量限制：{self.max_image_number}\n"
-            f"正文待移除内容：{self.content_to_remove}\n"
+        ret_list = (
+            lambda: f"名称：{self.name}\n",
+            lambda: f"订阅地址：{self.url}\n",
+            lambda: f"订阅QQ：{self.user_id}\n" if self.user_id else "",
+            lambda: f"订阅群：{self.group_id}\n" if self.group_id else "",
+            lambda: f"更新时间：{self.time}\n",
+            lambda: f"代理：{self.img_proxy}\n" if self.img_proxy else "",
+            lambda: f"翻译：{self.translation}\n" if self.translation else "",
+            lambda: f"仅标题：{self.only_title}\n" if self.only_title else "",
+            lambda: f"仅图片：{self.only_pic}\n" if self.only_pic else "",
+            lambda: f"仅含有图片：{self.only_has_pic}\n" if self.only_has_pic else "",
+            lambda: f"白名单关键词：{self.down_torrent_keyword}\n"
+            if self.down_torrent_keyword
+            else "",
+            lambda: f"黑名单关键词：{self.black_keyword}\n" if self.black_keyword else "",
+            lambda: "cookies：True\n" if self.cookies else "",
+            lambda: f"下载种子：{self.down_torrent}\n"
+            if self.down_torrent
+            else "种子自动下载功能未打开\n",
+            lambda: f"是否上传到群：{self.is_open_upload_group}\n"
+            if self.is_open_upload_group
+            else "",
+            lambda: f"{mode_msg}\n" if self.duplicate_filter_mode else "",
+            lambda: f"图片数量限制：{self.max_image_number}\n"
+            if self.max_image_number
+            else "",
+            lambda: f"正文待移除内容：{self.content_to_remove}\n"
+            if self.content_to_remove
+            else "",
         )
+        ret = ""
+        for r in ret_list:
+            ret += r()
         return ret

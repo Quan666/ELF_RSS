@@ -310,7 +310,7 @@ def write_item(rss: rss_class.Rss, new_rss: dict, new_item: str):
 async def handle_down_torrent(rss: rss_class, item: dict) -> list:
     if not rss.is_open_upload_group:
         rss.group_id = []
-    if config.is_open_auto_down_torrent and rss.down_torrent:
+    if rss.down_torrent:
         return await down_torrent(rss=rss, item=item, proxy=get_proxy(rss.img_proxy))
 
 
