@@ -729,6 +729,7 @@ async def handle_html_tag(html) -> str:
         "font",
         "iframe",
         "pre",
+        "small",
         "span",
         "strong",
         "sub",
