@@ -243,7 +243,7 @@ class Rss:
             if "or" in self.duplicate_filter_mode:
                 delimiter = " 或 "
             mode_msg = (
-                "\n已启用去重模式，"
+                "已启用去重模式，"
                 f"{delimiter.join(mode_name[i] for i in self.duplicate_filter_mode if i != 'or')} 相同时去重"
             )
         ret_list = (
