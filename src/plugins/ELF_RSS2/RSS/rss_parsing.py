@@ -274,7 +274,10 @@ async def duplicate_exists(
             content = await download_image(url, rss.img_proxy)
             if not content:
                 continue
-            im = Image.open(BytesIO(content))
+            try:
+                im = Image.open(BytesIO(content))
+            except UnidentifiedImageError:
+                continue
             image_hash = imagehash.average_hash(im)
             # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤直接跳过
             if im.format == "GIF":
@@ -590,10 +593,12 @@ async def download_image_detail(url: str, proxy: bool):
             except httpx.ConnectError as e:
                 logger.error(f"图片[{url}]下载失败,有可能需要开启代理！ \n{e}")
                 return None
-            # 如果图片无法访问到,直接返回
-            if pic.status_code not in STATUS_CODE or len(pic.content) == 0:
+            # 如果 图片无法获取到 / 获取到的不是图片，直接返回
+            if ("image" not in pic.headers["Content-Type"]) or (
+                pic.status_code not in STATUS_CODE
+            ):
                 logger.error(
-                    f"[{url}] pic.status_code: {pic.status_code} pic.size: {len(pic.content)}"
+                    f"[{url}] Content-Type: {pic.headers['Content-Type']} status_code: {pic.status_code}"
                 )
                 return None
             return pic.content
