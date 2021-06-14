@@ -794,7 +794,8 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
     if dictionary.get("published_parsed"):
         dictionary_temp.pop("published_parsed")
     # 某些情况下，如微博带视频的消息，正文可能不一样，先过滤
-    dictionary_temp.pop("summary")
+    if dictionary.get("summary"):
+        dictionary_temp.pop("summary")
     if dictionary.get("summary_detail"):
         dictionary_temp.pop("summary_detail")
     d_hash = hashlib.md5()
