@@ -33,6 +33,7 @@ class Rss:
     duplicate_filter_mode: [str] = None  # 去重模式
     max_image_number: int = 0  # 图片数量限制，防止消息太长刷屏
     content_to_remove: [str] = None  # 正文待移除内容，支持正则
+    stop: False  # 停止更新
 
     def __init__(
         self,
@@ -54,6 +55,7 @@ class Rss:
         duplicate_filter_mode: str = None,
         max_image_number: int = 0,
         content_to_remove: str = None,
+        stop=False,
     ):
         self.name = name
         self.url = url
@@ -82,6 +84,7 @@ class Rss:
         self.duplicate_filter_mode = duplicate_filter_mode
         self.max_image_number = max_image_number
         self.content_to_remove = content_to_remove
+        self.stop = stop
 
     # 返回订阅链接
     def get_url(self, rsshub: str = config.rsshub) -> str:
@@ -275,6 +278,7 @@ class Rss:
             lambda: f"正文待移除内容：{self.content_to_remove}\n"
             if self.content_to_remove
             else "",
+            lambda: f"停止更新：{self.stop}\n" if self.stop else "",
         )
         ret = ""
         for r in ret_list:

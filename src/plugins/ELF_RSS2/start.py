@@ -16,7 +16,8 @@ async def start():
         if not rss_list:
             raise Exception("第一次启动，你还没有订阅，记得添加哟！")
         for rss_tmp in rss_list:
-            await rt.add_job(rss_tmp)  # 创建检查更新任务
+            if not rss_tmp.stop:
+                await rt.add_job(rss_tmp)  # 创建检查更新任务
         await bot.send_msg(
             message_type="private",
             user_id=str(list(config.superusers)[0]),
