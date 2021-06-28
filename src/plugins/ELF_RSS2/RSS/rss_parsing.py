@@ -88,6 +88,9 @@ async def start(rss: rss_class.Rss) -> None:
         return
     old_rss_list = read_rss(rss.name).get("entries")
     if not old_rss_list:
+        if not new_rss_list:
+            logger.info(f"{rss.name} 目前还没有内容！")
+            return
         write_rss(name=rss.name, new_rss=new_rss)
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
@@ -843,9 +846,10 @@ async def check_update(new: list, old: list) -> list:
 # 读取记录
 def read_rss(name) -> dict:
     # 检查是否存在rss记录
-    if not os.path.isfile(FILE_PATH + (name + ".json")):
+    json_path = FILE_PATH + (name + ".json")
+    if not os.path.isfile(json_path) or os.stat(json_path).st_size == 0:
         return {}
-    with codecs.open(FILE_PATH + (name + ".json"), "r", "utf-8") as load_f:
+    with codecs.open(json_path, "r", "utf-8") as load_f:
         load_dict = json.load(load_f)
     return load_dict
 
