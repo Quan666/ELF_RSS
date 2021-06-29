@@ -33,7 +33,7 @@ class Rss:
     duplicate_filter_mode: [str] = None  # 去重模式
     max_image_number: int = 0  # 图片数量限制，防止消息太长刷屏
     content_to_remove: [str] = None  # 正文待移除内容，支持正则
-    stop: False  # 停止更新
+    stop = False  # 停止更新
 
     def __init__(
         self,
