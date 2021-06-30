@@ -691,6 +691,7 @@ async def handle_html_tag(html) -> str:
         "u",
         "tr",
         "td",
+        "tbody",
     ]
     for i in bbcode_tags:
         rss_str = re.sub(rf"\[{i}=.+?]", "", rss_str, flags=re.I)
