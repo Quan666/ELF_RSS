@@ -86,11 +86,9 @@ async def start(rss: rss_class.Rss) -> None:
             f"{rss.name}[{rss.get_url()}]抓取失败！已达最大重试次数！请检查订阅地址！{cookies_str}\nE: {e}"
         )
         return
-    old_rss_list = read_rss(rss.name).get("entries")
-    if not old_rss_list:
-        if not new_rss_list:
-            logger.info(f"{rss.name} 目前还没有内容！")
-            return
+    old_rss = read_rss(rss.name)
+    old_rss_list = old_rss.get("entries")
+    if not old_rss:
         write_rss(name=rss.name, new_rss=new_rss)
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
