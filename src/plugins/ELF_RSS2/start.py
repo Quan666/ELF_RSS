@@ -1,10 +1,30 @@
+import codecs
 import nonebot
+import os
+import re
 from nonebot import logger, on_metaevent
 from nonebot.adapters.cqhttp import Bot, Event, LifecycleMetaEvent
+from pathlib import Path
 
 from .config import config
 from .RSS import rss_class
 from .RSS import my_trigger as rt
+
+FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
+
+
+def hash_clear():
+    json_paths = list(Path(FILE_PATH).glob("*.json"))
+
+    for j in [str(i) for i in json_paths if i != "rss.json"]:
+
+        with codecs.open(j, "r", "utf-8") as f:
+            lines = f.readlines()
+
+        with codecs.open(j, "w", "utf-8") as f:
+            for line in lines:
+                if not re.search(r'"hash": "[0-9a-zA-Z]{32}",', line):
+                    f.write(line)
 
 
 async def start():
@@ -29,6 +49,7 @@ async def start():
             ),
         )
         logger.info("ELF_RSS 订阅器启动成功！")
+        hash_clear()
     except Exception as e:
         await bot.send_msg(
             message_type="private",
