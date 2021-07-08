@@ -182,7 +182,10 @@ async def start(rss: rss_class.Rss) -> None:
         item_msg += await handle_source(source=item["link"])
 
         # 处理时间
-        item_msg += await handle_date(date=item.get("published_parsed"))
+        date = item.get("published_parsed")
+        if not date:
+            date = item.get("updated_parsed")
+        item_msg += await handle_date(date=date)
 
         # 处理种子
         try:
@@ -802,15 +805,8 @@ async def handle_translation(content: str) -> str:
 
 # 将 dict 对象转换为 json 字符串后，计算哈希值，供后续比较
 def dict_hash(dictionary: Dict[str, Any]) -> str:
-    dictionary_temp = dictionary.copy()
-    # 避免部分缺失 published_parsed 的消息导致检查更新出问题，进行过滤
-    if dictionary.get("published_parsed"):
-        dictionary_temp.pop("published_parsed")
-    # 某些情况下，如微博带视频的消息，正文可能不一样，先过滤
-    if dictionary.get("summary"):
-        dictionary_temp.pop("summary")
-    if dictionary.get("summary_detail"):
-        dictionary_temp.pop("summary_detail")
+    keys = ["id", "link", "published", "updated", "title"]
+    dictionary_temp = {k: dictionary[k] for k in keys if k in dictionary}
     d_hash = hashlib.md5()
     encoded = json.dumps(dictionary_temp, sort_keys=True).encode()
     d_hash.update(encoded)
@@ -828,14 +824,15 @@ async def check_update(new: list, old: list) -> list:
             i["hash"] = hash_temp
             temp.append(i)
     # 将结果进行去重，避免消息重复发送
-    temp = [value for index, value in enumerate(temp) if value not in temp[index + 1 :]]
-    # 因为最新的消息会在最上面，所以要反转处理（主要是为了那些缺失 published_parsed 的消息）
-    result = []
-    for t in temp:
-        result.insert(0, t)
+    result = [
+        value for index, value in enumerate(temp) if value not in temp[index + 1 :]
+    ]
     # 对结果按照发布时间排序
     result_with_date = [
-        (await handle_date(i.get("published_parsed")), i) for i in result
+        (await handle_date(i.get("updated_parsed")), i)
+        if i.get("updated_parsed")
+        else (await handle_date(i.get("published_parsed")), i)
+        for i in result
     ]
     result_with_date.sort(key=lambda tup: tup[0])
     result = [i for key, i in result_with_date]
