@@ -175,7 +175,8 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
         await send_msg(f"👏 {name}\nHash: {hash_str} \n下载完成！耗时：{all_time} s")
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOADING
         for group_id in group_ids:
-            if not isinstance(group_id, int): continue
+            if not isinstance(group_id, int):
+                continue
             for tmp in files:
                 # 异常包起来防止超时报错导致后续不执行
                 try:
