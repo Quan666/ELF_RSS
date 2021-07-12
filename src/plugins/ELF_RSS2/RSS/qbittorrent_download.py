@@ -7,6 +7,7 @@ import httpx
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger
 from nonebot import logger, require
+from nonebot.adapters.cqhttp import ActionFailed
 from qbittorrent import Client
 from ..config import config
 
@@ -174,6 +175,7 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
         await send_msg(f"👏 {name}\nHash: {hash_str} \n下载完成！耗时：{all_time} s")
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOADING
         for group_id in group_ids:
+            if not isinstance(group_id, int): continue
             for tmp in files:
                 # 异常包起来防止超时报错导致后续不执行
                 try:
@@ -182,15 +184,18 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
                     else:
                         path = info["save_path"] + tmp["name"]
                     await send_msg(f"{name}\nHash: {hash_str} \n开始上传到群：{group_id}")
-                    await bot.call_api(
-                        "upload_group_file",
-                        group_id=group_id,
-                        file=path,
-                        name=tmp["name"],
-                    )
+                    try:
+                        await bot.call_api(
+                            "upload_group_file",
+                            group_id=group_id,
+                            file=path,
+                            name=tmp["name"],
+                        )
+                    except ActionFailed as e:
+                        await send_msg(f"{name}\nHash: {hash_str} \n上传到群：{group_id}失败！")
+                        logger.error(e)
                 except TimeoutError as e:
                     logger.warning(e)
-                    continue
         scheduler = require("nonebot_plugin_apscheduler").scheduler
         scheduler.remove_job(hash_str)
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOAD_OK
