@@ -1,3 +1,5 @@
+import copy
+
 from nonebot import on_command
 from nonebot import permission as su
 from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission, unescape
@@ -39,9 +41,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             if not str(group_id) in rss.group_id:
                 await RSS_SHOW.send(f"❌ 当前群组未订阅 {rss_name} ")
                 return
-            rss.group_id = [str(group_id), "*"]
-            rss.user_id = ["*"]
-        await RSS_SHOW.send(str(rss))
+            rss_tmp = copy.deepcopy(rss)
+            rss_tmp.group_id = [str(group_id), "*"]
+            rss_tmp.user_id = ["*"]
+        await RSS_SHOW.send(str(rss_tmp))
         return
 
     if group_id:
