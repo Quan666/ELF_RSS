@@ -191,7 +191,9 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
                             name=tmp["name"],
                         )
                     except ActionFailed as e:
-                        await send_msg(f"{name}\nHash: {hash_str} \n上传到群：{group_id}失败！请手动上传！")
+                        await send_msg(
+                            f"{name}\nHash: {hash_str} \n上传到群：{group_id}失败！请手动上传！"
+                        )
                         logger.error(e)
                 except TimeoutError as e:
                     logger.warning(e)
