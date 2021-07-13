@@ -36,6 +36,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         if not rss:
             await RSS_SHOW.send(f"❌ 订阅 {rss_name} 不存在！")
             return
+        rss_msg = str(rss)
         if group_id:
             # 隐私考虑，群组下不展示除当前群组外的群号和QQ
             if not str(group_id) in rss.group_id:
@@ -44,7 +45,8 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             rss_tmp = copy.deepcopy(rss)
             rss_tmp.group_id = [str(group_id), "*"]
             rss_tmp.user_id = ["*"]
-        await RSS_SHOW.send(str(rss_tmp))
+            rss_msg = str(rss_tmp)
+        await RSS_SHOW.send(rss_msg)
         return
 
     if group_id:
