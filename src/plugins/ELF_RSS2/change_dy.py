@@ -188,14 +188,16 @@ async def handle_rss_change(bot: Bot, event: Event, state: dict):
         else:
             await tr.delete_job(rss)
             logger.info(f"{rss.name} 已停止更新")
+        rss_msg = str(rss)
         if group_id:
             # 隐私考虑，群组下不展示除当前群组外的群号和QQ
             # 奇怪的逻辑，群管理能修改订阅消息，这对其他订阅者不公平。
             rss_tmp = copy.deepcopy(rss)
             rss_tmp.group_id = [str(group_id), "*"]
             rss_tmp.user_id = ["*"]
-        await RSS_CHANGE.send(f"👏 修改成功\n{rss_tmp}")
-        logger.info(f"👏 修改成功\n{rss_tmp}")
+            rss_msg = str(rss_tmp)
+        await RSS_CHANGE.send(f"👏 修改成功\n{rss_msg}")
+        logger.info(f"👏 修改成功\n{rss_msg}")
 
     except Exception as e:
         await RSS_CHANGE.send(f"❌ 参数解析出现错误！\nE: {e}")
