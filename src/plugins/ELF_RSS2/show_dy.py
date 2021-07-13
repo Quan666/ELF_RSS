@@ -46,7 +46,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             rss_tmp.group_id = [str(group_id), "*"]
             rss_tmp.user_id = ["*"]
             rss_msg = str(rss_tmp)
-        await RSS_SHOW.send(str(rss_msg))
+        await RSS_SHOW.send(rss_msg)
         return
 
     if group_id:
