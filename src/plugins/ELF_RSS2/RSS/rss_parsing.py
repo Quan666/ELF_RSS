@@ -102,6 +102,7 @@ async def start(rss: rss_class.Rss) -> None:
     conn = None
     if rss.duplicate_filter_mode:
         conn = sqlite3.connect(FILE_PATH + "cache.db")
+        conn.set_trace_callback(logger.debug)
         await cache_db_manage(conn)
     item_count = 0
     for item in change_rss_list:
@@ -221,7 +222,8 @@ async def insert_into_cache_db(
     link = item["link"].replace("'", "''")
     title = item["title"].replace("'", "''")
     cursor.execute(
-        f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
+        "INSERT INTO main (link, title, image_hash) VALUES (?, ?, ?);",
+        (link, title, image_hash),
     )
     cursor.close()
     conn.commit()
@@ -247,7 +249,8 @@ async def cache_db_manage(conn: sqlite3.connect) -> None:
     cursor = conn.cursor()
     # 移除超过 config.db_cache_expire 天没重复过的记录
     cursor.execute(
-        f"DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-{config.db_cache_expire} Day');"
+        "DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', ?);",
+        (f"-{config.db_cache_expire} Day",),
     )
     cursor.close()
     conn.commit()
@@ -263,6 +266,7 @@ async def duplicate_exists(
     image_hash = None
     cursor = conn.cursor()
     sql = "SELECT * FROM main WHERE 1=1"
+    args = []
     for mode in rss.duplicate_filter_mode:
         if mode == "image":
             try:
@@ -284,24 +288,28 @@ async def duplicate_exists(
                 im = Image.open(BytesIO(content))
             except UnidentifiedImageError:
                 continue
-            image_hash = imagehash.average_hash(im)
+            image_hash = str(imagehash.average_hash(im))
             # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤直接跳过
             if im.format == "GIF":
                 continue
             logger.debug(f"image_hash: {image_hash}")
-            sql += f" AND image_hash='{image_hash}'"
+            sql += " AND image_hash=?"
+            args.append(image_hash)
         if mode == "link":
-            sql += f" AND link='{link}'"
+            sql += " AND link=?"
+            args.append(link)
         if mode == "title":
-            sql += f" AND title='{title}'"
+            sql += " AND title=?"
+            args.append(title)
     if "or" in rss.duplicate_filter_mode:
         sql = sql.replace("AND", "OR").replace("OR", "AND", 1)
-    cursor.execute(f"{sql};")
+    cursor.execute(f"{sql};", args)
     result = cursor.fetchone()
     if result is not None:
         result_id = result[0]
         cursor.execute(
-            f"UPDATE main SET datetime = DATETIME('Now','LocalTime') WHERE id = {result_id};"
+            "UPDATE main SET datetime = DATETIME('Now','LocalTime') WHERE id = ?;",
+            (result_id,),
         )
         cursor.close()
         conn.commit()
@@ -747,6 +755,7 @@ async def handle_html_tag(html) -> str:
         "dd",
         "dl",
         "dt",
+        "em",
         "font",
         "iframe",
         "pre",
