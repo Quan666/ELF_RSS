@@ -49,7 +49,8 @@ async def start():
             ),
         )
         logger.info("ELF_RSS 订阅器启动成功！")
-        hash_clear()
+        if config.version == "v2.2.7":
+            hash_clear()
     except Exception as e:
         await bot.send_msg(
             message_type="private",
