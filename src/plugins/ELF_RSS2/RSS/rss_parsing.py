@@ -13,7 +13,6 @@ import re
 import sqlite3
 import time
 import imagehash
-import tenacity
 import unicodedata
 from io import BytesIO
 from pathlib import Path
@@ -29,7 +28,7 @@ from nonebot.exception import NetworkError
 from nonebot.log import logger
 from PIL import Image, UnidentifiedImageError
 from pyquery import PyQuery as Pq
-from tenacity import retry, stop_after_attempt, stop_after_delay
+from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError, TryAgain
 
 from ..config import config
 from . import rss_class, translation_baidu
@@ -77,14 +76,9 @@ async def start(rss: rss_class.Rss) -> None:
     try:
         new_rss = await get_rss(rss)
         new_rss_list = new_rss.get("entries")
-    except tenacity.RetryError as e:
-        if rss.cookies:
-            cookies_str = "\n如果设置了 cookies 请检查 cookies 正确性"
-        else:
-            cookies_str = ""
-        logger.error(
-            f"{rss.name}[{rss.get_url()}]抓取失败！已达最大重试次数！请检查订阅地址！{cookies_str}\nE: {e}"
-        )
+    except RetryError:
+        cookies_str = "及 cookies " if rss.cookies else ""
+        logger.error(f"{rss.name}[{rss.get_url()}]抓取失败！已达最大重试次数！请检查订阅地址{cookies_str}！")
         return
     old_rss = read_rss(rss.name)
     old_rss_list = old_rss.get("entries")
@@ -354,10 +348,7 @@ async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_rss(rss: rss_class.Rss) -> dict:
     # 判断是否使用cookies
-    if rss.cookies:
-        cookies = rss.cookies
-    else:
-        cookies = None
+    cookies = rss.cookies if rss.cookies else None
 
     # 获取 xml
     async with httpx.AsyncClient(
@@ -367,38 +358,37 @@ async def get_rss(rss: rss_class.Rss) -> dict:
         try:
             r = await client.get(rss.get_url())
             # 解析为 JSON
-            d = feedparser.parse(r.content)
+            if r.status_code in STATUS_CODE:
+                d = feedparser.parse(r.content)
+            else:
+                raise httpx.HTTPStatusError
         except Exception:
-            # logger.error("抓取订阅 {} 的 RSS 失败，将重试 ！ E：{}".format(rss.name, e))
             if (
                 not re.match("[hH][tT]{2}[pP][sS]?://", rss.url, flags=0)
                 and config.rsshub_backup
             ):
-                logger.warning("RSSHub :" + config.rsshub + " 访问失败 ！将使用备用RSSHub 地址！")
+                logger.warning(f"RSSHub：[{config.rsshub}]访问失败！将使用备用 RSSHub 地址！")
                 for rsshub_url in list(config.rsshub_backup):
                     async with httpx.AsyncClient(
                         proxies=get_proxy(open_proxy=rss.img_proxy)
                     ) as fork_client:
                         try:
                             r = await fork_client.get(rss.get_url(rsshub=rsshub_url))
+                            if r.status_code in STATUS_CODE:
+                                d = feedparser.parse(r.content)
+                            else:
+                                raise httpx.HTTPStatusError
                         except Exception:
                             logger.warning(
-                                "RSSHub :"
-                                + rss.get_url(rsshub=rsshub_url)
-                                + " 访问失败 ！将使用备用 RSSHub 地址！"
+                                f"[{rss.get_url(rsshub=rsshub_url)}]访问失败！将使用备用 RSSHub 地址！"
                             )
                             continue
-                        if r.status_code in STATUS_CODE:
-                            d = feedparser.parse(r.content)
-                            if d.get("entries"):
-                                logger.info(rss.get_url(rsshub=rsshub_url) + " 抓取成功！")
-                                break
-        try:
-            if not d:
-                raise Exception
-        except Exception:
+                        if d.get("entries"):
+                            logger.info(f"[{rss.get_url(rsshub=rsshub_url)}]抓取成功！")
+                            break
+        if not d.get("entries"):
             logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
-            raise
+            raise TryAgain
         return d
 
 
@@ -883,31 +873,30 @@ def write_rss(name: str, new_rss: dict, new_item: list = None):
 # 发送消息
 async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
     (bot,) = nonebot.get_bots().values()
-    try:
-        if len(msg) <= 0:
-            return False
-        if rss.user_id:
-            for user_id in rss.user_id:
-                try:
-                    await bot.send_msg(
-                        message_type="private", user_id=user_id, message=str(msg)
-                    )
-                except NetworkError as e:
-                    logger.error(f"网络错误,消息发送失败,将重试 E: {e}\n链接：{item['link']}")
-                except Exception as e:
-                    logger.error(f"QQ号[{user_id}]不合法或者不是好友 E: {e}")
-
-        if rss.group_id:
-            for group_id in rss.group_id:
-                try:
-                    await bot.send_msg(
-                        message_type="group", group_id=group_id, message=str(msg)
-                    )
-                except NetworkError as e:
-                    logger.error(f"网络错误,消息发送失败,将重试 E: {e}\n链接：{item['link']}")
-                except Exception as e:
-                    logger.info(f"群号[{group_id}]不合法或者未加群 E: {e}")
-        return True
-    except Exception as e:
-        logger.info(f"发生错误 消息发送失败 E: {e}")
+    flag = False
+    if not msg:
         return False
+    if rss.user_id:
+        for user_id in rss.user_id:
+            try:
+                await bot.send_msg(
+                    message_type="private", user_id=user_id, message=str(msg)
+                )
+                flag = True
+            except NetworkError:
+                logger.error(f"网络错误,消息发送失败,将重试 链接：[{item['link']}]")
+            except Exception as e:
+                logger.error(f"QQ号[{user_id}]不合法或者不是好友 E: {e}")
+
+    if rss.group_id:
+        for group_id in rss.group_id:
+            try:
+                await bot.send_msg(
+                    message_type="group", group_id=group_id, message=str(msg)
+                )
+                flag = True
+            except NetworkError:
+                logger.error(f"网络错误,消息发送失败,将重试 链接：[{item['link']}]")
+            except Exception as e:
+                logger.info(f"群号[{group_id}]不合法或者未加群 E: {e}")
+    return flag
