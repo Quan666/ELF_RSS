@@ -13,7 +13,6 @@ import re
 import sqlite3
 import time
 import imagehash
-import tenacity
 import unicodedata
 from io import BytesIO
 from pathlib import Path
@@ -29,7 +28,7 @@ from nonebot.exception import NetworkError
 from nonebot.log import logger
 from PIL import Image, UnidentifiedImageError
 from pyquery import PyQuery as Pq
-from tenacity import retry, stop_after_attempt, stop_after_delay
+from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError, TryAgain
 
 from .routes.Parsing import ParsingRss
 from ..config import config
@@ -78,17 +77,13 @@ async def start(rss: rss_class.Rss) -> None:
     try:
         new_rss = await get_rss(rss)
         new_rss_list = new_rss.get("entries")
-    except tenacity.RetryError as e:
-        if rss.cookies:
-            cookies_str = "\n如果设置了 cookies 请检查 cookies 正确性"
-        else:
-            cookies_str = ""
-        logger.error(
-            f"{rss.name}[{rss.get_url()}]抓取失败！已达最大重试次数！请检查订阅地址！{cookies_str}\nE: {e}"
-        )
+    except RetryError:
+        cookies_str = "及 cookies " if rss.cookies else ""
+        logger.error(f"{rss.name}[{rss.get_url()}]抓取失败！已达最大重试次数！请检查订阅地址{cookies_str}！")
         return
-    old_rss_list = read_rss(rss.name).get("entries")
-    if not old_rss_list:
+    old_rss = read_rss(rss.name)
+    old_rss_list = old_rss.get("entries")
+    if not old_rss:
         write_rss(name=rss.name, new_rss=new_rss)
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
@@ -106,6 +101,7 @@ async def start(rss: rss_class.Rss) -> None:
     conn = None
     if rss.duplicate_filter_mode:
         conn = sqlite3.connect(FILE_PATH + "cache.db")
+        conn.set_trace_callback(logger.debug)
         await cache_db_manage(conn)
     item_count = 0
     for item in change_rss_list:
@@ -156,6 +152,7 @@ async def start(rss: rss_class.Rss) -> None:
         title = item["title"]
         if not config.blockquote:
             title = re.sub(r" - 转发 .*", "", title)
+        title_msg = await handle_title(title=title)
         if not rss.only_title:
             # 先判断与正文相识度，避免标题正文一样，或者是标题为正文前N字等情况
             try:
@@ -167,16 +164,17 @@ async def start(rss: rss_class.Rss) -> None:
                 )
                 # 标题正文相似度
                 if rss.only_pic or similarity.ratio() <= 0.6:
-                    item_msg += await handle_title(title=title)
+                    item_msg += title_msg
                     if rss.translation:
                         item_msg += await handle_translation(content=title)
                 # 处理正文
                 item_msg += await handle_summary(summary=summary, rss=rss)
             except Exception as e:
                 logger.info(f"{rss.name} 没有正文内容！ E: {e}")
-                item_msg += await handle_title(title=title)
+                if title_msg not in item_msg:
+                    item_msg += title_msg
         else:
-            item_msg += await handle_title(title=title)
+            item_msg += title_msg
             if rss.translation:
                 item_msg += await handle_translation(content=title)
 
@@ -184,7 +182,10 @@ async def start(rss: rss_class.Rss) -> None:
         item_msg += await handle_source(source=item["link"])
 
         # 处理时间
-        item_msg += await handle_date(date=item.get("published_parsed"))
+        date = item.get("published_parsed")
+        if not date:
+            date = item.get("updated_parsed")
+        item_msg += await handle_date(date=date)
 
         # 处理种子
         try:
@@ -220,7 +221,8 @@ async def insert_into_cache_db(
     link = item["link"].replace("'", "''")
     title = item["title"].replace("'", "''")
     cursor.execute(
-        f"INSERT INTO main (link, title, image_hash) VALUES ('{link}', '{title}', '{image_hash}');"
+        "INSERT INTO main (link, title, image_hash) VALUES (?, ?, ?);",
+        (link, title, image_hash),
     )
     cursor.close()
     conn.commit()
@@ -246,7 +248,8 @@ async def cache_db_manage(conn: sqlite3.connect) -> None:
     cursor = conn.cursor()
     # 移除超过 config.db_cache_expire 天没重复过的记录
     cursor.execute(
-        f"DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', '-{config.db_cache_expire} Day');"
+        "DELETE FROM main WHERE datetime <= DATETIME('Now', 'LocalTime', ?);",
+        (f"-{config.db_cache_expire} Day",),
     )
     cursor.close()
     conn.commit()
@@ -262,6 +265,7 @@ async def duplicate_exists(
     image_hash = None
     cursor = conn.cursor()
     sql = "SELECT * FROM main WHERE 1=1"
+    args = []
     for mode in rss.duplicate_filter_mode:
         if mode == "image":
             try:
@@ -279,25 +283,32 @@ async def duplicate_exists(
             content = await download_image(url, rss.img_proxy)
             if not content:
                 continue
-            im = Image.open(BytesIO(content))
-            image_hash = imagehash.average_hash(im)
+            try:
+                im = Image.open(BytesIO(content))
+            except UnidentifiedImageError:
+                continue
+            image_hash = str(imagehash.average_hash(im))
             # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤直接跳过
             if im.format == "GIF":
                 continue
             logger.debug(f"image_hash: {image_hash}")
-            sql += f" AND image_hash='{image_hash}'"
+            sql += " AND image_hash=?"
+            args.append(image_hash)
         if mode == "link":
-            sql += f" AND link='{link}'"
+            sql += " AND link=?"
+            args.append(link)
         if mode == "title":
-            sql += f" AND title='{title}'"
+            sql += " AND title=?"
+            args.append(title)
     if "or" in rss.duplicate_filter_mode:
         sql = sql.replace("AND", "OR").replace("OR", "AND", 1)
-    cursor.execute(f"{sql};")
+    cursor.execute(f"{sql};", args)
     result = cursor.fetchone()
     if result is not None:
         result_id = result[0]
         cursor.execute(
-            f"UPDATE main SET datetime = DATETIME('Now','LocalTime') WHERE id = {result_id};"
+            "UPDATE main SET datetime = DATETIME('Now','LocalTime') WHERE id = ?;",
+            (result_id,),
         )
         cursor.close()
         conn.commit()
@@ -315,7 +326,7 @@ def write_item(rss: rss_class.Rss, new_rss: dict, new_item: str):
 async def handle_down_torrent(rss: rss_class, item: dict) -> list:
     if not rss.is_open_upload_group:
         rss.group_id = []
-    if config.is_open_auto_down_torrent and rss.down_torrent:
+    if rss.down_torrent:
         return await down_torrent(rss=rss, item=item, proxy=get_proxy(rss.img_proxy))
 
 
@@ -342,10 +353,7 @@ async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_rss(rss: rss_class.Rss) -> dict:
     # 判断是否使用cookies
-    if rss.cookies:
-        cookies = rss.cookies
-    else:
-        cookies = None
+    cookies = rss.cookies if rss.cookies else None
 
     # 获取 xml
     async with httpx.AsyncClient(
@@ -355,38 +363,37 @@ async def get_rss(rss: rss_class.Rss) -> dict:
         try:
             r = await client.get(rss.get_url())
             # 解析为 JSON
-            d = feedparser.parse(r.content)
+            if r.status_code in STATUS_CODE:
+                d = feedparser.parse(r.content)
+            else:
+                raise httpx.HTTPStatusError
         except Exception:
-            # logger.error("抓取订阅 {} 的 RSS 失败，将重试 ！ E：{}".format(rss.name, e))
             if (
                 not re.match("[hH][tT]{2}[pP][sS]?://", rss.url, flags=0)
                 and config.rsshub_backup
             ):
-                logger.warning("RSSHub :" + config.rsshub + " 访问失败 ！将使用备用RSSHub 地址！")
+                logger.warning(f"RSSHub：[{config.rsshub}]访问失败！将使用备用 RSSHub 地址！")
                 for rsshub_url in list(config.rsshub_backup):
                     async with httpx.AsyncClient(
                         proxies=get_proxy(open_proxy=rss.img_proxy)
                     ) as fork_client:
                         try:
                             r = await fork_client.get(rss.get_url(rsshub=rsshub_url))
+                            if r.status_code in STATUS_CODE:
+                                d = feedparser.parse(r.content)
+                            else:
+                                raise httpx.HTTPStatusError
                         except Exception:
                             logger.warning(
-                                "RSSHub :"
-                                + rss.get_url(rsshub=rsshub_url)
-                                + " 访问失败 ！将使用备用 RSSHub 地址！"
+                                f"[{rss.get_url(rsshub=rsshub_url)}]访问失败！将使用备用 RSSHub 地址！"
                             )
                             continue
-                        if r.status_code in STATUS_CODE:
-                            d = feedparser.parse(r.content)
-                            if d.get("entries"):
-                                logger.info(rss.get_url(rsshub=rsshub_url) + " 抓取成功！")
-                                break
-        try:
-            if not d:
-                raise Exception
-        except Exception:
+                        if d.get("entries"):
+                            logger.info(f"[{rss.get_url(rsshub=rsshub_url)}]抓取成功！")
+                            break
+        if not d.get("entries"):
             logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
-            raise
+            raise TryAgain
         return d
 
 
@@ -397,8 +404,6 @@ async def handle_title(title: str) -> str:
 
 # 处理正文，图片放后面
 async def handle_summary(summary: str, rss: rss_class.Rss) -> str:
-    # 去掉换行
-    # summary = re.sub('\n', '', summary)
     # 处理 summary 使其 HTML标签统一，方便处理
     try:
         summary_html = Pq(summary)
@@ -595,10 +600,12 @@ async def download_image_detail(url: str, proxy: bool):
             except httpx.ConnectError as e:
                 logger.error(f"图片[{url}]下载失败,有可能需要开启代理！ \n{e}")
                 return None
-            # 如果图片无法访问到,直接返回
-            if pic.status_code not in STATUS_CODE or len(pic.content) == 0:
+            # 如果 图片无法获取到 / 获取到的不是图片，直接返回
+            if ("image" not in pic.headers["Content-Type"]) or (
+                pic.status_code not in STATUS_CODE
+            ):
                 logger.error(
-                    f"[{url}] pic.status_code: {pic.status_code} pic.size: {len(pic.content)}"
+                    f"[{url}] Content-Type: {pic.headers['Content-Type']} status_code: {pic.status_code}"
                 )
                 return None
             return pic.content
@@ -607,9 +614,21 @@ async def download_image_detail(url: str, proxy: bool):
         raise
 
 
-async def download_image(url: str, proxy: bool = False):
+# 图片地址预处理
+async def handle_img_url(url: str) -> str:
     if re.search(r"^//", url):
         url = url.replace("//", "https://")
+    # 如果是推特图片，重定向为原图
+    if "pbs.twimg.com" in url:
+        url = url.replace("?format=", ".").replace("&name=", ":")
+        url = re.sub(":(thumb|small|medium|large)", "", url)
+        if ":orig" not in url:
+            url += ":orig"
+    return url
+
+
+async def download_image(url: str, proxy: bool = False):
+    url = await handle_img_url(url)
     try:
         return await download_image_detail(url=url, proxy=proxy)
     except Exception as e:
@@ -618,8 +637,7 @@ async def download_image(url: str, proxy: bool = False):
 
 
 async def handle_img_combo(url: str, img_proxy: bool) -> str:
-    if re.search(r"^//", url):
-        url = url.replace("//", "https://")
+    url = await handle_img_url(url)
     content = await download_image(url, img_proxy)
     resize_content = await zip_pic(url, img_proxy, content)
     img_base64 = await get_pic_base64(resize_content)
@@ -659,7 +677,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
 
 # HTML标签等处理
 async def handle_html_tag(html) -> str:
-    rss_str = str(html)
+    rss_str = html_unescape(str(html))
 
     # issue 36 处理 bbcode
     rss_str = re.sub(
@@ -677,6 +695,7 @@ async def handle_html_tag(html) -> str:
         "u",
         "tr",
         "td",
+        "tbody",
     ]
     for i in bbcode_tags:
         rss_str = re.sub(rf"\[{i}=.+?]", "", rss_str, flags=re.I)
@@ -692,7 +711,7 @@ async def handle_html_tag(html) -> str:
     if bbcode_search and re.search(rf"\[{bbcode_search.group(1)}", rss_str):
         parser = bbcode.Parser()
         parser.escape_html = False
-        rss_str = parser.format(rss_str).replace("&lt;/p&gt;", "")
+        rss_str = parser.format(rss_str)
 
     new_html = Pq(rss_str)
     # 有序/无序列表 标签处理
@@ -714,28 +733,43 @@ async def handle_html_tag(html) -> str:
 
     # <a> 标签处理
     for a in new_html("a").items():
-        a_str = re.search(r"<a.+?</a>", html_unescape(str(a)))[0]
+        a_str = re.search(r"<a.+?</a>", html_unescape(str(a)), flags=re.DOTALL)[0]
         if a.text() and str(a.text()) != a.attr("href"):
             rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
         else:
             rss_str = rss_str.replace(a_str, f" {a.attr('href')}\n")
 
     # 处理一些 HTML 标签
-    rss_str = re.sub('<br .+?"/>|<(br|hr) ?/?>', "\n", rss_str)
-    rss_str = re.sub('<span .+?">|</?span>', "", rss_str)
-    rss_str = re.sub('<pre .+?">|</?pre>', "", rss_str)
-    rss_str = re.sub('<[pbi] .+?">|</?[pbi]>', "", rss_str)
-    rss_str = re.sub('<div .+?"/?>|</?div>', "", rss_str)
-    rss_str = re.sub('<iframe .+?"/>', "", rss_str)
-    rss_str = re.sub("</?(code|strong)>", "", rss_str)
-    rss_str = re.sub('<font .+?">|</font>', "", rss_str)
-    rss_str = re.sub("</?(table|tr|th|td)>", "", rss_str)
-    rss_str = re.sub(r"</?h\d>", "\n", rss_str)
+    html_tags = [
+        "b",
+        "i",
+        "p",
+        "code",
+        "del",
+        "div",
+        "dd",
+        "dl",
+        "dt",
+        "em",
+        "font",
+        "iframe",
+        "pre",
+        "small",
+        "span",
+        "strong",
+        "sub",
+        "table",
+        "td",
+        "th",
+        "tr",
+    ]
+    # 直接去掉标签，留下内部文本信息
+    for i in html_tags:
+        rss_str = re.sub(rf'<{i} .+?"/?>', "", rss_str)
+        rss_str = re.sub(rf"</?{i}>", "", rss_str)
 
-    # 解决 issue #3
-    rss_str = re.sub('<dd .+?">|</?dd>', "", rss_str)
-    rss_str = re.sub('<dl .+?">|</?dl>', "", rss_str)
-    rss_str = re.sub('<dt .+?">|</?dt>', "", rss_str)
+    rss_str = re.sub('<br .+?"/>|<(br|hr) ?/?>', "\n", rss_str)
+    rss_str = re.sub(r"</?h\d>", "\n", rss_str)
 
     # 删除图片、视频标签
     rss_str = re.sub(r'<video .+?"?/>|</video>|<img.+?>', "", rss_str)
@@ -775,14 +809,8 @@ async def handle_translation(content: str) -> str:
 
 # 将 dict 对象转换为 json 字符串后，计算哈希值，供后续比较
 def dict_hash(dictionary: Dict[str, Any]) -> str:
-    dictionary_temp = dictionary.copy()
-    # 避免部分缺失 published_parsed 的消息导致检查更新出问题，进行过滤
-    if dictionary.get("published_parsed"):
-        dictionary_temp.pop("published_parsed")
-    # 某些情况下，如微博带视频的消息，正文可能不一样，先过滤
-    dictionary_temp.pop("summary")
-    if dictionary.get("summary_detail"):
-        dictionary_temp.pop("summary_detail")
+    keys = ["id", "link", "published", "updated", "title"]
+    dictionary_temp = {k: dictionary[k] for k in keys if k in dictionary}
     d_hash = hashlib.md5()
     encoded = json.dumps(dictionary_temp, sort_keys=True).encode()
     d_hash.update(encoded)
@@ -800,14 +828,15 @@ async def check_update(new: list, old: list) -> list:
             i["hash"] = hash_temp
             temp.append(i)
     # 将结果进行去重，避免消息重复发送
-    temp = [value for index, value in enumerate(temp) if value not in temp[index + 1 :]]
-    # 因为最新的消息会在最上面，所以要反转处理（主要是为了那些缺失 published_parsed 的消息）
-    result = []
-    for t in temp:
-        result.insert(0, t)
+    result = [
+        value for index, value in enumerate(temp) if value not in temp[index + 1 :]
+    ]
     # 对结果按照发布时间排序
     result_with_date = [
-        (await handle_date(i.get("published_parsed")), i) for i in result
+        (await handle_date(i.get("updated_parsed")), i)
+        if i.get("updated_parsed")
+        else (await handle_date(i.get("published_parsed")), i)
+        for i in result
     ]
     result_with_date.sort(key=lambda tup: tup[0])
     result = [i for key, i in result_with_date]
@@ -817,9 +846,10 @@ async def check_update(new: list, old: list) -> list:
 # 读取记录
 def read_rss(name) -> dict:
     # 检查是否存在rss记录
-    if not os.path.isfile(FILE_PATH + (name + ".json")):
+    json_path = FILE_PATH + (name + ".json")
+    if not os.path.isfile(json_path) or os.stat(json_path).st_size == 0:
         return {}
-    with codecs.open(FILE_PATH + (name + ".json"), "r", "utf-8") as load_f:
+    with codecs.open(json_path, "r", "utf-8") as load_f:
         load_dict = json.load(load_f)
     return load_dict
 
@@ -845,35 +875,33 @@ def write_rss(name: str, new_rss: dict, new_item: list = None):
         dump_f.write(json.dumps(old, sort_keys=True, indent=4, ensure_ascii=False))
 
 
-# 发送消息,失败重试
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
+# 发送消息
 async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
     (bot,) = nonebot.get_bots().values()
-    try:
-        if len(msg) <= 0:
-            return False
-        if rss.user_id:
-            for user_id in rss.user_id:
-                try:
-                    await bot.send_msg(
-                        message_type="private", user_id=user_id, message=str(msg)
-                    )
-                except NetworkError as e:
-                    logger.error(f"网络错误,消息发送失败,将重试 E: {e}\n链接：{item['link']}")
-                except Exception as e:
-                    logger.error(f"QQ号[{user_id}]不合法或者不是好友 E: {e}")
-
-        if rss.group_id:
-            for group_id in rss.group_id:
-                try:
-                    await bot.send_msg(
-                        message_type="group", group_id=group_id, message=str(msg)
-                    )
-                except NetworkError as e:
-                    logger.error(f"网络错误,消息发送失败,将重试 E: {e}\n链接：{item['link']}")
-                except Exception as e:
-                    logger.info(f"群号[{group_id}]不合法或者未加群 E: {e}")
-        return True
-    except Exception as e:
-        logger.info(f"发生错误 消息发送失败 E: {e}")
+    flag = False
+    if not msg:
         return False
+    if rss.user_id:
+        for user_id in rss.user_id:
+            try:
+                await bot.send_msg(
+                    message_type="private", user_id=user_id, message=str(msg)
+                )
+                flag = True
+            except NetworkError:
+                logger.error(f"网络错误,消息发送失败,将重试 链接：[{item['link']}]")
+            except Exception as e:
+                logger.error(f"QQ号[{user_id}]不合法或者不是好友 E: {e}")
+
+    if rss.group_id:
+        for group_id in rss.group_id:
+            try:
+                await bot.send_msg(
+                    message_type="group", group_id=group_id, message=str(msg)
+                )
+                flag = True
+            except NetworkError:
+                logger.error(f"网络错误,消息发送失败,将重试 链接：[{item['link']}]")
+            except Exception as e:
+                logger.info(f"群号[{group_id}]不合法或者未加群 E: {e}")
+    return flag

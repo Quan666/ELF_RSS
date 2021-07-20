@@ -1,3 +1,4 @@
+import copy
 import re
 
 from nonebot import on_command
@@ -39,9 +40,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             "\n去重模式-mode"
             "\n图片数量限制-img_num 只发送限定数量的图片，防止刷屏"
             "\n正文待移除内容-rm_list 从正文中要移除的指定内容，支持正则"
+            "\n停止更新-stop"
             "\n注："
             "\n仅含有图片不同于仅图片，除了图片还会发送正文中的其他文本信息"
-            "\nproxy、tl、ot、op、ohp、downopen、upgroup 值为 1/0"
+            "\nproxy、tl、ot、op、ohp、downopen、upgroup、stop 值为 1/0"
             "\n去重模式分为按链接(link)、标题(title)、图片(image)判断"
             "\n其中 image 模式,出于性能考虑以及避免误伤情况发生,生效对象限定为只带 1 张图片的消息,"
             "\n此外,如果属性中带有 or 说明判断逻辑是任一匹配即去重,默认为全匹配"
@@ -88,6 +90,7 @@ attribute_dict = {
     "bkey": "black_keyword",
     "mode": "duplicate_filter_mode",
     "img_num": "max_image_number",
+    "stop": "stop",
 }
 
 
@@ -108,7 +111,16 @@ def handle_change_list(
                 value_to_change = "1"
             else:
                 value_to_change = str(int(float(value_to_change)))
-    elif key_to_change in ["proxy", "tl", "ot", "op", "ohp", "upgroup", "downopen"]:
+    elif key_to_change in [
+        "proxy",
+        "tl",
+        "ot",
+        "op",
+        "ohp",
+        "upgroup",
+        "downopen",
+        "stop",
+    ]:
         value_to_change = bool(int(value_to_change))
     elif (
         key_to_change in ["downkey", "wkey", "blackkey", "bkey"]
@@ -171,14 +183,21 @@ async def handle_rss_change(bot: Bot, event: Event, state: dict):
         # 参数解析完毕，写入
         rss.write_rss()
         # 加入定时任务
-        await tr.add_job(rss)
+        if not rss.stop:
+            await tr.add_job(rss)
+        else:
+            await tr.delete_job(rss)
+            logger.info(f"{rss.name} 已停止更新")
+        rss_msg = str(rss)
         if group_id:
             # 隐私考虑，群组下不展示除当前群组外的群号和QQ
             # 奇怪的逻辑，群管理能修改订阅消息，这对其他订阅者不公平。
-            rss.group_id = [str(group_id), "*"]
-            rss.user_id = ["*"]
-        await RSS_CHANGE.send(f"👏 修改成功\n{rss}")
-        logger.info(f"👏 修改成功\n{rss}")
+            rss_tmp = copy.deepcopy(rss)
+            rss_tmp.group_id = [str(group_id), "*"]
+            rss_tmp.user_id = ["*"]
+            rss_msg = str(rss_tmp)
+        await RSS_CHANGE.send(f"👏 修改成功\n{rss_msg}")
+        logger.info(f"👏 修改成功\n{rss_msg}")
 
     except Exception as e:
         await RSS_CHANGE.send(f"❌ 参数解析出现错误！\nE: {e}")
