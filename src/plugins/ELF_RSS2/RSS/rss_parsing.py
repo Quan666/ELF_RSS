@@ -410,8 +410,7 @@ async def handle_summary(summary: str, rss: rss_class.Rss) -> str:
 
     # 判断是否保留转发内容，保留的话只去掉标签，留下里面的内容
     if config.blockquote:
-        blockquote_html = summary_html("blockquote")
-        for blockquote in blockquote_html.items():
+        for blockquote in summary_html("blockquote").items():
             blockquote.replace_with(blockquote.html())
     else:
         summary_html.remove("blockquote")
@@ -730,7 +729,11 @@ async def handle_html_tag(html) -> str:
     for a in new_html("a").items():
         a_str = re.search(r"<a.+?</a>", html_unescape(str(a)), flags=re.DOTALL)[0]
         if a.text() and str(a.text()) != a.attr("href"):
-            rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
+            # 去除微博话题对应链接，只保留文本
+            if "weibo.cn" in a.attr("href") and a.children("span.surl-text"):
+                rss_str = rss_str.replace(a_str, a.text())
+            else:
+                rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
         else:
             rss_str = rss_str.replace(a_str, f" {a.attr('href')}\n")
 
