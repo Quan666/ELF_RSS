@@ -16,6 +16,19 @@ RSS_SHOW = on_command(
 )
 
 
+async def handle_rss_list(rss_list: list) -> str:
+    rss_info_list = [f"{i.name}：{i.url}" for i in rss_list]
+    rss_info_list.sort()
+    msg_str = f"当前共有 {len(rss_info_list)} 条订阅：\n\n" + "\n\n".join(rss_info_list)
+    rss_stopped_info_list = [f"{i.name}：{i.url}" for i in rss_list if i.stop]
+    if rss_stopped_info_list:
+        rss_stopped_info_list.sort()
+        msg_str += f"\n\n其中共有 {len(rss_stopped_info_list)} 条订阅已停止更新：\n\n" + "\n\n".join(
+            rss_stopped_info_list
+        )
+    return msg_str
+
+
 # 不带订阅名称默认展示当前群组或账号的订阅，带订阅名称就显示该订阅的
 @RSS_SHOW.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
@@ -24,15 +37,15 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         rss_name = unescape(args)  # 如果用户发送了参数则直接赋值
     else:
         rss_name = None
+
     user_id = event.get_user_id()
     group_id = None
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
     rss = rss_class.Rss("", "", "-1", "-1")
-
     if rss_name:
-        rss = rss.find_name(str(rss_name))
+        rss = rss.find_name(rss_name)
         if not rss:
             await RSS_SHOW.send(f"❌ 订阅 {rss_name} 不存在！")
             return
@@ -55,20 +68,10 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             await RSS_SHOW.send("❌ 当前群组没有任何订阅！")
             return
     else:
-        rss_list = rss.find_user(user=str(user_id))
-    if rss_list:
-        if len(rss_list) == 1:
-            await RSS_SHOW.send(str(rss_list[0]))
-        else:
-            flag = 0
-            info = ""
-            for rss_tmp in rss_list:
-                if flag % 5 == 0 and flag != 0:
-                    await RSS_SHOW.send(str(info))
-                    info = ""
-                info += f"Name：{rss_tmp.name}\nURL：{rss_tmp.url}\n\n"
-                flag += 1
-            await RSS_SHOW.send(f"{info}共 {flag} 条订阅")
+        rss_list = rss.find_user(user=user_id)
 
+    if rss_list:
+        msg_str = await handle_rss_list(rss_list)
+        await RSS_SHOW.send(msg_str)
     else:
         await RSS_SHOW.send("❌ 当前没有任何订阅！")
