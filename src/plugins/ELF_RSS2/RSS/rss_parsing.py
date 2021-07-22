@@ -901,5 +901,5 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
             except NetworkError:
                 logger.error(f"网络错误,消息发送失败,将重试 链接：[{item['link']}]")
             except Exception as e:
-                logger.info(f"群号[{group_id}]不合法或者未加群 E: {e}")
+                logger.error(f"群号[{group_id}]不合法或者未加群 E: {e}")
     return flag
