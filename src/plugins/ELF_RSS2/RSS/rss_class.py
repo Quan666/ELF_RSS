@@ -184,7 +184,7 @@ class Rss:
         rss_json = []
         for rss_one in rss_old:
             if rss_one.name != delrss.name:
-                rss_json.append(json.dumps(rss_one.__dict__, ensure_ascii=False))
+                rss_json.append(rss_one.__dict__)
 
         if not os.path.isdir(FILE_PATH):
             os.makedirs(FILE_PATH)
@@ -204,21 +204,16 @@ class Rss:
         rss_old = self.read_rss()
         result = []
         for rss_tmp in rss_old:
-            for group_tmp in rss_tmp.group_id:
-                if group_tmp == str(group):
-                    # 隐私考虑，群组下不展示除当前群组外的群号和QQ
-                    rss_tmp.group_id = [str(group), "*"]
-                    rss_tmp.user_id = ["*"]
-                    result.append(rss_tmp)
+            if rss_tmp.group_id and group in rss_tmp.group_id:
+                # 隐私考虑，群组下不展示除当前群组外的群号和QQ
+                rss_tmp.group_id = [group, "*"]
+                rss_tmp.user_id = ["*"]
+                result.append(rss_tmp)
         return result
 
     def find_user(self, user: str) -> list:
         rss_old = self.read_rss()
-        result = []
-        for rss_tmp in rss_old:
-            for group_tmp in rss_tmp.user_id:
-                if group_tmp == str(user):
-                    result.append(rss_tmp)
+        result = [rss for rss in rss_old if user in rss.user_id]
         return result
 
     def set_cookies(self, cookies_str: str) -> bool:
