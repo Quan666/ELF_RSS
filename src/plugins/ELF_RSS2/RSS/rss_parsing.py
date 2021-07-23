@@ -88,7 +88,7 @@ async def start(rss: rss_class.Rss) -> None:
         return
 
     change_rss_list = await check_update(new=new_rss_list, old=old_rss_list)
-    if len(change_rss_list) <= 0:
+    if not change_rss_list:
         # 没有更新，返回
         logger.info(f"{rss.name} 没有新信息")
         return
@@ -383,10 +383,10 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                                 f"[{rss.get_url(rsshub=rsshub_url)}]访问失败！将使用备用 RSSHub 地址！"
                             )
                             continue
-                        if d.get("entries"):
+                        if d.get("feed"):
                             logger.info(f"[{rss.get_url(rsshub=rsshub_url)}]抓取成功！")
                             break
-        if not d.get("entries"):
+        if not d.get("feed"):
             logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
             raise TryAgain
         return d
@@ -552,30 +552,26 @@ async def get_pic_base64(content) -> str:
 
 
 # 去你的 pixiv.cat
-async def fuck_pixiv(url: str) -> str:
-    if url.find("pixiv.cat"):
-        img_id = re.sub("https://pixiv.cat/", "", url)
-        img_id = img_id[:-4]
-        info_list = img_id.split("-")
-        async with httpx.AsyncClient(proxies={}) as client:
-            try:
-                req_json = (
-                    await client.get(
-                        "https://hibiapi.getloli.com/api/pixiv/illust?id="
-                        + info_list[0]
-                    )
-                ).json()
-                if len(info_list) >= 2:
-                    return req_json["illust"]["meta_pages"][int(info_list[1]) - 1][
-                        "image_urls"
-                    ]["original"]
-                else:
-                    return req_json["illust"]["meta_single_page"]["original_image_url"]
-            except Exception as e:
-                logger.error(f"处理pixiv.cat链接时出现问题 ：{e}")
-                return url
-    else:
-        return url
+async def fuck_pixiv_cat(url: str) -> str:
+    img_id = re.sub("https://pixiv.cat/", "", url)
+    img_id = img_id[:-4]
+    info_list = img_id.split("-")
+    async with httpx.AsyncClient(proxies={}) as client:
+        try:
+            req_json = (
+                await client.get(
+                    f"https://hibiapi.getloli.com/api/pixiv/illust?id={info_list[0]}"
+                )
+            ).json()
+            if len(info_list) >= 2:
+                return req_json["illust"]["meta_pages"][int(info_list[1]) - 1][
+                    "image_urls"
+                ]["original"]
+            else:
+                return req_json["illust"]["meta_single_page"]["original_image_url"]
+        except Exception as e:
+            logger.error(f"处理pixiv.cat链接时出现问题 ：{e} 链接：[{url}]")
+            return url
 
 
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
@@ -585,8 +581,6 @@ async def download_image_detail(url: str, proxy: bool):
         async with httpx.AsyncClient(
             proxies=get_proxy(open_proxy=proxy), timeout=None
         ) as client:
-            if config.close_pixiv_cat:
-                url = await fuck_pixiv(url=url)
             referer = re.findall("([hH][tT]{2}[pP][sS]?://.*?)/.*?", url)[0]
             headers = {"referer": referer}
             try:
@@ -598,6 +592,9 @@ async def download_image_detail(url: str, proxy: bool):
             if ("image" not in pic.headers["Content-Type"]) or (
                 pic.status_code not in STATUS_CODE
             ):
+                if "pixiv.cat" in url:
+                    url = await fuck_pixiv_cat(url=url)
+                    return await download_image(url, proxy)
                 logger.error(
                     f"[{url}] Content-Type: {pic.headers['Content-Type']} status_code: {pic.status_code}"
                 )
@@ -775,6 +772,7 @@ async def handle_html_tag(html) -> str:
     # 去掉多余换行
     while re.search("\n\n", rss_str):
         rss_str = re.sub("\n\n", "\n", rss_str)
+    rss_str = rss_str.strip()
 
     if 0 < config.max_length < len(rss_str):
         rss_str = rss_str[: config.max_length] + "..."
@@ -817,6 +815,10 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 
 # 检查更新
 async def check_update(new: list, old: list) -> list:
+    # 有些订阅可能存在没有 entries 的情况，比如 Bilibili 直播间开播状态，直接跳过
+    if not new:
+        return []
+
     old_hash_list = [dict_hash(i) if not i.get("hash") else i.get("hash") for i in old]
     # 对比本地消息缓存和获取到的消息，新的存入 hash ，随着检查更新的次数增多，逐步替换原来没存 hash 的缓存记录
     temp = []
