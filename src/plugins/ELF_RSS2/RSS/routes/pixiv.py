@@ -5,7 +5,7 @@ from .Parsing import ParsingBase
 from ..rss_class import Rss
 
 
-@ParsingBase.append_handler(parsing_type="source", rex="pixiv", priority=9, block=True)
+@ParsingBase.append_handler(parsing_type="source", rex="pixiv", priority=10, block=True)
 async def handle_source(rss: Rss, item: dict, tmp: str) -> str:
     source = item["link"]
     # 缩短 pixiv 链接

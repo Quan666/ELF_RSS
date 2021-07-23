@@ -89,7 +89,7 @@ async def start(rss: rss_class.Rss) -> None:
         return
 
     pr = ParsingRss(rss=rss)
-    await pr.start(new_data=new_rss_list,old_data=old_rss_list)
+    await pr.start(new_rss=new_rss,old_data=old_rss_list)
     return
 
     change_rss_list = await check_update(new=new_rss_list, old=old_rss_list)
