@@ -560,7 +560,7 @@ async def fuck_pixiv_cat(url: str) -> str:
         try:
             req_json = (
                 await client.get(
-                    f"https://hibiapi.getloli.com/api/pixiv/illust?id={info_list[0]}"
+                    f"https://api.obfs.dev/api/pixiv/illust?id={info_list[0]}"
                 )
             ).json()
             if len(info_list) >= 2:
