@@ -185,9 +185,18 @@ class ParsingRss():
 
 
 # 检查更新
-@ParsingBase.append_before_handler()
+@ParsingBase.append_before_handler(priority=10)
 async def handle_check_update(rss: Rss, state: dict):
     change_data = await check_update.check_update(state.get("new_data"), state.get("old_data"))
+    return {
+        "change_data": change_data
+    }
+
+
+# 判断是否满足推送条件
+@ParsingBase.append_before_handler(priority=11)
+async def handle_check_update(rss: Rss, state: dict):
+    change_data = state.get("change_data")
     new_rss = state.get("new_rss")
     for item in change_data.copy():
         summary = get_summary(item)
@@ -257,20 +266,20 @@ async def handle_title(rss: Rss, state: dict, item: dict, item_msg: str, tmp: st
     return res
 
 
-# 处理正文 判断是否是仅推送标题
+# 处理正文 判断是否是仅推送标题 、是否仅推送图片
 @ParsingBase.append_handler(parsing_type="summary", priority=1)
 async def handle_summary_only_title(rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict) -> str:
     if not rss.only_title:
         tmp_state['continue'] = False
-        return tmp
+        return ''
+    # 判断是否开启了只推送图片
+    if rss.only_pic:
+        return ''
 
 
 # 处理正文 处理网页 tag
 @ParsingBase.append_handler(parsing_type="summary", priority=10)
 async def handle_summary(rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict) -> str:
-    # 判断是否开启了只推送图片
-    if rss.only_pic:
-        return ""
     return await handle_html_tag(html=Pq(get_summary(item)))
 
 
