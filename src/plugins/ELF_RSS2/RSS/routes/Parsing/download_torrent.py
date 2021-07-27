@@ -1,8 +1,7 @@
-
-
+from .utils import get_proxy
 from ... import rss_class
 from ...qbittorrent_download import start_down
-from .utils import get_proxy
+
 
 # 下载种子判断
 async def handle_down_torrent(rss: rss_class, item: dict) -> list:
@@ -17,8 +16,8 @@ async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
     hash_list = []
     for tmp in item["links"]:
         if (
-                tmp["type"] == "application/x-bittorrent"
-                or tmp["href"].find(".torrent") > 0
+            tmp["type"] == "application/x-bittorrent"
+            or tmp["href"].find(".torrent") > 0
         ):
             hash_list.append(
                 await start_down(

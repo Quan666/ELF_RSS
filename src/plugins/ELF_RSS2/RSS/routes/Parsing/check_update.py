@@ -1,7 +1,7 @@
-# 将 dict 对象转换为 json 字符串后，计算哈希值，供后续比较
 import hashlib
 import json
 import time
+
 from typing import Dict, Any
 
 
@@ -16,6 +16,7 @@ async def handle_date(date=None) -> str:
     # 没有日期的情况，以当前时间
     else:
         return "日期：" + time.strftime("%m月%d日 %H:%M:%S", time.localtime())
+
 
 # 将 dict 对象转换为 json 字符串后，计算哈希值，供后续比较
 def dict_hash(dictionary: Dict[str, Any]) -> str:

@@ -1,22 +1,22 @@
-
-# 通过 ezgif 压缩 GIF
 import base64
+import httpx
 import random
 import re
-from io import BytesIO
 
-import httpx
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
+from io import BytesIO
 from nonebot import logger
-from tenacity import retry, stop_after_attempt, stop_after_delay
 from pyquery import PyQuery as Pq
+from tenacity import retry, stop_after_attempt, stop_after_delay
+
 from .utils import get_proxy
 from ....config import config
 
 STATUS_CODE = [200, 301, 302]
 
 
+# 通过 ezgif 压缩 GIF
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def resize_gif(url: str, proxy: bool, resize_ratio: int = 2) -> BytesIO:
     try:
@@ -136,7 +136,7 @@ async def download_image_detail(url: str, proxy: bool):
     try:
         # 默认超时时长为 5 秒,为了减少超时前图片没完成下载的发生频率,暂时先禁用后观察
         async with httpx.AsyncClient(
-                proxies=get_proxy(open_proxy=proxy), timeout=None
+            proxies=get_proxy(open_proxy=proxy), timeout=None
         ) as client:
             referer = re.findall("([hH][tT]{2}[pP][sS]?://.*?)/.*?", url)[0]
             headers = {"referer": referer}
@@ -147,7 +147,7 @@ async def download_image_detail(url: str, proxy: bool):
                 return None
             # 如果 图片无法获取到 / 获取到的不是图片，直接返回
             if ("image" not in pic.headers["Content-Type"]) or (
-                    pic.status_code not in STATUS_CODE
+                pic.status_code not in STATUS_CODE
             ):
                 if "pixiv.cat" in url:
                     url = await fuck_pixiv_cat(url=url)
