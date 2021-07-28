@@ -1,20 +1,20 @@
-import re
-from html import unescape as html_unescape
-# HTML标签等处理
 import bbcode
+import re
 
-from pyquery import PyQuery as Pq
+from html import unescape as html_unescape
 
 from ....config import config
 
 
-async def handle_html_tag(html) -> str:
+# 处理 bbcode
+async def handle_bbcode(html) -> str:
     rss_str = html_unescape(str(html))
 
     # issue 36 处理 bbcode
     rss_str = re.sub(
         r"(\[url=.+?])?\[img].+?\[/img](\[/url])?", "", rss_str, flags=re.I
     )
+
     bbcode_tags = [
         "align",
         "backcolor",
@@ -29,6 +29,7 @@ async def handle_html_tag(html) -> str:
         "td",
         "tbody",
     ]
+
     for i in bbcode_tags:
         rss_str = re.sub(rf"\[{i}=.+?]", "", rss_str, flags=re.I)
         rss_str = re.sub(rf"\[/?{i}]", "", rss_str, flags=re.I)
@@ -45,15 +46,21 @@ async def handle_html_tag(html) -> str:
         parser.escape_html = False
         rss_str = parser.format(rss_str)
 
-    new_html = Pq(rss_str)
+    return rss_str
+
+
+# HTML标签等处理
+async def handle_html_tag(html) -> str:
+    rss_str = html_unescape(str(html))
+
     # 有序/无序列表 标签处理
-    for ul in new_html("ul").items():
+    for ul in html("ul").items():
         for li in ul("li").items():
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
             rss_str = rss_str.replace(str(li), f"\n- {li_str_search.group(1)}").replace(
                 "\\n", "\n"
             )
-    for ol in new_html("ol").items():
+    for ol in html("ol").items():
         for index, li in enumerate(ol("li").items()):
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
             rss_str = rss_str.replace(
@@ -64,7 +71,7 @@ async def handle_html_tag(html) -> str:
     rss_str = rss_str.replace("<li>", "- ").replace("</li>", "")
 
     # <a> 标签处理
-    for a in new_html("a").items():
+    for a in html("a").items():
         a_str = re.search(r"<a.+?</a>", html_unescape(str(a)), flags=re.DOTALL)[0]
         if a.text() and str(a.text()) != a.attr("href"):
             # 去除微博话题对应链接，只保留文本

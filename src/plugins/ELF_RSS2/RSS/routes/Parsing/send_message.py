@@ -1,7 +1,7 @@
 import nonebot
+
 from nonebot import logger
 from nonebot.adapters.cqhttp import NetworkError
-from tenacity import retry, stop_after_attempt, stop_after_delay
 
 from ....RSS import rss_class
 
