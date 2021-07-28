@@ -1,9 +1,11 @@
 import difflib
+import os.path
 import re
 import sqlite3
 import time
 
 from nonebot import logger
+from pathlib import Path
 from pyquery import PyQuery as Pq
 from typing import List, Dict
 
@@ -17,9 +19,10 @@ from .handle_translation import handle_translation
 from .read_or_write_rss_data import write_item
 from .utils import get_proxy
 from .utils import get_summary
-from ...rss_parsing import FILE_PATH
 from ....RSS.rss_class import Rss
 from ....config import config
+
+FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
 
 # 订阅器启动的时候将解析器注册到rss实例类？，避免每次推送时再匹配
