@@ -1,5 +1,6 @@
 import difflib
 import re
+import sqlite3
 import time
 
 from nonebot import logger
@@ -8,6 +9,7 @@ from typing import List, Dict
 
 from . import check_update, send_message
 from .download_torrent import down_torrent
+from .duplicate_filter import cache_db_manage, duplicate_exists, insert_into_cache_db
 from .handle_html_tag import handle_bbcode
 from .handle_html_tag import handle_html_tag
 from .handle_images import handle_img
@@ -15,6 +17,7 @@ from .handle_translation import handle_translation
 from .read_or_write_rss_data import write_item
 from .utils import get_proxy
 from .utils import get_summary
+from ...rss_parsing import FILE_PATH
 from ....RSS.rss_class import Rss
 from ....config import config
 
@@ -165,6 +168,8 @@ class ParsingRss:
                 "new_data": new_rss.get("entries"),
                 "old_data": old_data,
                 "change_data": [],  # 更新的消息列表
+                "conn": None,  # 数据库连接
+                "image_hash": "",  # 用来去重的图片特征值
             }
         )
         for h in self.before_handler:
@@ -257,6 +262,48 @@ async def handle_check_update(rss: Rss, state: dict):
     return {"change_data": change_data}
 
 
+# 如果启用了去重模式，对推送列表进行过滤
+@ParsingBase.append_before_handler(priority=12)
+async def handle_check_update(rss: Rss, state: dict):
+    change_data = state.get("change_data")
+    new_rss = state.get("new_rss")
+    conn = state.get("conn")
+    image_hash = None
+
+    # 检查是否启用去重 使用 duplicate_filter_mode 字段
+    if not rss.duplicate_filter_mode:
+        return {"change_data": change_data}
+
+    if not conn:
+        conn = sqlite3.connect(FILE_PATH + "cache.db")
+        conn.set_trace_callback(logger.debug)
+
+    await cache_db_manage(conn)
+
+    for item in change_data.copy():
+        summary = get_summary(item)
+        is_duplicate, image_hash = await duplicate_exists(
+            rss=rss,
+            conn=conn,
+            link=item["link"],
+            title=item["title"],
+            summary=summary,
+        )
+        if is_duplicate:
+            write_item(rss=rss, new_rss=new_rss, new_item=item)
+            change_data.remove(item)
+
+    if not change_data:
+        # 没有更新
+        logger.info(f"{rss.name} 没有新信息")
+
+    return {
+        "change_data": change_data,
+        "conn": conn,
+        "image_hash": str(image_hash),
+    }
+
+
 # 处理标题
 @ParsingBase.append_handler(parsing_type="title")
 async def handle_title(
@@ -306,6 +353,15 @@ async def handle_summary_only_title(
 async def handle_summary(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
+    summary_html = Pq(get_summary(item))
+
+    # 判断是否保留转发内容，保留的话只去掉标签，留下里面的内容
+    if config.blockquote:
+        for blockquote in summary_html("blockquote").items():
+            blockquote.replace_with(blockquote.html())
+    else:
+        summary_html.remove("blockquote")
+
     return await handle_html_tag(html=Pq(get_summary(item)))
 
 
@@ -380,7 +436,11 @@ async def handle_torrent(
 async def handle_date(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
-    date = item.get("published_parsed")
+    date = (
+        item.get("updated_parsed")
+        if item.get("updated_parsed")
+        else item.get("published_parsed")
+    )
     if date:
         rss_time = time.mktime(date)
         # 时差处理，待改进
@@ -400,14 +460,25 @@ async def handle_message(
     # 发送消息并写入文件
     if await send_message.send_msg(rss=rss, msg=item_msg, item=item):
         write_item(rss=rss, new_rss=state.get("new_rss"), new_item=item)
+        image_hash = state.get("image_hash")
+        if image_hash:
+            await insert_into_cache_db(
+                conn=state.get("conn"), item=item, image_hash=image_hash
+            )
     return tmp
 
 
 @ParsingBase.append_after_handler()
 async def after_handler(rss: Rss, state: dict) -> dict:
     item_count = len(state["messages"])
+    conn = state.get("conn")
+
     if item_count > 0:
         logger.info(f"{rss.name} 新消息推送完毕，共计：{item_count}")
     else:
         logger.info(f"{rss.name} 没有新信息")
+
+    if conn is not None:
+        conn.close()
+
     return {}
