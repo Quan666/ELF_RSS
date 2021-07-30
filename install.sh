@@ -8,9 +8,9 @@ install_gocqhttp() {
   echo "开始安装 go-cqhttp"
   read -p "输入机器人 QQ：" qq
   read -p "输入机器人 QQ密码：" pwd
-  wget https://github.com/Mrs4s/go-cqhttp/releases/download/v0.9.37-fix1/go-cqhttp-v0.9.37-fix1-linux-amd64.tar.gz
-  tar -xvf go-cqhttp-v0.9.37-fix1-linux-amd64.tar.gz
-  rm -rf go-cqhttp-v0.9.37-fix1-linux-amd64.tar.gz
+  wget https://github.com/Mrs4s/go-cqhttp/releases/download/v0.9.40-fix4/go-cqhttp-v0.9.40-fix4-linux-amd64.tar.gz
+  tar -xvf go-cqhttp-v0.9.40-fix4-linux-amd64.tar.gz
+  rm -rf go-cqhttp-v0.9.40-fix4-linux-amd64.tar.gz
   mkdir gocqhttp
   mv go-cqhttp gocqhttp
   echo '{
@@ -73,13 +73,9 @@ install_ELF_RSS() {
   git clone https://github.com/Quan666/ELF_RSS.git
   cd ELF_RSS
   docker build -t elfrss:latest .
-  mkdir /app
-  cd ../
-  cp ./ELF_RSS /app
 
-  rm -rf ./ELF_RSS
-  docker run --name elfrss -p 8080:8080 -v /app/:/app/ -d elfrss:latest
-  echo "ELF_RSS 安装完成，请修改配置文件 /app/.env.prod"
+  docker run --name elfrss -p 8080:8080 -v $(pwd)/:/app/ -e TZ=Asia/Shanghai -d elfrss:latest
+  echo "ELF_RSS 安装完成，请修改配置文件 .env.prod"
 }
 install() {
   #1. 一键安装 ELF_RSS (RSS 订阅插件)
@@ -93,8 +89,7 @@ install() {
 3. 停止 ELF_RSS
 4. 查看日志
 0. 退出
-注意：安装完成后程序在 /app 目录下
-      请修改配置文件后重启！
+注意：安装完成后请修改配置文件后重启！
 "
 
   read -p "输入选择:" no

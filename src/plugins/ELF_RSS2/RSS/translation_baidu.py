@@ -1,5 +1,6 @@
 # coding: utf8
-'''
+
+"""
     @Author: LCY
     @Contact: lchuanyong@126.com
     @blog: http://http://blog.csdn.net/lcyong_
@@ -13,7 +14,7 @@
     官方链接：
            http://api.fanyi.baidu.com/api/trans/product/index
 
-'''
+"""
 
 import hashlib
 import http.client
@@ -27,41 +28,53 @@ from ..config import config
 
 
 def baidu_translate(content):
-    appid = config.baiduid
-    secretKey = config.baidukey
-    httpClient = None
-    myurl = '/api/trans/vip/translate'
+    appid = config.baidu_id
+    secret_key = config.baidu_key
+    http_client = None
+    my_url = "/api/trans/vip/translate"
     q = content
-    fromLang = 'auto'  # 源语言
-    toLang = 'zh'  # 翻译后的语言
+    from_lang = "auto"  # 源语言
+    to_lang = "zh"  # 翻译后的语言
     salt = random.randint(32768, 65536)
-    sign = str(appid) + str(q) + str(salt) + str(secretKey)
+    sign = str(appid) + str(q) + str(salt) + str(secret_key)
     sign = hashlib.md5(sign.encode()).hexdigest()
-    myurl = myurl + '?appid=' + str(appid) + '&q=' + urllib.parse.quote(
-        q) + '&from=' + fromLang + '&to=' + toLang + '&salt=' + str(
-        salt) + '&sign=' + sign
+    my_url = (
+        my_url
+        + "?appid="
+        + str(appid)
+        + "&q="
+        + urllib.parse.quote(q)
+        + "&from="
+        + from_lang
+        + "&to="
+        + to_lang
+        + "&salt="
+        + str(salt)
+        + "&sign="
+        + sign
+    )
 
     try:
-        httpClient = http.client.HTTPConnection('api.fanyi.baidu.com')
-        httpClient.request('GET', myurl)
+        http_client = http.client.HTTPConnection("api.fanyi.baidu.com")
+        http_client.request("GET", my_url)
         # response是HTTPResponse对象
-        response = httpClient.getresponse()
-        jsonResponse = response.read().decode("utf-8")  # 获得返回的结果，结果为json格式
-        js = json.loads(jsonResponse)  # 将json格式的结果转换字典结构
+        response = http_client.getresponse()
+        json_response = response.read().decode("utf-8")  # 获得返回的结果，结果为json格式
+        js = json.loads(json_response)  # 将json格式的结果转换字典结构
         dst = str(js["trans_result"][0]["dst"])  # 取得翻译后的文本结果
         return dst  # 打印结果
     except Exception as e:
         logger.error(e)
-        return '翻译失败：{}'.format(e)
+        return f"翻译失败：{e}"
     finally:
-        if httpClient:
-            httpClient.close()
+        if http_client:
+            http_client.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     while True:
         print("请输入要翻译的内容,如果退出输入q")
-        content = input()
-        if (content == 'q'):
+        input_content = input()
+        if input_content == "q":
             break
-        baidu_translate(content)
+        baidu_translate(input_content)

@@ -1,37 +1,38 @@
-import json
+from urllib.parse import quote
 
-from httpx import AsyncClient
-from nonebot import on_command
+import httpx
+from nonebot import on_command, logger
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.rule import to_me
 
-url = on_command("短链", rule=to_me(), priority=5)
+URL = on_command("短链", rule=to_me(), priority=5)
 
 
-@url.handle()
+@URL.handle()
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    args = str(event.message).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
+    args = str(event.get_message()).strip()
     if args:
-        state["url"] = args  # 如果用户发送了参数则直接赋值
+        state["URL"] = args
 
 
-@url.got("url", prompt="输入你想要缩短的链接")
-async def handle_city(bot: Bot, event: Event, state: dict):
-    link = state["url"]
-    # if link not in ["上海", "北京"]:
-    #     await url.reject("你想查询的城市暂不支持，请重新输入！")
+@URL.got("URL", prompt="输入你想要缩短的链接")
+async def handle_url(bot: Bot, event: Event, state: dict):
+    link = state["URL"]
     uri = await get_uri_of_url(link)
-    await url.finish(uri)
+    await URL.finish(uri)
 
 
 async def get_uri_of_url(url: str) -> str:
-    www = 'https://ii1.fun/url/insert'
-    data = {"url": url}
-    headers = {'Content-Type': 'application/json'}
-    try:
-        async with AsyncClient(proxies={}, headers=headers) as client:
-            data_json = await client.post(www, data=json.dumps(data))
-            data_json = data_json.json()
-        return data_json['data']['shortUrl']
-    except:
-        return '获取短链接出错'
+    api = "https://oy.mk/api/insert"
+    async with httpx.AsyncClient(proxies={}) as client:
+        try:
+            url = quote(url, "utf-8")
+            res = await client.get(f"{api}?url={url}")
+            res = res.json()
+            if res["code"] != 200:
+                raise httpx.HTTPStatusError
+            return res["data"]["url"]
+        except httpx.HTTPStatusError as e:
+            msg = f"获取短链出错：{e}"
+            logger.error(msg)
+            return msg
