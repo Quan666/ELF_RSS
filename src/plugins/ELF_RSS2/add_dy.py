@@ -46,13 +46,13 @@ async def handle_rss_add(bot: Bot, event: Event, state: dict):
         await RSS_ADD.send("❌ 输入的订阅名为空！")
         return
 
-    async def add_group_or_user(group_id, user_id):
-        if group_id:
-            rss.add_group(group=str(group_id))
+    async def add_group_or_user(_group_id, _user_id):
+        if _group_id:
+            rss.add_group(group=str(_group_id))
             await tr.add_job(rss)
             await RSS_ADD.send("👏 订阅到当前群组成功！")
         else:
-            rss.add_user(user=user_id)
+            rss.add_user(user=_user_id)
             await tr.add_job(rss)
             await RSS_ADD.send("👏 订阅到当前账号成功！")
 

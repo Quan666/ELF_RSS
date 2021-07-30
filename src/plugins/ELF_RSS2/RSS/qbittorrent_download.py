@@ -128,7 +128,7 @@ async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
                 hash_str = get_torrent_b16_hash(res.content)
             except Exception as e:
                 await send_msg(f"下载种子失败,可能需要代理:{e}")
-                return None
+                return {}
 
     while not info:
         for tmp_torrent in qb.torrents():
@@ -146,7 +146,7 @@ async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
 async def start_down(url: str, group_ids: list, name: str, proxy=None) -> str:
     qb = await get_qb_client()
     if not qb:
-        return
+        return ""
     # 获取种子 hash
     info = await get_torrent_info_from_hash(url=url, proxy=proxy)
     await rss_trigger(
