@@ -55,16 +55,9 @@ class ParsingItem:
         self.block: bool = block
 
 
-# 解析器排序 并删除优先级相同时默认的处理器
+# 解析器排序
 def _sort(_list):
     _list.sort(key=lambda x: x.priority)
-    delete = []
-    for i in _list:
-        if i.rex != "(.*)":
-            delete.append(i.priority)
-    for i in _list.copy():
-        if i.priority in delete and i.rex == "(.*)":
-            _list.remove(i)
     return _list
 
 
@@ -85,6 +78,7 @@ class ParsingBase:
         "before": [],  # item的预处理
         "title": [],
         "summary": [],
+        "picture": [],
         "source": [],
         "date": [],
         "torrent": [],
@@ -148,17 +142,55 @@ class ParsingRss:
         self.before_handler = []
         self.handler = {}
         self.after_handler = []
-        for i in range(0, len(ParsingBase.before_handler)):
-            if re.search(ParsingBase.before_handler[i].rex, self.rss.get_url()):
-                self.before_handler.append(ParsingBase.before_handler[i])
+
+        for index, value in enumerate(ParsingBase.before_handler):
+            if re.search(value.rex, self.rss.get_url()):
+                self.before_handler.append(value)
+
         for k, v in ParsingBase.handler.items():
             self.handler.update({k: []})
             for h in v:
                 if re.search(h.rex, self.rss.get_url()):
                     self.handler[k].append(h)
-        for i in range(0, len(ParsingBase.after_handler)):
-            if re.search(ParsingBase.after_handler[i].rex, self.rss.get_url()):
-                self.after_handler.append(ParsingBase.after_handler[i])
+
+        for index, value in enumerate(ParsingBase.after_handler):
+            if re.search(value.rex, self.rss.get_url()):
+                self.after_handler.append(value)
+
+        # 删除优先级相同时默认的处理器
+        delete = [
+            (h.func.__name__, "(.*)", h.priority)
+            for h in self.before_handler
+            if h.rex != "(.*)"
+        ]
+        self.before_handler = [
+            h
+            for h in self.before_handler
+            if not ((h.func.__name__, h.rex, h.priority) in delete)
+        ]
+
+        for k, v in ParsingBase.handler.items():
+            delete = [
+                (h.func.__name__, "(.*)", h.priority)
+                for h in self.handler[k]
+                if h.rex != "(.*)"
+            ]
+            self.handler[k] = [
+                h
+                for h in self.handler[k]
+                if not ((h.func.__name__, h.rex, h.priority) in delete)
+            ]
+
+        delete = [
+            (h.func.__name__, "(.*)", h.priority)
+            for h in self.after_handler
+            if h.rex != "(.*)"
+        ]
+        self.after_handler = [
+            h
+            for h in self.after_handler
+            if not ((h.func.__name__, h.rex, h.priority) in delete)
+        ]
 
     # 开始解析
     async def start(self, new_rss: dict, old_data: list):
@@ -184,14 +216,17 @@ class ParsingRss:
         self.state.update(
             {
                 "messages": [],
+                "item_count": 0,
             }
         )
         for item in self.state.get("change_data"):
             item_msg = f"【{self.state.get('rss_title')}】更新了!\n----------------------\n"
+
             for k, v in self.handler.items():
                 # 用于保存上一次处理结果
-                tmp = get_summary(item)
+                tmp = ""
                 tmp_state = {"continue": True}  # 是否继续执行后续处理
+
                 # 某一个内容的处理如正文，传入原文与上一次处理结果，此次处理完后覆盖
                 for h in v:
                     tmp = await h.func(
@@ -204,7 +239,7 @@ class ParsingRss:
                     )
                     if h.block or not tmp_state["continue"]:
                         break
-                item_msg = f'{item_msg}{tmp if tmp else ""}'
+                item_msg += tmp
             self.state.get("messages").append(item_msg)
 
         # 最后处理
@@ -259,9 +294,6 @@ async def handle_check_update(rss: Rss, state: dict):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             change_data.remove(item)
 
-    if not change_data:
-        # 没有更新
-        logger.info(f"{rss.name} 没有新信息")
     return {"change_data": change_data}
 
 
@@ -296,10 +328,6 @@ async def handle_check_update(rss: Rss, state: dict):
             write_item(rss=rss, new_rss=new_rss, new_item=item)
             change_data.remove(item)
 
-    if not change_data:
-        # 没有更新
-        logger.info(f"{rss.name} 没有新信息")
-
     return {
         "change_data": change_data,
         "conn": conn,
@@ -312,6 +340,11 @@ async def handle_check_update(rss: Rss, state: dict):
 async def handle_title(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
+    # 判断是否开启了只推送图片
+    if rss.only_pic:
+        tmp_state["continue"] = False
+        return ""
+
     # 处理标题
     title = item["title"]
     res = ""
@@ -340,15 +373,12 @@ async def handle_title(
 
 # 处理正文 判断是否是仅推送标题 、是否仅推送图片
 @ParsingBase.append_handler(parsing_type="summary", priority=1)
-async def handle_summary_only_title(
+async def handle_summary_only_title_or_pic(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
-    if not rss.only_title:
+    if rss.only_title or rss.only_pic:
         tmp_state["continue"] = False
-        return ""
-    # 判断是否开启了只推送图片
-    if rss.only_pic:
-        return ""
+    return ""
 
 
 # 处理正文 处理网页 tag
@@ -356,16 +386,8 @@ async def handle_summary_only_title(
 async def handle_summary(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
-    summary_html = Pq(get_summary(item))
-
-    # 判断是否保留转发内容，保留的话只去掉标签，留下里面的内容
-    if config.blockquote:
-        for blockquote in summary_html("blockquote").items():
-            blockquote.replace_with(blockquote.html())
-    else:
-        summary_html.remove("blockquote")
-
-    return await handle_html_tag(html=Pq(get_summary(item)))
+    tmp += await handle_html_tag(html=Pq(get_summary(item)))
+    return tmp
 
 
 # 处理正文 移出指定内容
@@ -391,16 +413,26 @@ async def handle_summary(
 
 
 # 处理正文 处理图片
-@ParsingBase.append_handler(parsing_type="summary", priority=13)
-async def handle_summary(
+@ParsingBase.append_handler(parsing_type="picture")
+async def handle_picture(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
-    tmp += await handle_img(
+
+    # 判断是否开启了只推送标题
+    if rss.only_title:
+        return ""
+
+    res = await handle_img(
         html=Pq(get_summary(item)),
         img_proxy=rss.img_proxy,
         img_num=rss.max_image_number,
     )
-    return f"{tmp}\n"
+
+    # 判断是否开启了只推送图片
+    if rss.only_pic:
+        return f"{res}\n"
+
+    return f"{tmp + res}\n"
 
 
 # 处理来源
@@ -416,6 +448,7 @@ async def handle_source(
 async def handle_torrent(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
+    res = ""
     if not rss.is_open_upload_group:
         rss.group_id = []
     if rss.down_torrent:
@@ -425,13 +458,13 @@ async def handle_torrent(
                 rss=rss, item=item, proxy=get_proxy(rss.img_proxy)
             )
             if hash_list and hash_list[0] is not None:
-                tmp += "\n磁力：\n"
+                res += "\n磁力：\n"
                 for h in hash_list:
-                    tmp += f"magnet:?xt=urn:btih:{h}\n"
-                tmp = tmp[:-1]
+                    res += f"magnet:?xt=urn:btih:{h}\n"
+                res = res[:-1]
         except Exception as e:
             logger.error(f"下载种子时出错：{e}")
-    return tmp
+    return res
 
 
 # 处理日期
@@ -464,16 +497,20 @@ async def handle_message(
     if await send_message.send_msg(rss=rss, msg=item_msg, item=item):
         write_item(rss=rss, new_rss=state.get("new_rss"), new_item=item)
         image_hash = state.get("image_hash")
+
         if image_hash:
             await insert_into_cache_db(
                 conn=state.get("conn"), item=item, image_hash=image_hash
             )
-    return tmp
+
+        state["item_count"] += 1
+
+    return ""
 
 
 @ParsingBase.append_after_handler()
 async def after_handler(rss: Rss, state: dict) -> dict:
-    item_count = len(state["messages"])
+    item_count = state.get("item_count")
     conn = state.get("conn")
 
     if item_count > 0:
