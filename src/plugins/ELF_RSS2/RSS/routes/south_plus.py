@@ -2,10 +2,7 @@ import re
 
 from pyquery import PyQuery as Pq
 
-from .Parsing import ParsingBase
-from .Parsing import get_summary
-from .Parsing import handle_bbcode
-from .Parsing import handle_html_tag
+from .Parsing import ParsingBase, get_summary, handle_bbcode, handle_html_tag
 from ..rss_class import Rss
 
 
@@ -17,7 +14,8 @@ async def handle_summary(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
     rss_str = await handle_bbcode(html=Pq(get_summary(item)))
-    return await handle_html_tag(html=Pq(rss_str))
+    tmp += await handle_html_tag(html=Pq(rss_str))
+    return tmp
 
 
 # 处理来源

@@ -3,8 +3,7 @@ import httpx
 import random
 import re
 
-from PIL import UnidentifiedImageError
-from PIL.Image import Image
+from PIL import Image, UnidentifiedImageError
 from io import BytesIO
 from nonebot import logger
 from pyquery import PyQuery as Pq
