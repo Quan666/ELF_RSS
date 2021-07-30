@@ -5,7 +5,10 @@ description = "ELF_RSS"
 authors = ["Quan666"]
 license = "GPL v3"
 readme = "README.md"
-
+packages = [
+    { include = "ELF_RSS2", from = "src/plugins" },
+    { include = "ELF_URL", from = "src/plugins" },    
+]
 homepage = "https://github.com/Quan666/ELF_RSS"
 repository = "https://github.com/Quan666/ELF_RSS"
 keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
