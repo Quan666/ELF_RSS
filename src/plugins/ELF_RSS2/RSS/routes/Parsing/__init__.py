@@ -204,7 +204,6 @@ class ParsingRss:
                 "old_data": old_data,
                 "change_data": [],  # 更新的消息列表
                 "conn": None,  # 数据库连接
-                "image_hash": "",  # 用来去重的图片特征值
             }
         )
         for h in self.before_handler:
@@ -303,7 +302,6 @@ async def handle_check_update(rss: Rss, state: dict):
     change_data = state.get("change_data")
     new_rss = state.get("new_rss")
     conn = state.get("conn")
-    image_hash = None
 
     # 检查是否启用去重 使用 duplicate_filter_mode 字段
     if not rss.duplicate_filter_mode:
@@ -315,7 +313,8 @@ async def handle_check_update(rss: Rss, state: dict):
 
     await cache_db_manage(conn)
 
-    for item in change_data.copy():
+    delete = []
+    for index, item in enumerate(change_data):
         summary = get_summary(item)
         is_duplicate, image_hash = await duplicate_exists(
             rss=rss,
@@ -326,12 +325,17 @@ async def handle_check_update(rss: Rss, state: dict):
         )
         if is_duplicate:
             write_item(rss=rss, new_rss=new_rss, new_item=item)
-            change_data.remove(item)
+            delete.append(index)
+        else:
+            change_data[index]["image_hash"] = str(image_hash)
+
+    change_data = [
+        item for index, item in enumerate(change_data) if index not in delete
+    ]
 
     return {
         "change_data": change_data,
         "conn": conn,
-        "image_hash": str(image_hash),
     }
 
 
@@ -496,9 +500,9 @@ async def handle_message(
     # 发送消息并写入文件
     if await send_message.send_msg(rss=rss, msg=item_msg, item=item):
         write_item(rss=rss, new_rss=state.get("new_rss"), new_item=item)
-        image_hash = state.get("image_hash")
 
-        if image_hash:
+        if rss.duplicate_filter_mode:
+            image_hash = item["image_hash"]
             await insert_into_cache_db(
                 conn=state.get("conn"), item=item, image_hash=image_hash
             )

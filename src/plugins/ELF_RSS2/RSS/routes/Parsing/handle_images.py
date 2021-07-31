@@ -161,21 +161,7 @@ async def download_image_detail(url: str, proxy: bool):
         raise
 
 
-# 图片地址预处理
-async def handle_img_url(url: str) -> str:
-    if re.search(r"^//", url):
-        url = url.replace("//", "https://")
-    # 如果是推特图片，重定向为原图
-    if "pbs.twimg.com" in url:
-        url = url.replace("?format=", ".").replace("&name=", ":")
-        url = re.sub(":(thumb|small|medium|large)", "", url)
-        if ":orig" not in url:
-            url += ":orig"
-    return url
-
-
 async def download_image(url: str, proxy: bool = False):
-    url = await handle_img_url(url)
     try:
         return await download_image_detail(url=url, proxy=proxy)
     except Exception as e:
@@ -184,7 +170,6 @@ async def download_image(url: str, proxy: bool = False):
 
 
 async def handle_img_combo(url: str, img_proxy: bool) -> str:
-    url = await handle_img_url(url)
     content = await download_image(url, img_proxy)
     resize_content = await zip_pic(url, img_proxy, content)
     img_base64 = await get_pic_base64(resize_content)
