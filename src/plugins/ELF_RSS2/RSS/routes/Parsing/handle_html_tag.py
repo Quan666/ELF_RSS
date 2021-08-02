@@ -87,6 +87,7 @@ async def handle_html_tag(html) -> str:
         "b",
         "i",
         "p",
+        "s",
         "code",
         "del",
         "div",
