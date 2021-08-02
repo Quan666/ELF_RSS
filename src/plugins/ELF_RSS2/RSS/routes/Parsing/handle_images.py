@@ -57,6 +57,7 @@ async def zip_pic(url: str, proxy: bool, content: bytes):
     try:
         im = Image.open(BytesIO(content))
     except UnidentifiedImageError:
+        logger.error(f"无法识别图像文件 链接：[{url}]")
         return None
     # 获得图像文件类型：
     file_type = im.format
@@ -68,24 +69,20 @@ async def zip_pic(url: str, proxy: bool, content: bytes):
         # 和谐
         pim = im.load()
         points = [[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]]
-        try:
-            for point in points:
-                if file_type == "PNG":
-                    im.putpixel(point, random.randint(0, 255))
-                elif file_type == "JPEG":
-                    # 如果 Image.getcolors() 返回有值,说明不是 RGB 三通道图,而是单通道图
-                    if im.getcolors():
-                        pim[point[0], point[1]] = random.randint(0, 255)
-                    else:
-                        pim[point[0], point[1]] = (
-                            random.randint(0, 255),
-                            random.randint(0, 255),
-                            random.randint(0, 255),
-                        )
-        except BaseException as e:
-            logger.error(f"图片和谐失败！ E: {e}")
-            raise
-        return im
+        for point in points:
+            if file_type == "PNG":
+                im.putpixel(point, random.randint(0, 255))
+            elif file_type == "JPEG":
+                # 如果 Image.getcolors() 返回有值,说明不是 RGB 三通道图,而是单通道图
+                if im.getcolors():
+                    pim[point[0], point[1]] = random.randint(0, 255)
+                else:
+                    pim[point[0], point[1]] = (
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                    )
+            return im
     else:
         if len(content) > config.gif_zip_size * 1024:
             return await resize_gif(url, proxy)
@@ -144,10 +141,8 @@ async def download_image_detail(url: str, proxy: bool):
             except httpx.ConnectError as e:
                 logger.error(f"图片[{url}]下载失败,有可能需要开启代理！ \n{e}")
                 return None
-            # 如果 图片无法获取到 / 获取到的不是图片，直接返回
-            if ("image" not in pic.headers["Content-Type"]) or (
-                pic.status_code not in STATUS_CODE
-            ):
+            # 如果图片无法获取到，直接返回
+            if pic.status_code not in STATUS_CODE:
                 if "pixiv.cat" in url:
                     url = await fuck_pixiv_cat(url=url)
                     return await download_image(url, proxy)
