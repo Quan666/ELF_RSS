@@ -107,6 +107,11 @@ async def handle_html_tag(html) -> str:
         "th",
         "tr",
     ]
+
+    # <p> <pre> 标签后增加俩个换行
+    for i in ["p", "pre"]:
+        rss_str = re.sub(f"</{i}>", f"</{i}>\n\n", rss_str)
+
     # 直接去掉标签，留下内部文本信息
     for i in html_tags:
         rss_str = re.sub(rf'<{i} .+?"/?>', "", rss_str)
@@ -119,11 +124,11 @@ async def handle_html_tag(html) -> str:
     rss_str = re.sub(r'<video .+?"?/>|</video>|<img.+?>', "", rss_str)
 
     # 去掉多余换行
-    while re.search("\n\n", rss_str):
-        rss_str = re.sub("\n\n", "\n", rss_str)
+    while re.search("\n\n\n", rss_str):
+        rss_str = re.sub("\n\n\n", "\n\n", rss_str)
     rss_str = rss_str.strip()
 
     if 0 < config.max_length < len(rss_str):
         rss_str = rss_str[: config.max_length] + "..."
 
-    return rss_str
+    return f"\n{rss_str}\n"
