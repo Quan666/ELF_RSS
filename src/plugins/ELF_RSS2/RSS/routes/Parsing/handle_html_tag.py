@@ -74,8 +74,10 @@ async def handle_html_tag(html) -> str:
     for a in html("a").items():
         a_str = re.search(r"<a.+?</a>", html_unescape(str(a)), flags=re.DOTALL)[0]
         if a.text() and str(a.text()) != a.attr("href"):
-            # 去除微博话题对应链接，只保留文本
-            if "weibo.cn" in a.attr("href") and a.children("span.surl-text"):
+            # 去除微博话题对应链接 及 微博用户主页链接，只保留文本
+            if ("weibo.cn" in a.attr("href") and a.children("span.surl-text")) or (
+                "weibo.com" in a.attr("href") and a.text().startswith("@")
+            ):
                 rss_str = rss_str.replace(a_str, a.text())
             else:
                 rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
