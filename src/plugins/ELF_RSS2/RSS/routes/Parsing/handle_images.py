@@ -142,7 +142,7 @@ async def download_image_detail(url: str, proxy: bool):
                 logger.error(f"图片[{url}]下载失败,有可能需要开启代理！ \n{e}")
                 return None
             # 如果图片无法获取到，直接返回
-            if pic.status_code not in STATUS_CODE:
+            if (len(pic.content) == 0) or (pic.status_code not in STATUS_CODE):
                 if "pixiv.cat" in url:
                     url = await fuck_pixiv_cat(url=url)
                     return await download_image(url, proxy)
