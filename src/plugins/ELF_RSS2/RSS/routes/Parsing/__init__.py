@@ -416,7 +416,7 @@ async def handle_summary(
     return tmp
 
 
-# 处理正文 处理图片
+# 处理图片
 @ParsingBase.append_handler(parsing_type="picture")
 async def handle_picture(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
