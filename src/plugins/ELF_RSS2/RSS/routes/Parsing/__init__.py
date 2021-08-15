@@ -349,12 +349,20 @@ async def handle_title(
         tmp_state["continue"] = False
         return ""
 
-    # 处理标题
     title = item["title"]
-    res = ""
+
     if not config.blockquote:
         title = re.sub(r" - 转发 .*", "", title)
-    # 先判断与正文相识度，避免标题正文一样，或者是标题为正文前N字等情况
+
+    res = f"标题：{title}\n"
+    if rss.translation:
+        res += await handle_translation(content=title)
+
+    # 如果开启了只推送标题，跳过下面判断标题与正文相似度的处理
+    if rss.only_title:
+        return res
+
+    # 判断标题与正文相似度，避免标题正文一样，或者是标题为正文前N字等情况
     try:
         summary_html = Pq(item["summary"])
         if not config.blockquote:
@@ -363,15 +371,11 @@ async def handle_title(
             None, summary_html.text()[: len(title)], title
         )
         # 标题正文相似度
-        if rss.only_pic or similarity.ratio() <= 0.6:
-            res += f"标题：{title}\n"
-            if rss.translation:
-                res += await handle_translation(content=title)
+        if similarity.ratio() > 0.6:
+            res = ""
     except Exception as e:
         logger.info(f"{rss.name} 没有正文内容！ E: {e}")
-        res += f"标题：{title}\n"
-        if rss.translation:
-            res += await handle_translation(content=title)
+
     return res
 
 
