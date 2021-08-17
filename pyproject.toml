@@ -14,13 +14,28 @@ repository = "https://github.com/Quan666/ELF_RSS"
 keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
-nonebot2 = "^2.0.0a8.post2"
-nb-cli = "^0.3.1"
-nonebot-plugin-apscheduler = "^0.1.0"
+python = "^3.8.3"
+aiofiles = "~=0.5.0"
+bbcode = "~=1.1.0"
+emoji = "~=0.5.4"
+feedparser = "~=6.0.0"
+google-trans-new = "~=1.1.9"
+httpx = "~=0.18.0"
+ImageHash = "~=4.2.0"
+magneturi = "~=1.3"
+nonebot-adapter-cqhttp = "2.0.0a15"
+nonebot-plugin-apscheduler = "~=0.1.2"
+nonebot2 = "2.0.0a15"
+Pillow = ">=8.1.1"
+pydantic = "~=1.8.1"
+pyquery = "~=1.4.3"
+python-qbittorrent = "~=0.4.2"
+tenacity = "~=7.0.0"
+typing-extensions = "~=3.7.4.3"
 
 [tool.poetry.dev-dependencies]
 nonebot-test = "^0.1.0"
+nb-cli = "~=0.4.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
