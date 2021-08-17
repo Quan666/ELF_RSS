@@ -12,11 +12,8 @@ async def handle_summary(
 ) -> str:
     summary_html = Pq(get_summary(item))
 
-    # 判断是否保留转发内容，保留的话只去掉标签，留下里面的内容
-    if config.blockquote:
-        for blockquote in summary_html("blockquote").items():
-            blockquote.replace_with(blockquote.html())
-    else:
+    # 判断是否保留转发内容
+    if not config.blockquote:
         summary_html.remove("blockquote")
 
     tmp += await handle_html_tag(html=summary_html)
