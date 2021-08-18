@@ -15,19 +15,20 @@ async def handle_bbcode(html) -> str:
         r"(\[url=.+?])?\[img].+?\[/img](\[/url])?", "", rss_str, flags=re.I
     )
 
+    # 处理一些 bbcode 标签
     bbcode_tags = [
         "align",
+        "b",
         "backcolor",
         "color",
         "font",
         "size",
         "table",
-        "url",
-        "b",
-        "u",
-        "tr",
-        "td",
         "tbody",
+        "td",
+        "tr",
+        "u",
+        "url",
     ]
 
     for i in bbcode_tags:
@@ -66,7 +67,7 @@ async def handle_html_tag(html) -> str:
             rss_str = rss_str.replace(
                 str(li), f"\n{index + 1}. {li_str_search.group(1)}"
             ).replace("\\n", "\n")
-    rss_str = re.sub("</?(ul|ol)>", "", rss_str)
+    rss_str = re.sub("</(ul|ol)>", "\n", rss_str)
     # 处理没有被 ul / ol 标签包围的 li 标签
     rss_str = rss_str.replace("<li>", "- ").replace("</li>", "")
 
@@ -87,19 +88,21 @@ async def handle_html_tag(html) -> str:
     # 处理一些 HTML 标签
     html_tags = [
         "b",
-        "i",
-        "p",
-        "s",
+        "blockquote",
         "code",
+        "dd",
         "del",
         "div",
-        "dd",
         "dl",
         "dt",
         "em",
         "font",
+        "i",
         "iframe",
+        "ol",
+        "p",
         "pre",
+        "s",
         "small",
         "span",
         "strong",
@@ -108,6 +111,7 @@ async def handle_html_tag(html) -> str:
         "td",
         "th",
         "tr",
+        "ul",
     ]
 
     # <p> <pre> 标签后增加俩个换行
@@ -133,4 +137,4 @@ async def handle_html_tag(html) -> str:
     if 0 < config.max_length < len(rss_str):
         rss_str = rss_str[: config.max_length] + "..."
 
-    return f"\n{rss_str}\n"
+    return rss_str
