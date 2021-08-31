@@ -22,7 +22,7 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
             except NetworkError:
                 logger.error(f"网络错误,消息发送失败,将重试 链接：[{item['link']}]")
             except Exception as e:
-                logger.error(f"QQ号[{user_id}]不合法或者不是好友 E: {e}")
+                logger.error(f"QQ号[{user_id}]不合法或者不是好友 E: {e} 链接：[{item['link']}]")
 
     if rss.group_id:
         for group_id in rss.group_id:
@@ -34,5 +34,5 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
             except NetworkError:
                 logger.error(f"网络错误,消息发送失败,将重试 链接：[{item['link']}]")
             except Exception as e:
-                logger.error(f"群号[{group_id}]不合法或者未加群 E: {e}")
+                logger.error(f"群号[{group_id}]不合法或者未加群 E: {e} 链接：[{item['link']}]")
     return flag
