@@ -22,7 +22,7 @@ STATUS_CODE = [200, 301, 302]
 # 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告
 asyncio.log.logger.setLevel(40)
 HEADERS = {
-    "Accept": "*/*",
+    "Accept": "application/xhtml+xml,application/xml,*/*",
     "Accept-Language": "en-US,en;q=0.9",
     "Cache-Control": "max-age=0",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36",
