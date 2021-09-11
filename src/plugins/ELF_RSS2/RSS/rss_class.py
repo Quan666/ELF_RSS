@@ -20,7 +20,6 @@ class Rss:
     user_id = []  # 订阅用户（qq） -1 为空
     group_id = []  # 订阅群组
     img_proxy = False
-    sum = 20  # 加载条数
     time = "5"  # 更新频率 分钟/次
     translation = False  # 翻译
     only_title = False  # 仅标题
