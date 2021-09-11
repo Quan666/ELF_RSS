@@ -68,6 +68,9 @@ def change_rss_json():
 async def start():
     (bot,) = nonebot.get_bots().values()
 
+    if config.version == "v2.4.0":
+        change_rss_json()
+
     try:
         rss = rss_class.Rss("", "", "-1", "-1")
         rss_list = rss.read_rss()  # 读取list
