@@ -1,4 +1,5 @@
 import copy
+import os
 import re
 
 from nonebot import on_command
@@ -7,11 +8,15 @@ from nonebot import require
 from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission, unescape
 from nonebot.log import logger
 from nonebot.rule import to_me
+from pathlib import Path
+from tinydb import TinyDB, Query
 
 from .RSS import rss_class
 from .RSS import my_trigger as tr
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
+# 存储目录
+FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
 RSS_CHANGE = on_command(
     "change",
@@ -181,7 +186,14 @@ async def handle_rss_change(bot: Bot, event: Event, state: dict):
             else:
                 setattr(rss, "content_to_remove", rm_list)
         # 参数解析完毕，写入
-        rss.write_rss()
+        db = TinyDB(
+            str(FILE_PATH + "rss.json"),
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
+        db.update(rss.__dict__, Query().name == name)
         # 加入定时任务
         if not rss.stop:
             await tr.add_job(rss)

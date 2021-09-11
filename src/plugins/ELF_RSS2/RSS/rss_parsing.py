@@ -3,19 +3,15 @@
 import asyncio
 import feedparser
 import httpx
-import os.path
 import re
 
 from nonebot.log import logger
-from pathlib import Path
 from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError, TryAgain
 
 from . import rss_class
 from .routes.Parsing import ParsingRss, get_proxy
 from .routes.Parsing.read_or_write_rss_data import read_rss, write_rss
 from ..config import config
-
-FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
 
 STATUS_CODE = [200, 301, 302]
