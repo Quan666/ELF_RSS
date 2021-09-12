@@ -28,8 +28,11 @@ def cache_filter(data: dict) -> dict:
 # 将 xxx.json (缓存) 改造为 tinydb 数据库
 def change_cache_json():
     json_paths = list(Path(FILE_PATH).glob("*.json"))
+    cache_json_list = [
+        str(i) for i in json_paths if not str(i).endswith("rss.json")
+    ]
 
-    for j in [str(i) for i in json_paths if i != "rss.json"]:
+    for j in cache_json_list:
 
         with codecs.open(j, "r", "utf-8") as f:
             cache_json = json.load(f)
