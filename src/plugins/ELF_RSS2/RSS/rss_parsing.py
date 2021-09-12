@@ -3,16 +3,16 @@
 import asyncio
 import feedparser
 import httpx
-import os.path
+import os
 import re
 
 from nonebot.log import logger
 from pathlib import Path
 from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError, TryAgain
+from tinydb import TinyDB
 
 from . import rss_class
 from .routes.Parsing import ParsingRss, get_proxy
-from .routes.Parsing.read_or_write_rss_data import read_rss, write_rss
 from ..config import config
 
 FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
@@ -44,15 +44,23 @@ async def start(rss: rss_class.Rss) -> None:
         cookies_str = "及 cookies " if rss.cookies else ""
         logger.error(f"{rss.name}[{rss.get_url()}]抓取失败！已达最大重试次数！请检查订阅地址{cookies_str}！")
         return
-    old_rss = read_rss(rss.name)
-    old_rss_list = old_rss.get("entries")
-    if not old_rss:
-        write_rss(name=rss.name, new_rss=new_rss)
+    # 检查是否存在rss记录
+    _file = FILE_PATH + (rss.name + ".json")
+    if not os.path.isfile(_file):
+        db = TinyDB(
+            _file,
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
+        entries = new_rss.get("entries")
+        db.insert_multiple(entries)
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
 
     pr = ParsingRss(rss=rss)
-    await pr.start(new_rss=new_rss, old_data=old_rss_list)
+    await pr.start(new_rss=new_rss)
 
 
 # 获取 RSS 并解析为 json ，失败重试

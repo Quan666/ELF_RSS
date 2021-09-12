@@ -1,15 +1,17 @@
-import codecs
 import json
 import os
 import re
-from pathlib import Path
 
 from nonebot.log import logger
+from pathlib import Path
+from tinydb import TinyDB, Query
+from tinydb.operations import set
 
 from ..config import config
 
 # 存储目录
 FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
+JSON_PATH = FILE_PATH + "rss.json"
 
 
 class Rss:
@@ -19,7 +21,6 @@ class Rss:
     user_id = []  # 订阅用户（qq） -1 为空
     group_id = []  # 订阅群组
     img_proxy = False
-    sum = 20  # 加载条数
     time = "5"  # 更新频率 分钟/次
     translation = False  # 翻译
     only_title = False  # 仅标题
@@ -101,48 +102,23 @@ class Rss:
     @staticmethod
     def read_rss() -> list:
         # 如果文件不存在
-        if not os.path.isfile(str(FILE_PATH + "rss.json")):
+        if not os.path.isfile(JSON_PATH):
             return []
         rss_list = []
-        with codecs.open(str(FILE_PATH + "rss.json"), "r", "utf-8") as load_f:
-            rss_list_json = json.load(load_f)
-            for rss_one in rss_list_json:
-                tmp_rss = Rss("", "", "-1", "-1")
-                if not isinstance(rss_one, str):
-                    rss_one = json.dumps(rss_one)
-                tmp_rss.__dict__ = json.loads(rss_one)
-                rss_list.append(tmp_rss)
+        db = TinyDB(
+            JSON_PATH,
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
+        for rss in db.all():
+            tmp_rss = Rss("", "", "-1", "-1")
+            if not isinstance(rss, str):
+                rss = json.dumps(rss)
+            tmp_rss.__dict__ = json.loads(rss)
+            rss_list.append(tmp_rss)
         return rss_list
-
-    # 写入记录，传入rss list，不传就把当前 self 写入
-    def write_rss(self, rss_new: list = None):
-        # 先读取订阅记录
-        rss_old = self.read_rss()
-        # 把当前 self 写入
-        if not rss_new:
-            rss_new = [self]
-
-        for tmp_new in rss_new:
-            flag = True
-            for index, i_old in enumerate(rss_old):
-                # 如果有记录 就修改记录,没有就添加
-                if i_old.name == tmp_new.name:
-                    rss_old[index] = tmp_new
-                    flag = False
-                    break
-            if flag:
-                rss_old.append(tmp_new)
-        rss_json = []
-        for rss_one in rss_old:
-            tmp = {}
-            tmp.update(rss_one.__dict__)
-            rss_json.append(tmp)
-        if not os.path.isdir(FILE_PATH):
-            os.makedirs(FILE_PATH)
-        with codecs.open(str(FILE_PATH + "rss.json"), "w", "utf-8") as dump_f:
-            dump_f.write(
-                json.dumps(rss_json, sort_keys=True, indent=4, ensure_ascii=False)
-            )
 
     # 查找是否存在当前订阅名 rss 要转换为 rss_
     def find_name(self, name: str):
@@ -156,47 +132,55 @@ class Rss:
                 return feed
         return None
 
-    # 添加订阅 QQ
-    def add_user(self, user: str):
-        if str(user) in self.user_id:
-            return
-        self.user_id.append(str(user))
-        self.write_rss()
-
-    # 添加订阅 群组
-    def add_group(self, group: str):
-        if str(group) in self.group_id:
-            return
-        self.group_id.append(str(group))
-        self.write_rss()
+    # 添加订阅
+    def add_user_or_group(self, user: str = None, group: str = None):
+        if user:
+            if str(user) in self.user_id:
+                return
+            self.user_id.append(str(user))
+        else:
+            if str(group) in self.group_id:
+                return
+            self.group_id.append(str(group))
+        db = TinyDB(
+            JSON_PATH,
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
+        db.upsert(self.__dict__, Query().name == self.name)
 
     # 删除订阅 群组
     def delete_group(self, group: str) -> bool:
         if not str(group) in self.group_id:
             return False
         self.group_id.remove(str(group))
-        self.write_rss()
+        db = TinyDB(
+            JSON_PATH,
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
+        db.update(set("group_id", self.group_id), Query().name == self.name)
         return True
 
     # 删除整个订阅
-    def delete_rss(self, delrss):
-        rss_old = self.read_rss()
-        rss_json = []
-        for rss_one in rss_old:
-            if rss_one.name != delrss.name:
-                rss_json.append(rss_one.__dict__)
-
-        if not os.path.isdir(FILE_PATH):
-            os.makedirs(FILE_PATH)
-        with codecs.open(str(FILE_PATH + "rss.json"), "w", "utf-8") as dump_f:
-            dump_f.write(
-                json.dumps(rss_json, sort_keys=True, indent=4, ensure_ascii=False)
-            )
+    def delete_rss(self):
+        db = TinyDB(
+            JSON_PATH,
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
+        db.remove(Query().name == self.name)
         self.delete_file()
 
     # 删除订阅json文件
     def delete_file(self):
-        this_file_path = str(FILE_PATH + self.name + ".json")
+        this_file_path = str(FILE_PATH + (self.name + ".json"))
         if os.path.exists(this_file_path):
             os.remove(this_file_path)
 
@@ -225,7 +209,14 @@ class Rss:
                         name, value = line.strip().split("=")
                         cookies[name] = value
                 self.cookies = cookies
-                self.write_rss()
+                db = TinyDB(
+                    JSON_PATH,
+                    encoding="utf-8",
+                    sort_keys=True,
+                    indent=4,
+                    ensure_ascii=False,
+                )
+                db.update(set("cookies", cookies), Query().name == self.name)
                 return True
             else:
                 self.cookies = None

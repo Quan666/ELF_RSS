@@ -1,6 +1,3 @@
-import os
-from pathlib import Path
-
 from nonebot import on_command
 from nonebot import permission as su
 from nonebot import require
@@ -11,8 +8,6 @@ from .RSS import rss_class
 from .RSS import my_trigger as tr
 
 SCHEDULER = require("nonebot_plugin_apscheduler").scheduler
-# 存储目录
-FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
 RSS_DELETE = on_command(
     "deldy",
@@ -47,7 +42,7 @@ async def handle_rss_delete(bot: Bot, event: Event, state: dict):
     if group_id:
         if rss.delete_group(group=group_id):
             if not rss.group_id and not rss.user_id:
-                rss.delete_rss(rss)
+                rss.delete_rss()
                 await tr.delete_job(rss)
             else:
                 await tr.add_job(rss)
@@ -55,6 +50,6 @@ async def handle_rss_delete(bot: Bot, event: Event, state: dict):
         else:
             await RSS_DELETE.send(f"❌ 当前群组没有订阅： {rss.name} ！")
     else:
-        rss.delete_rss(rss)
+        rss.delete_rss()
         await tr.delete_job(rss)
         await RSS_DELETE.send(f"👏 订阅 {rss.name} 删除成功！")

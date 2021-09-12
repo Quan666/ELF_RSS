@@ -18,3 +18,4 @@ ImageHash~=4.2.0
 pydantic~=1.8.1
 tenacity~=7.0.0
 bbcode~=1.1.0
+tinydb~=4.5.1
