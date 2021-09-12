@@ -46,14 +46,7 @@ async def cache_db_manage(conn: sqlite3.connect) -> None:
 
 
 # 对缓存 json 进行管理
-async def cache_json_manage(_file: str) -> None:
-    db = TinyDB(
-        _file,
-        encoding="utf-8",
-        sort_keys=True,
-        indent=4,
-        ensure_ascii=False,
-    )
+async def cache_json_manage(db: TinyDB) -> None:
     expired_date = datetime.datetime.utcnow() - datetime.timedelta(
         days=config.db_cache_expire
     )

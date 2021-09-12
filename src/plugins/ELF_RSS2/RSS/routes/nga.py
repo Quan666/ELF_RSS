@@ -14,6 +14,7 @@ FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 async def handle_check_update(rss: Rss, state: dict):
     new_data = state.get("new_data")
     old_data = state.get("old_data")
+    db = state.get("tinydb")
 
     for i in new_data:
         i["link"] = re.sub(r"&rand=\d+", "", i["link"])
@@ -21,6 +22,5 @@ async def handle_check_update(rss: Rss, state: dict):
     for i in old_data:
         i["link"] = re.sub(r"&rand=\d+", "", i["link"])
 
-    _file = FILE_PATH + (rss.name + ".json")
-    change_data = await check_update.check_update(_file, new_data)
+    change_data = await check_update.check_update(db, new_data)
     return {"change_data": change_data}

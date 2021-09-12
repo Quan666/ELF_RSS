@@ -6,7 +6,9 @@ import os
 from nonebot import logger, on_metaevent
 from nonebot.adapters.cqhttp import Bot, Event, LifecycleMetaEvent
 from pathlib import Path
-from tinydb import TinyDB
+from tinydb import TinyDB, Query
+from tinydb.storages import JSONStorage
+from tinydb.middlewares import CachingMiddleware
 
 from .RSS import my_trigger as rt
 from .RSS import rss_class
@@ -15,6 +17,12 @@ from .config import config
 
 FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 JSON_PATH = FILE_PATH + "rss.json"
+
+
+# 精简 xxx.json (缓存) 中的字段
+def cache_filter(data: dict) -> dict:
+    keys = ["id", "link", "published", "updated", "title", "hash", "to_send", "count"]
+    return {k: data[k] for k in keys if k in data}
 
 
 # 将 xxx.json (缓存) 改造为 tinydb 数据库
@@ -31,15 +39,40 @@ def change_cache_json():
             os.remove(j)
             db = TinyDB(
                 j,
+                storage=CachingMiddleware(JSONStorage),
                 encoding="utf-8",
                 sort_keys=True,
                 indent=4,
                 ensure_ascii=False,
             )
 
+            result = []
             for i in entries:
                 i["hash"] = dict_hash(i)
-                db.insert(i)
+                i = cache_filter(i)
+                result.append(i)
+
+            db.insert_multiple(result)
+
+        else:
+            db = TinyDB(
+                j,
+                storage=CachingMiddleware(JSONStorage),
+                encoding="utf-8",
+                sort_keys=True,
+                indent=4,
+                ensure_ascii=False,
+            )
+
+            result = []
+            for i in db.all():
+                i = cache_filter(i)
+                result.append(i)
+
+            db.truncate()
+            db.insert_multiple(result)
+
+        db.close()
 
 
 # 将 rss.json 改造为 tinydb 数据库
@@ -58,6 +91,7 @@ def change_rss_json():
         os.remove(JSON_PATH)
         db = TinyDB(
             JSON_PATH,
+            storage=CachingMiddleware(JSONStorage),
             encoding="utf-8",
             sort_keys=True,
             indent=4,
@@ -66,6 +100,8 @@ def change_rss_json():
 
         for rss_json in rss_list_json:
             db.insert(rss_json)
+
+        db.close()
 
 
 async def start():
