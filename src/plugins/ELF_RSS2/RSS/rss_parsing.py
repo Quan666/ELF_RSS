@@ -67,7 +67,7 @@ async def start(rss: rss_class.Rss) -> None:
         return
 
     pr = ParsingRss(rss=rss)
-    await pr.start(new_rss=new_rss)
+    await pr.start(rss_name=rss.name, new_rss=new_rss)
 
 
 # 获取 RSS 并解析为 json ，失败重试

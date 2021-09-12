@@ -200,12 +200,12 @@ class ParsingRss:
         ]
 
     # 开始解析
-    async def start(self, new_rss: dict):
+    async def start(self, rss_name: str, new_rss: dict):
         # new_data 是完整的 rss 解析后的 dict
         # 前置处理
         rss_title = new_rss.get("feed").get("title")
         new_data = new_rss.get("entries")
-        _file = FILE_PATH + (rss_title + ".json")
+        _file = FILE_PATH + (rss_name + ".json")
         db = TinyDB(
             _file,
             storage=CachingMiddleware(JSONStorage),
