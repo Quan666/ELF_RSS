@@ -44,6 +44,9 @@ def change_cache_json():
 
 # 将 rss.json 改造为 tinydb 数据库
 def change_rss_json():
+    if not os.path.exists(JSON_PATH):
+        return
+
     with codecs.open(JSON_PATH, "r", "utf-8") as f:
         rss_list_json = json.load(f)
         if isinstance(rss_list_json, list):
