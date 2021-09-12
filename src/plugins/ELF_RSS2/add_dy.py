@@ -48,11 +48,11 @@ async def handle_rss_add(bot: Bot, event: Event, state: dict):
 
     async def add_group_or_user(_group_id, _user_id):
         if _group_id:
-            rss.add_group(group=str(_group_id))
+            rss.add_user_or_group(group=str(_group_id))
             await tr.add_job(rss)
             await RSS_ADD.send("👏 订阅到当前群组成功！")
         else:
-            rss.add_user(user=_user_id)
+            rss.add_user_or_group(user=_user_id)
             await tr.add_job(rss)
             await RSS_ADD.send("👏 订阅到当前账号成功！")
 

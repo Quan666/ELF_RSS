@@ -11,6 +11,7 @@ from ..config import config
 
 # 存储目录
 FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
+JSON_PATH = FILE_PATH + "rss.json"
 
 
 class Rss:
@@ -101,11 +102,11 @@ class Rss:
     @staticmethod
     def read_rss() -> list:
         # 如果文件不存在
-        if not os.path.isfile(str(FILE_PATH + "rss.json")):
+        if not os.path.isfile(JSON_PATH):
             return []
         rss_list = []
         db = TinyDB(
-            str(FILE_PATH + "rss.json"),
+            JSON_PATH,
             encoding="utf-8",
             sort_keys=True,
             indent=4,
@@ -131,27 +132,18 @@ class Rss:
                 return feed
         return None
 
-    # 添加订阅 QQ
-    def add_user(self, user: str):
-        if str(user) in self.user_id:
-            return
-        self.user_id.append(str(user))
+    # 添加订阅
+    def add_user_or_group(self, user: str = None, group: str = None):
+        if user:
+            if str(user) in self.user_id:
+                return
+            self.user_id.append(str(user))
+        else:
+            if str(group) in self.group_id:
+                return
+            self.group_id.append(str(group))
         db = TinyDB(
-            str(FILE_PATH + "rss.json"),
-            encoding="utf-8",
-            sort_keys=True,
-            indent=4,
-            ensure_ascii=False,
-        )
-        db.upsert(self.__dict__, Query().name == self.name)
-
-    # 添加订阅 群组
-    def add_group(self, group: str):
-        if str(group) in self.group_id:
-            return
-        self.group_id.append(str(group))
-        db = TinyDB(
-            str(FILE_PATH + "rss.json"),
+            JSON_PATH,
             encoding="utf-8",
             sort_keys=True,
             indent=4,
@@ -165,7 +157,7 @@ class Rss:
             return False
         self.group_id.remove(str(group))
         db = TinyDB(
-            str(FILE_PATH + "rss.json"),
+            JSON_PATH,
             encoding="utf-8",
             sort_keys=True,
             indent=4,
@@ -177,7 +169,7 @@ class Rss:
     # 删除整个订阅
     def delete_rss(self):
         db = TinyDB(
-            str(FILE_PATH + "rss.json"),
+            JSON_PATH,
             encoding="utf-8",
             sort_keys=True,
             indent=4,
@@ -188,7 +180,7 @@ class Rss:
 
     # 删除订阅json文件
     def delete_file(self):
-        this_file_path = str(FILE_PATH + self.name + ".json")
+        this_file_path = str(FILE_PATH + (self.name + ".json"))
         if os.path.exists(this_file_path):
             os.remove(this_file_path)
 
@@ -218,7 +210,7 @@ class Rss:
                         cookies[name] = value
                 self.cookies = cookies
                 db = TinyDB(
-                    str(FILE_PATH + "rss.json"),
+                    JSON_PATH,
                     encoding="utf-8",
                     sort_keys=True,
                     indent=4,
