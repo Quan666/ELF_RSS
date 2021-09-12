@@ -14,7 +14,6 @@ JSON_PATH = FILE_PATH + "rss.json"
 
 
 class Rss:
-
     def __init__(self):
         self.name = ""  # 订阅名
         self.url = ""  # 订阅地址

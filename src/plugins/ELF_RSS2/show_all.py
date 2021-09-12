@@ -40,7 +40,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
     if rss_name_search:
         rss_list = [
-            i for i in rss_list if re.search(rss_name_search, f"{i.name}|{i.url}", flags=re.I)
+            i
+            for i in rss_list
+            if re.search(rss_name_search, f"{i.name}|{i.url}", flags=re.I)
         ]
 
     if rss_list:
