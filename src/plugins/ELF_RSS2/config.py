@@ -14,7 +14,6 @@ class ELFConfig(BaseConfig):
     rsshub: AnyHttpUrl = "https://rsshub.app"
     rsshub_backup: List[AnyHttpUrl] = []
     db_cache_expire = 30
-    limit = 50
 
     zip_size: int = 2 * 1024
 

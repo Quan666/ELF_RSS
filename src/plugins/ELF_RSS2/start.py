@@ -1,34 +1,76 @@
 import codecs
+import json
 import nonebot
 import os
-import re
+
 from nonebot import logger, on_metaevent
 from nonebot.adapters.cqhttp import Bot, Event, LifecycleMetaEvent
 from pathlib import Path
+from tinydb import TinyDB
 
-from .config import config
-from .RSS import rss_class
 from .RSS import my_trigger as rt
+from .RSS import rss_class
+from .RSS.routes.Parsing.check_update import dict_hash
+from .config import config
 
 FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
+JSON_PATH = FILE_PATH + "rss.json"
 
 
-def hash_clear():
+# 将 xxx.json (缓存) 改造为 tinydb 数据库
+def change_cache_json():
     json_paths = list(Path(FILE_PATH).glob("*.json"))
 
     for j in [str(i) for i in json_paths if i != "rss.json"]:
 
         with codecs.open(j, "r", "utf-8") as f:
-            lines = f.readlines()
+            cache_json = json.load(f)
+            entries = cache_json.get("entries")
 
-        with codecs.open(j, "w", "utf-8") as f:
-            for line in lines:
-                if not re.search(r'"hash": "[0-9a-zA-Z]{32}",', line):
-                    f.write(line)
+        if entries:
+            os.remove(j)
+            db = TinyDB(
+                j,
+                encoding="utf-8",
+                sort_keys=True,
+                indent=4,
+                ensure_ascii=False,
+            )
+
+            for i in entries:
+                i["hash"] = dict_hash(i)
+                db.insert(i)
+
+
+# 将 rss.json 改造为 tinydb 数据库
+def change_rss_json():
+    with codecs.open(JSON_PATH, "r", "utf-8") as f:
+        rss_list_json = json.load(f)
+        if isinstance(rss_list_json, list):
+            _default = None
+        else:
+            _default = rss_list_json.get("_default")
+
+    if not _default:
+        os.remove(JSON_PATH)
+        db = TinyDB(
+            JSON_PATH,
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
+
+        for rss_json in rss_list_json:
+            db.insert(rss_json)
 
 
 async def start():
     (bot,) = nonebot.get_bots().values()
+
+    if config.version == "v2.4.0":
+        change_rss_json()
+        change_cache_json()
 
     try:
         rss = rss_class.Rss("", "", "-1", "-1")
@@ -49,8 +91,6 @@ async def start():
             ),
         )
         logger.info("ELF_RSS 订阅器启动成功！")
-        if config.version == "v2.2.7":
-            hash_clear()
     except Exception as e:
         await bot.send_msg(
             message_type="private",
@@ -64,6 +104,7 @@ async def start():
         )
         logger.info("第一次启动，你还没有订阅，记得添加哟！")
         logger.debug(e)
+        raise
 
 
 async def check_first_connect(bot: Bot, event: Event, state: dict) -> bool:

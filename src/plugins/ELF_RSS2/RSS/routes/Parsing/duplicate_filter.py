@@ -1,14 +1,21 @@
-import sqlite3
+import datetime
 import imagehash
+import os
+import sqlite3
+import time
 
 from PIL import Image, UnidentifiedImageError
 from io import BytesIO
 from nonebot.log import logger
+from pathlib import Path
 from pyquery import PyQuery as Pq
+from tinydb import TinyDB, Query
 
 from .handle_images import download_image
 from ... import rss_class
 from ....config import config
+
+FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
 
 # 对去重数据库进行管理
@@ -36,6 +43,34 @@ async def cache_db_manage(conn: sqlite3.connect) -> None:
     )
     cursor.close()
     conn.commit()
+
+
+# 对缓存 json 进行管理
+async def cache_json_manage(_file: str) -> None:
+    db = TinyDB(
+        _file,
+        encoding="utf-8",
+        sort_keys=True,
+        indent=4,
+        ensure_ascii=False,
+    )
+    expired_date = datetime.datetime.utcnow() - datetime.timedelta(
+        days=config.db_cache_expire
+    )
+    expired_timestamp = datetime.datetime.timestamp(expired_date)
+    # 移除超过 config.db_cache_expire 天的记录
+    db.remove(
+        (
+            Query().published_parsed.test(
+                lambda x: time.mktime(tuple(x)) <= expired_timestamp
+            )
+        )
+        | (
+            Query().updated_parsed.test(
+                lambda x: time.mktime(tuple(x)) <= expired_timestamp
+            )
+        )
+    )
 
 
 # 去重判断
