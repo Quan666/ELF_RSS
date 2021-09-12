@@ -76,7 +76,7 @@ async def start():
         change_cache_json()
 
     try:
-        rss = rss_class.Rss("", "", "-1", "-1")
+        rss = rss_class.Rss()
         rss_list = rss.read_rss()  # 读取list
         if not rss_list:
             raise Exception("第一次启动，你还没有订阅，记得添加哟！")

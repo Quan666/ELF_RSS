@@ -154,7 +154,7 @@ async def handle_rss_change(bot: Bot, event: Event, state: dict):
 
     name = change_list[0]
     change_list.pop(0)
-    rss = rss_class.Rss(name, "", "-1", "-1")
+    rss = rss_class.Rss()
     if not rss.find_name(name=name):
         await RSS_CHANGE.send(f"❌ 订阅 {name} 不存在！")
         return
