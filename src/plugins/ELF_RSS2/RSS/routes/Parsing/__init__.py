@@ -268,8 +268,8 @@ class ParsingRss:
 # 检查更新
 @ParsingBase.append_before_handler(priority=10)
 async def handle_check_update(rss: Rss, state: dict):
-    _file = FILE_PATH + (rss.name + ".json")
-    change_data = await check_update.check_update(_file, state.get("new_data"))
+    db = state.get("tinydb")
+    change_data = await check_update.check_update(db, state.get("new_data"))
     return {"change_data": change_data}
 
 
