@@ -13,9 +13,9 @@ from tinydb import TinyDB
 
 from . import rss_class
 from .routes.Parsing import ParsingRss, get_proxy
+from .routes.Parsing.cache_manage import cache_filter
 from .routes.Parsing.check_update import dict_hash
 from ..config import config
-from ..start import cache_filter
 
 FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
@@ -60,8 +60,7 @@ async def start(rss: rss_class.Rss) -> None:
         result = []
         for i in entries:
             i["hash"] = dict_hash(i)
-            i = cache_filter(i)
-            result.append(i)
+            result.append(cache_filter(i))
         db.insert_multiple(result)
         logger.info(f"{rss.name} 第一次抓取成功！")
         return

@@ -8,7 +8,7 @@ from nonebot import logger
 from pathlib import Path
 from pyquery import PyQuery as Pq
 from typing import List, Dict
-from tinydb import TinyDB, Query
+from tinydb import TinyDB
 from tinydb.storages import JSONStorage
 from tinydb.middlewares import CachingMiddleware
 
@@ -20,12 +20,14 @@ from .cache_manage import (
     duplicate_exists,
     insert_into_cache_db,
 )
+from .cache_manage import cache_filter
 from .handle_html_tag import handle_bbcode
 from .handle_html_tag import handle_html_tag
 from .handle_images import handle_img
 from .handle_translation import handle_translation
 from .utils import get_proxy
 from .utils import get_summary
+from .write_rss_data import write_item
 from ....RSS.rss_class import Rss
 from ....config import config
 
@@ -283,14 +285,14 @@ async def handle_check_update(rss: Rss, state: dict):
         # 检查是否包含屏蔽词
         if config.black_word and re.findall("|".join(config.black_word), summary):
             logger.info("内含屏蔽词，已经取消推送该消息")
-            db.upsert(item, Query().hash == str(item.get("hash")))
+            write_item(db, item)
             change_data.remove(item)
             continue
         # 检查是否匹配关键词 使用 down_torrent_keyword 字段,命名是历史遗留导致，实际应该是白名单关键字
         if rss.down_torrent_keyword and not re.search(
             rss.down_torrent_keyword, summary
         ):
-            db.upsert(item, Query().hash == str(item.get("hash")))
+            write_item(db, item)
             change_data.remove(item)
             continue
         # 检查是否匹配黑名单关键词 使用 black_keyword 字段
@@ -298,7 +300,7 @@ async def handle_check_update(rss: Rss, state: dict):
             re.search(rss.black_keyword, item["title"])
             or re.search(rss.black_keyword, summary)
         ):
-            db.upsert(item, Query().hash == str(item.get("hash")))
+            write_item(db, item)
             change_data.remove(item)
             continue
         # 检查是否只推送有图片的消息
@@ -306,7 +308,7 @@ async def handle_check_update(rss: Rss, state: dict):
             r"<img.+?>|\[img]", summary
         ):
             logger.info(f"{rss.name} 已开启仅图片/仅含有图片，该消息没有图片，将跳过")
-            db.upsert(item, Query().hash == str(item.get("hash")))
+            write_item(db, item)
             change_data.remove(item)
 
     return {"change_data": change_data}
@@ -340,7 +342,7 @@ async def handle_check_update(rss: Rss, state: dict):
             summary=summary,
         )
         if is_duplicate:
-            db.upsert(item, Query().hash == str(item.get("hash")))
+            write_item(db, item)
             delete.append(index)
         else:
             change_data[index]["image_hash"] = str(image_hash)
@@ -521,16 +523,15 @@ async def handle_message(
 
     # 发送消息并写入文件
     if await send_message.send_msg(rss=rss, msg=item_msg, item=item):
-        if item.get("to_send"):
-            item.pop("to_send")
-            item.pop("count")
-        db.upsert(item, Query().hash == str(item.get("hash")))
 
         if rss.duplicate_filter_mode:
-            image_hash = item["image_hash"]
             await insert_into_cache_db(
-                conn=state.get("conn"), item=item, image_hash=image_hash
+                conn=state.get("conn"), item=item, image_hash=item["image_hash"]
             )
+
+        if item.get("to_send"):
+            item.pop("to_send")
+        write_item(db, cache_filter(item))
 
         state["item_count"] += 1
     else:
@@ -539,7 +540,7 @@ async def handle_message(
             item["count"] = 1
         else:
             item["count"] += 1
-        db.upsert(item, Query().hash == str(item.get("hash")))
+        write_item(db, item)
 
     return ""
 
