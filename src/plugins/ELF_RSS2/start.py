@@ -7,9 +7,12 @@ from nonebot import logger, on_metaevent
 from nonebot.adapters.cqhttp import Bot, Event, LifecycleMetaEvent
 from pathlib import Path
 from tinydb import TinyDB
+from tinydb.storages import JSONStorage
+from tinydb.middlewares import CachingMiddleware
 
 from .RSS import my_trigger as rt
 from .RSS import rss_class
+from .RSS.routes.Parsing.cache_manage import cache_filter
 from .RSS.routes.Parsing.check_update import dict_hash
 from .config import config
 
@@ -20,8 +23,9 @@ JSON_PATH = FILE_PATH + "rss.json"
 # 将 xxx.json (缓存) 改造为 tinydb 数据库
 def change_cache_json():
     json_paths = list(Path(FILE_PATH).glob("*.json"))
+    cache_json_list = [str(i) for i in json_paths if not str(i).endswith("rss.json")]
 
-    for j in [str(i) for i in json_paths if i != "rss.json"]:
+    for j in cache_json_list:
 
         with codecs.open(j, "r", "utf-8") as f:
             cache_json = json.load(f)
@@ -31,15 +35,38 @@ def change_cache_json():
             os.remove(j)
             db = TinyDB(
                 j,
+                storage=CachingMiddleware(JSONStorage),
                 encoding="utf-8",
                 sort_keys=True,
                 indent=4,
                 ensure_ascii=False,
             )
 
+            result = []
             for i in entries:
                 i["hash"] = dict_hash(i)
-                db.insert(i)
+                result.append(cache_filter(i))
+
+            db.insert_multiple(result)
+            db.close()
+
+        else:
+            db = TinyDB(
+                j,
+                storage=CachingMiddleware(JSONStorage),
+                encoding="utf-8",
+                sort_keys=True,
+                indent=4,
+                ensure_ascii=False,
+            )
+
+            result = []
+            for i in db.all():
+                result.append(cache_filter(i))
+
+            db.truncate()
+            db.insert_multiple(result)
+            db.close()
 
 
 # 将 rss.json 改造为 tinydb 数据库
@@ -58,6 +85,7 @@ def change_rss_json():
         os.remove(JSON_PATH)
         db = TinyDB(
             JSON_PATH,
+            storage=CachingMiddleware(JSONStorage),
             encoding="utf-8",
             sort_keys=True,
             indent=4,
@@ -66,6 +94,8 @@ def change_rss_json():
 
         for rss_json in rss_list_json:
             db.insert(rss_json)
+
+        db.close()
 
 
 async def start():
@@ -76,7 +106,7 @@ async def start():
         change_cache_json()
 
     try:
-        rss = rss_class.Rss("", "", "-1", "-1")
+        rss = rss_class.Rss()
         rss_list = rss.read_rss()  # 读取list
         if not rss_list:
             raise Exception("第一次启动，你还没有订阅，记得添加哟！")

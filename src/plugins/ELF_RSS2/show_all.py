@@ -29,7 +29,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
-    rss = rss_class.Rss("", "", "-1", "-1")
+    rss = rss_class.Rss()
     if group_id:
         rss_list = rss.find_group(group=str(group_id))
         if not rss_list:
@@ -40,7 +40,9 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
     if rss_name_search:
         rss_list = [
-            i for i in rss_list if re.search(rss_name_search, f"{i.name}|{i.url}")
+            i
+            for i in rss_list
+            if re.search(rss_name_search, f"{i.name}|{i.url}", flags=re.I)
         ]
 
     if rss_list:

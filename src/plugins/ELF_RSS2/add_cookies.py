@@ -42,7 +42,7 @@ async def handle_add_cookies(bot: Bot, event: Event, state: dict):
 
     dy = rss_cookies.split(" ", 1)
 
-    rss = rss_class.Rss(name="", url="", user_id="-1", group_id="-1")
+    rss = rss_class.Rss()
     # 判断是否有该名称订阅
     try:
         name = dy[0]

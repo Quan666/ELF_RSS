@@ -43,7 +43,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
-    rss = rss_class.Rss("", "", "-1", "-1")
+    rss = rss_class.Rss()
     if rss_name:
         rss = rss.find_name(rss_name)
         if not rss:

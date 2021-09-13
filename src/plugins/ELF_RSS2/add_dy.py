@@ -38,7 +38,7 @@ async def handle_rss_add(bot: Bot, event: Event, state: dict):
 
     dy = rss_dy_link.split(" ")
 
-    rss = rss_class.Rss(name="", url="", user_id="-1", group_id="-1")
+    rss = rss_class.Rss()
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅
     try:
         name = dy[0]

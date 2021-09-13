@@ -29,14 +29,8 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 
 
 # 检查更新
-async def check_update(_file: str, new: list) -> list:
-    db = TinyDB(
-        _file,
-        encoding="utf-8",
-        sort_keys=True,
-        indent=4,
-        ensure_ascii=False,
-    )
+async def check_update(db: TinyDB, new: list) -> list:
+
     # 发送失败超过 3 次的消息不再发送
     to_send_list = db.search(
         (Query().to_send.exists()) & (Query().count.test(lambda x: x <= 3))

@@ -8,22 +8,26 @@ from nonebot import logger
 from pathlib import Path
 from pyquery import PyQuery as Pq
 from typing import List, Dict
+from tinydb import TinyDB
+from tinydb.storages import JSONStorage
+from tinydb.middlewares import CachingMiddleware
 
 from . import check_update, send_message
 from .download_torrent import down_torrent
-from .duplicate_filter import (
+from .cache_manage import (
     cache_db_manage,
     cache_json_manage,
     duplicate_exists,
     insert_into_cache_db,
 )
+from .cache_manage import cache_filter
 from .handle_html_tag import handle_bbcode
 from .handle_html_tag import handle_html_tag
 from .handle_images import handle_img
 from .handle_translation import handle_translation
-from .read_or_write_rss_data import write_item
 from .utils import get_proxy
 from .utils import get_summary
+from .write_rss_data import write_item
 from ....RSS.rss_class import Rss
 from ....config import config
 
@@ -198,15 +202,27 @@ class ParsingRss:
         ]
 
     # 开始解析
-    async def start(self, new_rss: dict):
+    async def start(self, rss_name: str, new_rss: dict):
         # new_data 是完整的 rss 解析后的 dict
         # 前置处理
+        rss_title = new_rss.get("feed").get("title")
+        new_data = new_rss.get("entries")
+        _file = FILE_PATH + (rss_name + ".json")
+        db = TinyDB(
+            _file,
+            storage=CachingMiddleware(JSONStorage),
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
         self.state.update(
             {
-                "rss_title": new_rss.get("feed").get("title"),
-                "new_data": new_rss.get("entries"),
+                "rss_title": rss_title,
+                "new_data": new_data,
                 "change_data": [],  # 更新的消息列表
                 "conn": None,  # 数据库连接
+                "tinydb": db,  # 缓存 json
             }
         )
         for h in self.before_handler:
@@ -254,8 +270,8 @@ class ParsingRss:
 # 检查更新
 @ParsingBase.append_before_handler(priority=10)
 async def handle_check_update(rss: Rss, state: dict):
-    _file = FILE_PATH + (rss.name + ".json")
-    change_data = await check_update.check_update(_file, state.get("new_data"))
+    db = state.get("tinydb")
+    change_data = await check_update.check_update(db, state.get("new_data"))
     return {"change_data": change_data}
 
 
@@ -263,19 +279,20 @@ async def handle_check_update(rss: Rss, state: dict):
 @ParsingBase.append_before_handler(priority=11)
 async def handle_check_update(rss: Rss, state: dict):
     change_data = state.get("change_data")
+    db = state.get("tinydb")
     for item in change_data.copy():
         summary = get_summary(item)
         # 检查是否包含屏蔽词
         if config.black_word and re.findall("|".join(config.black_word), summary):
             logger.info("内含屏蔽词，已经取消推送该消息")
-            write_item(name=rss.name, new_item=item)
+            write_item(db, item)
             change_data.remove(item)
             continue
         # 检查是否匹配关键词 使用 down_torrent_keyword 字段,命名是历史遗留导致，实际应该是白名单关键字
         if rss.down_torrent_keyword and not re.search(
             rss.down_torrent_keyword, summary
         ):
-            write_item(name=rss.name, new_item=item)
+            write_item(db, item)
             change_data.remove(item)
             continue
         # 检查是否匹配黑名单关键词 使用 black_keyword 字段
@@ -283,7 +300,7 @@ async def handle_check_update(rss: Rss, state: dict):
             re.search(rss.black_keyword, item["title"])
             or re.search(rss.black_keyword, summary)
         ):
-            write_item(name=rss.name, new_item=item)
+            write_item(db, item)
             change_data.remove(item)
             continue
         # 检查是否只推送有图片的消息
@@ -291,7 +308,7 @@ async def handle_check_update(rss: Rss, state: dict):
             r"<img.+?>|\[img]", summary
         ):
             logger.info(f"{rss.name} 已开启仅图片/仅含有图片，该消息没有图片，将跳过")
-            write_item(name=rss.name, new_item=item)
+            write_item(db, item)
             change_data.remove(item)
 
     return {"change_data": change_data}
@@ -302,6 +319,7 @@ async def handle_check_update(rss: Rss, state: dict):
 async def handle_check_update(rss: Rss, state: dict):
     change_data = state.get("change_data")
     conn = state.get("conn")
+    db = state.get("tinydb")
 
     # 检查是否启用去重 使用 duplicate_filter_mode 字段
     if not rss.duplicate_filter_mode:
@@ -312,7 +330,6 @@ async def handle_check_update(rss: Rss, state: dict):
         conn.set_trace_callback(logger.debug)
 
     await cache_db_manage(conn)
-    await cache_json_manage(FILE_PATH + (rss.name + ".json"))
 
     delete = []
     for index, item in enumerate(change_data):
@@ -325,7 +342,7 @@ async def handle_check_update(rss: Rss, state: dict):
             summary=summary,
         )
         if is_duplicate:
-            write_item(name=rss.name, new_item=item)
+            write_item(db, item)
             delete.append(index)
         else:
             change_data[index]["image_hash"] = str(image_hash)
@@ -502,18 +519,19 @@ async def handle_date(
 async def handle_message(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
+    db = state.get("tinydb")
+
     # 发送消息并写入文件
     if await send_message.send_msg(rss=rss, msg=item_msg, item=item):
-        if item.get("to_send"):
-            item.pop("to_send")
-            item.pop("count")
-        write_item(name=rss.name, new_item=item)
 
         if rss.duplicate_filter_mode:
-            image_hash = item["image_hash"]
             await insert_into_cache_db(
-                conn=state.get("conn"), item=item, image_hash=image_hash
+                conn=state.get("conn"), item=item, image_hash=item["image_hash"]
             )
+
+        if item.get("to_send"):
+            item.pop("to_send")
+        write_item(db, cache_filter(item))
 
         state["item_count"] += 1
     else:
@@ -522,7 +540,7 @@ async def handle_message(
             item["count"] = 1
         else:
             item["count"] += 1
-        write_item(name=rss.name, new_item=item)
+        write_item(db, item)
 
     return ""
 
@@ -531,6 +549,7 @@ async def handle_message(
 async def after_handler(rss: Rss, state: dict) -> dict:
     item_count = state.get("item_count")
     conn = state.get("conn")
+    db = state.get("tinydb")
 
     if item_count > 0:
         logger.info(f"{rss.name} 新消息推送完毕，共计：{item_count}")
@@ -539,5 +558,8 @@ async def after_handler(rss: Rss, state: dict) -> dict:
 
     if conn is not None:
         conn.close()
+
+    await cache_json_manage(db)
+    db.close()
 
     return {}

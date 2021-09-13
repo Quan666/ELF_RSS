@@ -13,6 +13,8 @@ from tinydb import TinyDB
 
 from . import rss_class
 from .routes.Parsing import ParsingRss, get_proxy
+from .routes.Parsing.cache_manage import cache_filter
+from .routes.Parsing.check_update import dict_hash
 from ..config import config
 
 FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
@@ -55,12 +57,16 @@ async def start(rss: rss_class.Rss) -> None:
             ensure_ascii=False,
         )
         entries = new_rss.get("entries")
-        db.insert_multiple(entries)
+        result = []
+        for i in entries:
+            i["hash"] = dict_hash(i)
+            result.append(cache_filter(i))
+        db.insert_multiple(result)
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
 
     pr = ParsingRss(rss=rss)
-    await pr.start(new_rss=new_rss)
+    await pr.start(rss_name=rss.name, new_rss=new_rss)
 
 
 # 获取 RSS 并解析为 json ，失败重试

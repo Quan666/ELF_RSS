@@ -32,7 +32,7 @@ async def handle_rss_delete(bot: Bot, event: Event, state: dict):
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
-    rss = rss_class.Rss("", "", "-1", "-1")
+    rss = rss_class.Rss()
     if rss.find_name(name=rss_name):
         rss = rss.find_name(name=rss_name)
     else:
