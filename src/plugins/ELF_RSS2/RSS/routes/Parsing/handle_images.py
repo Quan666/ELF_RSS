@@ -147,7 +147,7 @@ async def download_image_detail(url: str, proxy: bool):
                     url = await fuck_pixiv_cat(url=url)
                     return await download_image(url, proxy)
                 logger.error(
-                    f"[{url}] Content-Type: {pic.headers['Content-Type']} status_code: {pic.status_code}"
+                    f"[{url}] Content-Type: {pic.headers.get('Content-Type')} status_code: {pic.status_code}"
                 )
                 return None
             return pic.content

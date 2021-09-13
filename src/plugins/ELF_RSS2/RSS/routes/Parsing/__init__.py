@@ -531,7 +531,6 @@ async def handle_message(
 
         if item.get("to_send"):
             item.pop("to_send")
-        write_item(db, cache_filter(item))
 
         state["item_count"] += 1
     else:
@@ -540,7 +539,8 @@ async def handle_message(
             item["count"] = 1
         else:
             item["count"] += 1
-        write_item(db, item)
+
+    write_item(db, item)
 
     return ""
 

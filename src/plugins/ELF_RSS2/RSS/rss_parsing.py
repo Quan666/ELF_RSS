@@ -10,6 +10,8 @@ from nonebot.log import logger
 from pathlib import Path
 from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError, TryAgain
 from tinydb import TinyDB
+from tinydb.storages import JSONStorage
+from tinydb.middlewares import CachingMiddleware
 
 from . import rss_class
 from .routes.Parsing import ParsingRss, get_proxy
@@ -51,6 +53,7 @@ async def start(rss: rss_class.Rss) -> None:
     if not os.path.isfile(_file):
         db = TinyDB(
             _file,
+            storage=CachingMiddleware(JSONStorage),
             encoding="utf-8",
             sort_keys=True,
             indent=4,
@@ -62,6 +65,7 @@ async def start(rss: rss_class.Rss) -> None:
             i["hash"] = dict_hash(i)
             result.append(cache_filter(i))
         db.insert_multiple(result)
+        db.close()
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
 
