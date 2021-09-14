@@ -50,7 +50,7 @@ async def start(rss: rss_class.Rss) -> None:
         return
     # 检查是否存在rss记录
     _file = FILE_PATH + (rss.name + ".json")
-    if not os.path.isfile(_file):
+    if not os.path.exists(_file):
         db = TinyDB(
             _file,
             storage=CachingMiddleware(JSONStorage),

@@ -50,7 +50,7 @@ class Rss:
     @staticmethod
     def read_rss() -> list:
         # 如果文件不存在
-        if not os.path.isfile(JSON_PATH):
+        if not os.path.exists(JSON_PATH):
             return []
         rss_list = []
         db = TinyDB(
