@@ -123,8 +123,7 @@ class Rss:
     # 删除订阅json文件
     def delete_file(self):
         this_file_path = DATA_PATH / (self.name + ".json")
-        if Path.exists(this_file_path):
-            Path.unlink(this_file_path)
+        Path.unlink(this_file_path, missing_ok=True)
 
     def find_group(self, group: str) -> list:
         rss_old = self.read_rss()
