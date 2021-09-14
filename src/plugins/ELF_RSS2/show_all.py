@@ -9,8 +9,8 @@ from .RSS import rss_class
 from .show_dy import handle_rss_list
 
 RSS_SHOW_ALL = on_command(
-    "showall",
-    aliases={"selectall", "所有订阅"},
+    "show_all",
+    aliases={"showall", "select_all", "selectall", "所有订阅"},
     rule=to_me(),
     priority=5,
     permission=su.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER,
