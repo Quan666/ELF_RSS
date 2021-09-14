@@ -1,9 +1,13 @@
 import os
-from typing import List, Any
 
 from nonebot import get_driver, logger
 from nonebot.config import BaseConfig
+from pathlib import Path
 from pydantic import AnyHttpUrl, Extra
+from typing import List, Any
+
+DATA_PATH = str(Path.cwd()) + os.sep + "data" + os.sep
+JSON_PATH = DATA_PATH + "rss.json"
 
 
 class ELFConfig(BaseConfig):

@@ -2,15 +2,11 @@ import os
 import re
 
 from nonebot.log import logger
-from pathlib import Path
 from tinydb import TinyDB, Query
 from tinydb.operations import set
 
 from ..config import config
-
-# 存储目录
-FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
-JSON_PATH = FILE_PATH + "rss.json"
+from ..config import DATA_PATH, JSON_PATH
 
 
 class Rss:
@@ -50,7 +46,7 @@ class Rss:
     @staticmethod
     def read_rss() -> list:
         # 如果文件不存在
-        if not os.path.isfile(JSON_PATH):
+        if not os.path.exists(JSON_PATH):
             return []
         rss_list = []
         db = TinyDB(
@@ -126,7 +122,7 @@ class Rss:
 
     # 删除订阅json文件
     def delete_file(self):
-        this_file_path = str(FILE_PATH + (self.name + ".json"))
+        this_file_path = DATA_PATH + (self.name + ".json")
         if os.path.exists(this_file_path):
             os.remove(this_file_path)
 

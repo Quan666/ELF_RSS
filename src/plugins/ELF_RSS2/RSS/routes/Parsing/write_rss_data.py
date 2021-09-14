@@ -1,11 +1,6 @@
-import os
-
-from pathlib import Path
 from tinydb import TinyDB, Query
 
 from .cache_manage import cache_filter
-
-FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
 
 # 写入缓存 json

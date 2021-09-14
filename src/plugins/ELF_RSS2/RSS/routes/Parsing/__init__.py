@@ -1,11 +1,9 @@
 import difflib
-import os.path
 import re
 import sqlite3
 import time
 
 from nonebot import logger
-from pathlib import Path
 from pyquery import PyQuery as Pq
 from typing import List, Dict
 from tinydb import TinyDB
@@ -30,8 +28,7 @@ from .utils import get_summary
 from .write_rss_data import write_item
 from ....RSS.rss_class import Rss
 from ....config import config
-
-FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
+from ....config import DATA_PATH
 
 
 # 订阅器启动的时候将解析器注册到rss实例类？，避免每次推送时再匹配
@@ -207,7 +204,7 @@ class ParsingRss:
         # 前置处理
         rss_title = new_rss.get("feed").get("title")
         new_data = new_rss.get("entries")
-        _file = FILE_PATH + (rss_name + ".json")
+        _file = DATA_PATH + (rss_name + ".json")
         db = TinyDB(
             _file,
             storage=CachingMiddleware(JSONStorage),
@@ -326,7 +323,7 @@ async def handle_check_update(rss: Rss, state: dict):
         return {"change_data": change_data}
 
     if not conn:
-        conn = sqlite3.connect(FILE_PATH + "cache.db")
+        conn = sqlite3.connect(DATA_PATH + "cache.db")
         conn.set_trace_callback(logger.debug)
 
     await cache_db_manage(conn)
