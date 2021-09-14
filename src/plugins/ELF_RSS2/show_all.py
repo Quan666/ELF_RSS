@@ -21,9 +21,9 @@ RSS_SHOW_ALL = on_command(
 async def handle_first_receive(bot: Bot, event: Event, state: dict):
     args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
     if args:
-        rss_name_search = unescape(args)  # 如果用户发送了参数则直接赋值
+        search_keyword = unescape(args)  # 如果用户发送了参数则直接赋值
     else:
-        rss_name_search = None
+        search_keyword = None
 
     group_id = None
     if isinstance(event, GroupMessageEvent):
@@ -38,15 +38,24 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     else:
         rss_list = rss.read_rss()
 
-    if rss_name_search:
-        rss_list = [
-            i
-            for i in rss_list
-            if re.search(rss_name_search, f"{i.name}|{i.url}", flags=re.I)
-        ]
+    result = []
+    if search_keyword:
+        for i in rss_list:
+            test = re.search(search_keyword, i.name, flags=re.I) or re.search(
+                search_keyword, i.url, flags=re.I
+            )
+            if not group_id and search_keyword.isdigit():
+                if i.user_id:
+                    test = test or search_keyword in i.user_id
+                if i.group_id:
+                    test = test or search_keyword in i.group_id
+            if test:
+                result.append(i)
+    else:
+        result = rss_list
 
-    if rss_list:
-        msg_str = await handle_rss_list(rss_list)
+    if result:
+        msg_str = await handle_rss_list(result)
         await RSS_SHOW_ALL.send(msg_str)
     else:
         await RSS_SHOW_ALL.send("❌ 当前没有任何订阅！")
