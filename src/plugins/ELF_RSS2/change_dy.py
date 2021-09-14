@@ -36,7 +36,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
             "\n如:"
             "\ntest qq=,123,234 qun=-1"
             "\n对应参数:"
-            "\n订阅链接-url QQ-qq 群-qun 更新频率-time"
+            "\n订阅名-name 订阅链接-url QQ-qq 群-qun 更新频率-time"
             "\n代理-proxy 翻译-tl 仅title-ot，仅图片-op，仅含有图片-ohp"
             "\n下载种子-downopen 白名单关键词-wkey 黑名单关键词-bkey 种子上传到群-upgroup"
             "\n去重模式-mode"
@@ -75,9 +75,10 @@ def handle_property(value: str, property_list: list) -> list:
 
 
 attribute_dict = {
+    "name": "name",
+    "url": "url",
     "qq": "user_id",
     "qun": "group_id",
-    "url": "url",
     "time": "time",
     "proxy": "img_proxy",
     "tl": "translation",
@@ -100,8 +101,10 @@ attribute_dict = {
 def handle_change_list(
     rss: rss_class.Rss, key_to_change: str, value_to_change: str, group_id: int
 ):
+    if key_to_change == "name":
+        rss.rename_file(value_to_change + ".json")
     # 暂时禁止群管理员修改 QQ / 群号，如要取消订阅可以使用 deldy 命令
-    if (key_to_change in ["qq", "qun"] and not group_id) or key_to_change == "mode":
+    elif (key_to_change in ["qq", "qun"] and not group_id) or key_to_change == "mode":
         value_to_change = handle_property(
             value_to_change, getattr(rss, attribute_dict[key_to_change])
         )
