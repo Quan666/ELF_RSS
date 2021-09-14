@@ -1,12 +1,7 @@
-import os
 import re
-
-from pathlib import Path
 
 from .Parsing import ParsingBase, check_update
 from ..rss_class import Rss
-
-FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
 
 # 检查更新

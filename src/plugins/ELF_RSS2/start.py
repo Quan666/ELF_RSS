@@ -16,13 +16,13 @@ from .RSS.routes.Parsing.cache_manage import cache_filter
 from .RSS.routes.Parsing.check_update import dict_hash
 from .config import config
 
-FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
-JSON_PATH = FILE_PATH + "rss.json"
+DATA_PATH = str(Path.cwd()) + os.sep + "data" + os.sep
+JSON_PATH = DATA_PATH + "rss.json"
 
 
 # 将 xxx.json (缓存) 改造为 tinydb 数据库
 def change_cache_json():
-    json_paths = list(Path(FILE_PATH).glob("*.json"))
+    json_paths = list(Path(DATA_PATH).glob("*.json"))
     cache_json_list = [str(i) for i in json_paths if not str(i).endswith("rss.json")]
 
     for j in cache_json_list:

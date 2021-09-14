@@ -1,19 +1,15 @@
 import imagehash
-import os
 import sqlite3
 
 from PIL import Image, UnidentifiedImageError
 from io import BytesIO
 from nonebot.log import logger
-from pathlib import Path
 from pyquery import PyQuery as Pq
 from tinydb import TinyDB
 
 from .handle_images import download_image
 from ... import rss_class
 from ....config import config
-
-FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
 
 
 # 精简 xxx.json (缓存) 中的字段
