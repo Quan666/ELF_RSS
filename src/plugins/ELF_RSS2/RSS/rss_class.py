@@ -6,7 +6,7 @@ from tinydb import TinyDB, Query
 from tinydb.operations import set
 
 from ..config import config
-from ..start import DATA_PATH, JSON_PATH
+from ..config import DATA_PATH, JSON_PATH
 
 
 class Rss:

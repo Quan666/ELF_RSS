@@ -3,8 +3,8 @@ from nonebot import permission as su
 from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission, unescape
 from nonebot.rule import to_me
 
-from .RSS import rss_class
 from .RSS import my_trigger as tr
+from .RSS import rss_class
 
 RSS_ADD = on_command(
     "add",

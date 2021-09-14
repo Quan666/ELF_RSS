@@ -17,7 +17,7 @@ from .routes.Parsing import ParsingRss, get_proxy
 from .routes.Parsing.cache_manage import cache_filter
 from .routes.Parsing.check_update import dict_hash
 from ..config import config
-from ..start import DATA_PATH
+from ..config import DATA_PATH
 
 
 STATUS_CODE = [200, 301, 302]

@@ -2,6 +2,7 @@ from nonebot import on_command
 from nonebot import permission as su
 from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 from nonebot.rule import to_me
+
 from .RSS import my_trigger as tr
 from .RSS import rss_class
 

@@ -9,9 +9,9 @@ from nonebot.log import logger
 from nonebot.rule import to_me
 from tinydb import TinyDB, Query
 
-from .RSS import rss_class
 from .RSS import my_trigger as tr
-from .start import JSON_PATH
+from .RSS import rss_class
+from .config import JSON_PATH
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 

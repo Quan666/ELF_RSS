@@ -28,7 +28,7 @@ from .utils import get_summary
 from .write_rss_data import write_item
 from ....RSS.rss_class import Rss
 from ....config import config
-from ....start import DATA_PATH
+from ....config import DATA_PATH
 
 
 # 订阅器启动的时候将解析器注册到rss实例类？，避免每次推送时再匹配
