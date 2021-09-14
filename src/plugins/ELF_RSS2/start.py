@@ -1,7 +1,5 @@
-import codecs
 import json
 import nonebot
-import os
 
 from nonebot import logger, on_metaevent
 from nonebot.adapters.cqhttp import Bot, Event, LifecycleMetaEvent
@@ -19,19 +17,18 @@ from .config import config, DATA_PATH, JSON_PATH
 
 # 将 xxx.json (缓存) 改造为 tinydb 数据库
 def change_cache_json():
-    json_paths = list(Path(DATA_PATH).glob("*.json"))
-    cache_json_list = [str(i) for i in json_paths if not str(i).endswith("rss.json")]
+    for cache_path in DATA_PATH.glob("*.json"):
 
-    for j in cache_json_list:
+        if cache_path.name == "rss.json":
+            continue
 
-        with codecs.open(j, "r", "utf-8") as f:
-            cache_json = json.load(f)
-            entries = cache_json.get("entries")
+        cache_json = json.loads(cache_path.read_bytes())
+        entries = cache_json.get("entries")
 
         if entries:
-            os.remove(j)
+            Path.unlink(cache_path)
             db = TinyDB(
-                j,
+                cache_path,
                 storage=CachingMiddleware(JSONStorage),
                 encoding="utf-8",
                 sort_keys=True,
@@ -49,7 +46,7 @@ def change_cache_json():
 
         else:
             db = TinyDB(
-                j,
+                cache_path,
                 storage=CachingMiddleware(JSONStorage),
                 encoding="utf-8",
                 sort_keys=True,
@@ -68,18 +65,17 @@ def change_cache_json():
 
 # 将 rss.json 改造为 tinydb 数据库
 def change_rss_json():
-    if not os.path.exists(JSON_PATH):
+    if not Path.exists(JSON_PATH):
         return
 
-    with codecs.open(JSON_PATH, "r", "utf-8") as f:
-        rss_list_json = json.load(f)
-        if isinstance(rss_list_json, list):
-            _default = None
-        else:
-            _default = rss_list_json.get("_default")
+    rss_list_json = json.loads(JSON_PATH.read_bytes())
+    if isinstance(rss_list_json, list):
+        _default = None
+    else:
+        _default = rss_list_json.get("_default")
 
     if not _default:
-        os.remove(JSON_PATH)
+        Path.unlink(JSON_PATH)
         db = TinyDB(
             JSON_PATH,
             storage=CachingMiddleware(JSONStorage),

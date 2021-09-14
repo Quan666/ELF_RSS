@@ -3,10 +3,10 @@
 import asyncio
 import feedparser
 import httpx
-import os
 import re
 
 from nonebot.log import logger
+from pathlib import Path
 from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError, TryAgain
 from tinydb import TinyDB
 from tinydb.storages import JSONStorage
@@ -47,8 +47,8 @@ async def start(rss: rss_class.Rss) -> None:
         logger.error(f"{rss.name}[{rss.get_url()}]抓取失败！已达最大重试次数！请检查订阅地址{cookies_str}！")
         return
     # 检查是否存在rss记录
-    _file = DATA_PATH + (rss.name + ".json")
-    if not os.path.exists(_file):
+    _file = DATA_PATH / (rss.name + ".json")
+    if not Path.exists(_file):
         db = TinyDB(
             _file,
             storage=CachingMiddleware(JSONStorage),

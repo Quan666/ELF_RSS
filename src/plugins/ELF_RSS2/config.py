@@ -6,8 +6,8 @@ from pathlib import Path
 from pydantic import AnyHttpUrl, Extra
 from typing import List, Any
 
-DATA_PATH = str(Path.cwd()) + os.sep + "data" + os.sep
-JSON_PATH = DATA_PATH + "rss.json"
+DATA_PATH = Path.cwd() / "data"
+JSON_PATH = DATA_PATH / "rss.json"
 
 
 class ELFConfig(BaseConfig):

@@ -204,7 +204,7 @@ class ParsingRss:
         # 前置处理
         rss_title = new_rss.get("feed").get("title")
         new_data = new_rss.get("entries")
-        _file = DATA_PATH + (rss_name + ".json")
+        _file = DATA_PATH / (rss_name + ".json")
         db = TinyDB(
             _file,
             storage=CachingMiddleware(JSONStorage),
@@ -323,7 +323,7 @@ async def handle_check_update(rss: Rss, state: dict):
         return {"change_data": change_data}
 
     if not conn:
-        conn = sqlite3.connect(DATA_PATH + "cache.db")
+        conn = sqlite3.connect(DATA_PATH / "cache.db")
         conn.set_trace_callback(logger.debug)
 
     await cache_db_manage(conn)
