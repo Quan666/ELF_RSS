@@ -105,8 +105,6 @@ def handle_change_list(
         value_to_change = handle_property(
             value_to_change, getattr(rss, attribute_dict[key_to_change])
         )
-    elif key_to_change == "url":
-        rss.delete_file()
     elif key_to_change == "time":
         if not re.search(r"[_*/,-]", value_to_change):
             if int(float(value_to_change)) < 1:
