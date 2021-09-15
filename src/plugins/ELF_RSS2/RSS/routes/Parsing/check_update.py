@@ -1,9 +1,8 @@
 import hashlib
+import time
 
 from tinydb import TinyDB, Query
 from typing import Dict, Any
-
-from .handle_date import handle_date
 
 
 # 对 dict 对象计算哈希值，供后续比较
@@ -33,11 +32,13 @@ async def check_update(db: TinyDB, new: list) -> list:
             to_send_list.append(i)
 
     # 对结果按照发布时间排序
-    result_with_date = [
-        (await handle_date(i.get("published_parsed", i.get("published_parsed"))), i)
-        for i in to_send_list
-    ]
-    result_with_date.sort()
-    result = [i for key, i in result_with_date]
+    to_send_list.sort(key=get_item_timestamp)
 
-    return result
+    return to_send_list
+
+
+def get_item_timestamp(item: dict) -> float:
+    date = item.get("published_parsed", item.get("updated_parsed"))
+    if not isinstance(date, tuple):
+        date = tuple(date)
+    return time.mktime(date)
