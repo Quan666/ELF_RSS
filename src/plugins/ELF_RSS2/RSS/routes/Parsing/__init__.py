@@ -1,7 +1,6 @@
 import difflib
 import re
 import sqlite3
-import time
 
 from nonebot import logger
 from pyquery import PyQuery as Pq
@@ -19,6 +18,7 @@ from .cache_manage import (
     insert_into_cache_db,
 )
 from .cache_manage import cache_filter
+from .handle_date import handle_date as hd
 from .handle_html_tag import handle_bbcode
 from .handle_html_tag import handle_html_tag
 from .handle_images import handle_img
@@ -495,20 +495,8 @@ async def handle_torrent(
 async def handle_date(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
-    date = tuple(
-        item.get("updated_parsed")
-        if item.get("updated_parsed")
-        else item.get("published_parsed")
-    )
-    if date:
-        rss_time = time.mktime(date)
-        # 时差处理，待改进
-        if rss_time + 28800.0 <= time.time():
-            rss_time += 28800.0
-        return "日期：" + time.strftime("%m月%d日 %H:%M:%S", time.localtime(rss_time))
-    # 没有日期的情况，以当前时间
-    else:
-        return "日期：" + time.strftime("%m月%d日 %H:%M:%S", time.localtime())
+    date = tuple(item.get("published_parsed", item.get("updated_parsed")))
+    return await hd(date)
 
 
 # 发送消息
