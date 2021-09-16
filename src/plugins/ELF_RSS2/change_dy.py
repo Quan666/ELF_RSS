@@ -76,7 +76,6 @@ async def handle_change_list(
     if key_to_change == "name":
         await tr.delete_job(rss)
         rss.rename_file(DATA_PATH / (value_to_change + ".json"))
-    # 暂时禁止群管理员修改 QQ / 群号，如要取消订阅可以使用 deldy 命令
     elif (key_to_change in ["qq", "qun"] and not group_id) or key_to_change == "mode":
         value_to_change = handle_property(
             value_to_change, getattr(rss, attribute_dict[key_to_change])
@@ -152,10 +151,14 @@ async def handle_rss_change(bot: Bot, event: Event, state: dict):
     rss_list = list(filter(lambda x: x is not None, rss_list))
 
     if group_id:
+        if re.search(" (qq|qun)=", change_info):
+            await RSS_CHANGE.send("❌ 禁止在群组中修改 QQ号 / 群号！如要取消订阅请使用 deldy 命令！")
+            return
         rss_list = list(filter(lambda x: str(group_id) in x.group_id, rss_list))
 
     if not rss_list:
         await RSS_CHANGE.send("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组无权操作")
+        return
     else:
         if len(rss_list) > 1 and " name=" in change_info:
             await RSS_CHANGE.send("❌ 禁止将多个订阅批量改名！会因为名称相同起冲突！")
