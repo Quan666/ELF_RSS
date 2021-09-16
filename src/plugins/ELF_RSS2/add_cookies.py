@@ -22,22 +22,19 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
         state["ADD_COOKIES"] = unescape(args)  # 如果用户发送了参数则直接赋值
 
 
-# 如果只有名称就把该 名称订阅 订阅到当前账号或群组
-
-
-@ADD_COOKIES.got(
-    "ADD_COOKIES",
-    prompt=(
-        "请输入：\n"
-        "名称 cookies\n"
-        "空格分割\n"
-        "获取方式：\n"
-        "PC端 chrome 浏览器按 F12\n"
-        "找到Console选项卡，输入:\n"
-        "document.cookie\n"
-        "输出的字符串就是了"
-    ),
+prompt = (
+    "请输入：\n"
+    "名称 cookies\n"
+    "空格分割\n"
+    "获取方式：\n"
+    "PC端 chrome 浏览器按 F12\n"
+    "找到Console选项卡，输入:\n"
+    "document.cookie\n"
+    "输出的字符串就是了"
 )
+
+
+@ADD_COOKIES.got("ADD_COOKIES", prompt=prompt)
 async def handle_add_cookies(bot: Bot, event: Event, state: dict):
     rss_cookies = unescape(state["ADD_COOKIES"])
 

@@ -22,13 +22,13 @@ class Rss:
         self.only_pic = False  # 仅图片
         self.only_has_pic = False  # 仅含有图片
         self.cookies = ""
-        self.down_torrent: bool = False  # 是否下载种子
-        self.down_torrent_keyword: str = ""  # 过滤关键字，支持正则
-        self.black_keyword: str = ""  # 黑名单关键词
-        self.is_open_upload_group: bool = True  # 默认开启上传到群
-        self.duplicate_filter_mode: [str] = None  # 去重模式
-        self.max_image_number: int = 0  # 图片数量限制，防止消息太长刷屏
-        self.content_to_remove: [str] = None  # 正文待移除内容，支持正则
+        self.down_torrent = False  # 是否下载种子
+        self.down_torrent_keyword = ""  # 过滤关键字，支持正则
+        self.black_keyword = ""  # 黑名单关键词
+        self.is_open_upload_group = True  # 默认开启上传到群
+        self.duplicate_filter_mode = None  # 去重模式
+        self.max_image_number = 0  # 图片数量限制，防止消息太长刷屏
+        self.content_to_remove = None  # 正文待移除内容，支持正则
         self.stop = False  # 停止更新
 
     # 返回订阅链接
@@ -123,7 +123,8 @@ class Rss:
     # 重命名订阅缓存 json 文件
     def rename_file(self, target: str):
         this_file_path = DATA_PATH / (self.name + ".json")
-        this_file_path.rename(target)
+        if Path.exists(this_file_path):
+            this_file_path.rename(target)
 
     # 删除订阅缓存 json 文件
     def delete_file(self):
