@@ -36,11 +36,11 @@
 
 > 注意：推荐 Python 3.8.3+ 版本 Windows版安装包下载地址：[https://www.python.org/ftp/python/3.8.3/python-3.8.3-amd64.exe](https://www.python.org/ftp/python/3.8.3/python-3.8.3-amd64.exe)
 >
-> * [更新日志](docs/更新日志.md)
+> * [部署教程](docs/部署教程.md)
 > * [使用教程](docs/2.0%20使用教程.md)
 > * [使用教程 旧版](docs/1.0%20使用教程.md)
-> * [部署教程](docs/部署教程.md)
 > * [常见问题](docs/常见问题.md)
+> * [更新日志](docs/更新日志.md)
 
 ## 效果预览
 
