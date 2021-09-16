@@ -4,13 +4,11 @@ import sqlite3
 
 from nonebot import logger
 from pyquery import PyQuery as Pq
-from typing import List, Dict
 from tinydb import TinyDB
-from tinydb.storages import JSONStorage
 from tinydb.middlewares import CachingMiddleware
+from tinydb.storages import JSONStorage
+from typing import List, Dict
 
-from . import check_update, send_message
-from .download_torrent import down_torrent
 from .cache_manage import (
     cache_db_manage,
     cache_json_manage,
@@ -18,11 +16,14 @@ from .cache_manage import (
     insert_into_cache_db,
 )
 from .cache_manage import cache_filter
+from .check_update import check_update
+from .download_torrent import down_torrent
 from .handle_date import handle_date as hd
 from .handle_html_tag import handle_bbcode
 from .handle_html_tag import handle_html_tag
 from .handle_images import handle_img
 from .handle_translation import handle_translation
+from .send_message import send_msg
 from .utils import get_proxy
 from .utils import get_summary
 from .write_rss_data import write_item
@@ -268,7 +269,7 @@ class ParsingRss:
 @ParsingBase.append_before_handler(priority=10)
 async def handle_check_update(rss: Rss, state: dict):
     db = state.get("tinydb")
-    change_data = await check_update.check_update(db, state.get("new_data"))
+    change_data = await check_update(db, state.get("new_data"))
     return {"change_data": change_data}
 
 
@@ -507,7 +508,7 @@ async def handle_message(
     db = state.get("tinydb")
 
     # 发送消息并写入文件
-    if await send_message.send_msg(rss=rss, msg=item_msg, item=item):
+    if await send_msg(rss=rss, msg=item_msg, item=item):
 
         if rss.duplicate_filter_mode:
             await insert_into_cache_db(
