@@ -26,8 +26,6 @@ def cache_filter(data: dict) -> dict:
         keys += [
             "content",
             "summary",
-            "published_parsed",
-            "updated_parsed",
             "to_send",
             "count",
         ]

@@ -1,7 +1,9 @@
+import arrow
 import difflib
 import re
 import sqlite3
 
+from email.utils import parsedate_to_datetime
 from nonebot import logger
 from pyquery import PyQuery as Pq
 from tinydb import TinyDB
@@ -18,7 +20,6 @@ from .cache_manage import (
 from .cache_manage import cache_filter
 from .check_update import check_update
 from .download_torrent import down_torrent
-from .handle_date import handle_date as hd
 from .handle_html_tag import handle_bbcode
 from .handle_html_tag import handle_html_tag
 from .handle_images import handle_img
@@ -496,8 +497,14 @@ async def handle_torrent(
 async def handle_date(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
-    date = tuple(item.get("published_parsed", item.get("updated_parsed")))
-    return await hd(date)
+    date = item.get("published", item.get("updated"))
+    try:
+        date = parsedate_to_datetime(date)
+    except TypeError:
+        pass
+    finally:
+        date = arrow.get(date).to("Asia/Shanghai")
+    return f"日期：{date.format('YYYY年MM月DD日 HH:mm:ss')}"
 
 
 # 发送消息

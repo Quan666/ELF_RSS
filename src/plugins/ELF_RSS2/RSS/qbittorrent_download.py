@@ -1,6 +1,6 @@
+import arrow
 import asyncio
 import base64
-import datetime
 import re
 
 import httpx
@@ -156,7 +156,7 @@ async def start_down(url: str, group_ids: list, name: str, proxy=None) -> str:
     )
     down_info[info["hash"]] = {
         "status": DOWN_STATUS_DOWNING,
-        "start_time": datetime.datetime.now(),  # 下载开始时间
+        "start_time": arrow.now(),  # 下载开始时间
         "downing_tips_msg_id": [],  # 下载中通知群上一条通知的信息，用于撤回，防止刷屏
     }
     return info["hash"]
@@ -171,8 +171,10 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
     files = qb.get_torrent_files(hash_str)
     bot = nonebot.get_bot()
     if info["total_downloaded"] - info["total_size"] >= 0.000000:
-        all_time = (datetime.datetime.now() - down_info[hash_str]["start_time"]).seconds
-        await send_msg(f"👏 {name}\nHash: {hash_str} \n下载完成！耗时：{all_time} s")
+        all_time = str(arrow.now() - down_info[hash_str]["start_time"]).split(".", 2)[
+            0
+        ]  # e.g.: 3:02:01
+        await send_msg(f"👏 {name}\nHash: {hash_str} \n下载完成！耗时：{all_time}")
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOADING
         for group_id in group_ids:
             for tmp in files:

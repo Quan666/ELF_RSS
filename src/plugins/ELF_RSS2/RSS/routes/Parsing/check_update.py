@@ -1,5 +1,8 @@
+import arrow
 import hashlib
-import time
+
+from arrow import Arrow
+from email.utils import parsedate_to_datetime
 
 from tinydb import TinyDB, Query
 from typing import Dict, Any
@@ -32,13 +35,17 @@ async def check_update(db: TinyDB, new: list) -> list:
             to_send_list.append(i)
 
     # 对结果按照发布时间排序
-    to_send_list.sort(key=get_item_timestamp)
+    to_send_list.sort(key=get_item_date)
 
     return to_send_list
 
 
-def get_item_timestamp(item: dict) -> float:
-    date = item.get("published_parsed", item.get("updated_parsed"))
-    if not isinstance(date, tuple):
-        date = tuple(date)
-    return time.mktime(date)
+def get_item_date(item: dict) -> Arrow:
+    date = item.get("published", item.get("updated"))
+    try:
+        date = parsedate_to_datetime(date)
+    except TypeError:
+        pass
+    finally:
+        date = arrow.get(date)
+    return date
