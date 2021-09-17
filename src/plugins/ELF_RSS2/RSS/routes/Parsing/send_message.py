@@ -13,9 +13,9 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
     flag = False
     if not msg:
         return False
-    bot_qq = get_bot_qq(bot)
+    bot_qq = await get_bot_qq(bot)
     if rss.user_id:
-        friend_list = get_bot_friend_list(bot)
+        friend_list = await get_bot_friend_list(bot)
         for user_id in rss.user_id:
             if int(user_id) not in friend_list:
                 logger.error(f"QQ号[{user_id}]不是Bot[{bot_qq}]的好友 链接：[{item['link']}]")
@@ -31,7 +31,7 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                 logger.error(f"E: {e} 链接：[{item['link']}]")
 
     if rss.group_id:
-        group_list = get_bot_group_list(bot)
+        group_list = await get_bot_group_list(bot)
         for group_id in rss.group_id:
             if int(group_id) not in group_list:
                 logger.error(f"Bot[{bot_qq}]未加入群组[{group_id}] 链接：[{item['link']}]")
