@@ -171,10 +171,12 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
     files = qb.get_torrent_files(hash_str)
     bot = nonebot.get_bot()
     if info["total_downloaded"] - info["total_size"] >= 0.000000:
-        all_time = str(arrow.now() - down_info[hash_str]["start_time"]).split(".", 2)[
-            0
-        ]  # e.g.: 3:02:01
-        await send_msg(f"👏 {name}\nHash: {hash_str} \n下载完成！耗时：{all_time}")
+        all_time = arrow.now() - down_info[hash_str]["start_time"]
+        await send_msg(
+            f"👏 {name}\n"
+            f"Hash: {hash_str} \n"
+            f"下载完成！耗时：{str(all_time).split('.', 2)[0]}"
+        )
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOADING
         for group_id in group_ids:
             for tmp in files:
