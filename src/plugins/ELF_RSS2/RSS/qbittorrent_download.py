@@ -37,7 +37,7 @@ down_info = {}
 # 发送通知
 async def send_msg(msg: str) -> list:
     logger.info(msg)
-    (bot,) = nonebot.get_bots().values()
+    bot = nonebot.get_bot()
     msg_id = []
     for group_id in config.down_status_msg_group:
         msg_id.append(
@@ -53,7 +53,7 @@ async def get_qb_client():
         qb = Client(config.qb_web_url)
         qb.login()
     except Exception as e:
-        (bot,) = nonebot.get_bots().values()
+        bot = nonebot.get_bot()
         msg = (
             "❌ 无法连接到 qbittorrent ,请检查：\n"
             "1.是否启动程序\n"
@@ -68,7 +68,7 @@ async def get_qb_client():
     try:
         qb.get_default_save_path()
     except Exception as e:
-        (bot,) = nonebot.get_bots().values()
+        bot = nonebot.get_bot()
         msg = f"❌ 无法连登录到 qbittorrent ,请检查是否勾选 “对本地主机上的客户端跳过身份验证”。\nE: {e}"
         logger.error(msg)
         await bot.send_msg(
@@ -169,7 +169,7 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
         return
     info = qb.get_torrent(hash_str)
     files = qb.get_torrent_files(hash_str)
-    (bot,) = nonebot.get_bots().values()
+    bot = nonebot.get_bot()
     if info["total_downloaded"] - info["total_size"] >= 0.000000:
         all_time = (datetime.datetime.now() - down_info[hash_str]["start_time"]).seconds
         await send_msg(f"👏 {name}\nHash: {hash_str} \n下载完成！耗时：{all_time} s")
@@ -213,7 +213,7 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
 
 # 撤回消息
 async def delete_msg(msg_ids: list):
-    (bot,) = nonebot.get_bots().values()
+    bot = nonebot.get_bot()
     for msg_id in msg_ids:
         await bot.call_api("delete_msg", message_id=msg_id["message_id"])
 

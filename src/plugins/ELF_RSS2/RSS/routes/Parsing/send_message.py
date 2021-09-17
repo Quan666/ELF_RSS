@@ -8,7 +8,7 @@ from ....RSS import rss_class
 
 # 发送消息
 async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
-    (bot,) = nonebot.get_bots().values()
+    bot = nonebot.get_bot()
     flag = False
     if not msg:
         return False

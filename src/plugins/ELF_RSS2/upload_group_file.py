@@ -59,7 +59,7 @@ async def check_down_status(hash_str: str, group_id: int):
         return
     info = qb.get_torrent(hash_str)
     files = qb.get_torrent_files(hash_str)
-    (bot,) = nonebot.get_bots().values()
+    bot = nonebot.get_bot()
     if info["total_downloaded"] - info["total_size"] >= 0.000000:
         for tmp in files:
             # 异常包起来防止超时报错导致后续不执行

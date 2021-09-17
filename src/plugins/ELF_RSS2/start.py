@@ -92,7 +92,7 @@ def change_rss_json():
 
 
 async def start():
-    (bot,) = nonebot.get_bots().values()
+    bot = nonebot.get_bot()
 
     if config.version <= "v2.4.1":
         change_rss_json()
