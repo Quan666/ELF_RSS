@@ -8,7 +8,7 @@ from tinydb import TinyDB
 from tinydb.storages import JSONStorage
 from tinydb.middlewares import CachingMiddleware
 
-from .RSS import my_trigger as rt
+from .RSS import my_trigger as tr
 from .RSS import rss_class
 from .RSS.routes.Parsing.cache_manage import cache_filter
 from .RSS.routes.Parsing.check_update import dict_hash
@@ -105,7 +105,7 @@ async def start():
             raise Exception("第一次启动，你还没有订阅，记得添加哟！")
         for rss_tmp in rss_list:
             if not rss_tmp.stop:
-                await rt.add_job(rss_tmp)  # 创建检查更新任务
+                await tr.add_job(rss_tmp)  # 创建检查更新任务
         await bot.send_msg(
             message_type="private",
             user_id=int(list(config.superusers)[0]),

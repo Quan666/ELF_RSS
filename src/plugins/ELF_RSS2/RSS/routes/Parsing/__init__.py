@@ -140,6 +140,19 @@ class ParsingBase:
         return _decorator
 
 
+# 对处理器进行过滤
+def _handler_filter(_handler_list: list, _url: str) -> list:
+    _result = [h for h in _handler_list if re.search(h.rex, _url)]
+    # 删除优先级相同时默认的处理器
+    _delete = [
+        (h.func.__name__, "(.*)", h.priority) for h in _result if h.rex != "(.*)"
+    ]
+    _result = [
+        h for h in _result if not ((h.func.__name__, h.rex, h.priority) in _delete)
+    ]
+    return _result
+
+
 # 解析实例
 class ParsingRss:
 
@@ -147,58 +160,17 @@ class ParsingRss:
     def __init__(self, rss: Rss):
         self.state = {}  # 用于存储实例处理中上下文数据
         self.rss = rss
-        self.before_handler = []
+
+        # 对处理器进行过滤
+        self.before_handler = _handler_filter(
+            ParsingBase.before_handler, self.rss.get_url()
+        )
         self.handler = {}
-        self.after_handler = []
-
-        for index, value in enumerate(ParsingBase.before_handler):
-            if re.search(value.rex, self.rss.get_url()):
-                self.before_handler.append(value)
-
         for k, v in ParsingBase.handler.items():
-            self.handler.update({k: []})
-            for h in v:
-                if re.search(h.rex, self.rss.get_url()):
-                    self.handler[k].append(h)
-
-        for index, value in enumerate(ParsingBase.after_handler):
-            if re.search(value.rex, self.rss.get_url()):
-                self.after_handler.append(value)
-
-        # 删除优先级相同时默认的处理器
-        delete = [
-            (h.func.__name__, "(.*)", h.priority)
-            for h in self.before_handler
-            if h.rex != "(.*)"
-        ]
-        self.before_handler = [
-            h
-            for h in self.before_handler
-            if not ((h.func.__name__, h.rex, h.priority) in delete)
-        ]
-
-        for k, v in ParsingBase.handler.items():
-            delete = [
-                (h.func.__name__, "(.*)", h.priority)
-                for h in self.handler[k]
-                if h.rex != "(.*)"
-            ]
-            self.handler[k] = [
-                h
-                for h in self.handler[k]
-                if not ((h.func.__name__, h.rex, h.priority) in delete)
-            ]
-
-        delete = [
-            (h.func.__name__, "(.*)", h.priority)
-            for h in self.after_handler
-            if h.rex != "(.*)"
-        ]
-        self.after_handler = [
-            h
-            for h in self.after_handler
-            if not ((h.func.__name__, h.rex, h.priority) in delete)
-        ]
+            self.handler[k] = _handler_filter(v, self.rss.get_url())
+        self.after_handler = _handler_filter(
+            ParsingBase.after_handler, self.rss.get_url()
+        )
 
     # 开始解析
     async def start(self, rss_name: str, new_rss: dict):
@@ -224,9 +196,9 @@ class ParsingRss:
                 "tinydb": db,  # 缓存 json
             }
         )
-        for h in self.before_handler:
-            self.state.update(await h.func(rss=self.rss, state=self.state))
-            if h.block:
+        for handler in self.before_handler:
+            self.state.update(await handler.func(rss=self.rss, state=self.state))
+            if handler.block:
                 break
 
         # 分条处理
@@ -239,14 +211,14 @@ class ParsingRss:
         for item in self.state.get("change_data"):
             item_msg = f"【{self.state.get('rss_title')}】更新了!\n----------------------\n"
 
-            for k, v in self.handler.items():
+            for handler_list in self.handler.values():
                 # 用于保存上一次处理结果
                 tmp = ""
                 tmp_state = {"continue": True}  # 是否继续执行后续处理
 
                 # 某一个内容的处理如正文，传入原文与上一次处理结果，此次处理完后覆盖
-                for h in v:
-                    tmp = await h.func(
+                for handler in handler_list:
+                    tmp = await handler.func(
                         rss=self.rss,
                         state=self.state,
                         item=item,
@@ -254,15 +226,15 @@ class ParsingRss:
                         tmp=tmp,
                         tmp_state=tmp_state,
                     )
-                    if h.block or not tmp_state["continue"]:
+                    if handler.block or not tmp_state["continue"]:
                         break
                 item_msg += tmp
             self.state.get("messages").append(item_msg)
 
         # 最后处理
-        for h in self.after_handler:
-            self.state.update(await h.func(rss=self.rss, state=self.state))
-            if h.block:
+        for handler in self.after_handler:
+            self.state.update(await handler.func(rss=self.rss, state=self.state))
+            if handler.block:
                 break
 
 
@@ -398,7 +370,7 @@ async def handle_title(
 
 # 处理正文 判断是否是仅推送标题 、是否仅推送图片
 @ParsingBase.append_handler(parsing_type="summary", priority=1)
-async def handle_summary_only_title_or_pic(
+async def handle_summary(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
     if rss.only_title or rss.only_pic:

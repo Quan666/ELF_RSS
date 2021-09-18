@@ -148,13 +148,13 @@ async def handle_rss_change(bot: Bot, event: Event, state: dict):
     name_list = change_info.split(" ")[0].split(",")
     rss = rss_class.Rss()
     rss_list = [rss.find_name(name=name) for name in name_list]
-    rss_list = list(filter(lambda x: x is not None, rss_list))
+    rss_list = [rss for rss in rss_list if rss]
 
     if group_id:
         if re.search(" (qq|qun)=", change_info):
             await RSS_CHANGE.send("❌ 禁止在群组中修改 QQ号 / 群号！如要取消订阅请使用 deldy 命令！")
             return
-        rss_list = list(filter(lambda x: str(group_id) in x.group_id, rss_list))
+        rss_list = [rss for rss in rss_list if str(group_id) in rss.group_id]
 
     if not rss_list:
         await RSS_CHANGE.send("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组无权操作")
