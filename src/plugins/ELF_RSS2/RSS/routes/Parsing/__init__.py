@@ -363,7 +363,7 @@ async def handle_title(
         if similarity.ratio() > 0.6:
             res = ""
     except Exception as e:
-        logger.info(f"{rss.name} 没有正文内容！ E: {e}")
+        logger.info(f"{rss.name} 没有正文内容！{e}")
 
     return res
 

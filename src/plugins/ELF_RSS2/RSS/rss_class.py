@@ -169,7 +169,7 @@ class Rss:
                 self.cookies = None
                 return False
         except Exception as e:
-            logger.error(f"{self.name} 的 Cookies 设置时出错！E: {e}")
+            logger.error(f"{self.name} 的 Cookies 设置时出错！\n{e}")
             return False
 
     def __str__(self) -> str:
