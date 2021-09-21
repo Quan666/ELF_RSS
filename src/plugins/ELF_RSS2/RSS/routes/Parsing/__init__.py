@@ -470,12 +470,15 @@ async def handle_date(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
     date = item.get("published", item.get("updated"))
-    try:
-        date = parsedate_to_datetime(date)
-    except TypeError:
-        pass
-    finally:
-        date = arrow.get(date).to("Asia/Shanghai")
+    if not date:
+        try:
+            date = parsedate_to_datetime(date)
+        except TypeError:
+            pass
+        finally:
+            date = arrow.get(date).to("Asia/Shanghai")
+    else:
+        date = arrow.now()
     return f"日期：{date.format('YYYY年MM月DD日 HH:mm:ss')}"
 
 
