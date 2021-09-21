@@ -60,9 +60,10 @@ async def cache_db_manage(conn: sqlite3.connect) -> None:
 
 
 # 对缓存 json 进行管理
-async def cache_json_manage(db: TinyDB) -> None:
-    # 移除超过 config.limit 条的记录，即只保留最多 config.limit 条记录
-    retains = db.all()[-config.limit :]
+async def cache_json_manage(db: TinyDB, new_data_length: int) -> None:
+    # 只保留最多 config.limit + new_data_length 条的记录
+    limit = config.limit + new_data_length
+    retains = db.all()[-limit:]
     db.truncate()
     db.insert_multiple(retains)
 

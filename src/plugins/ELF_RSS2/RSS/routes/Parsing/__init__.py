@@ -527,7 +527,8 @@ async def after_handler(rss: Rss, state: dict) -> dict:
     if conn is not None:
         conn.close()
 
-    await cache_json_manage(db)
+    new_data_length = len(state.get("new_data"))
+    await cache_json_manage(db, new_data_length)
     db.close()
 
     return {}
