@@ -73,7 +73,7 @@ def baidu_translate(content):
 
 if __name__ == "__main__":
     while True:
-        print("请输入要翻译的内容,如果退出输入q")
+        print("请输入要翻译的内容，要退出请输入q")
         input_content = input()
         if input_content == "q":
             break

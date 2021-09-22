@@ -48,7 +48,7 @@ async def resize_gif(url: str, proxy: bool, resize_ratio: int = 2) -> BytesIO:
                 output_img_url = "https:" + d("img:nth-child(1)").attr("src")
                 return await download_image(output_img_url)
     except Exception as e:
-        logger.error(f"GIF 图片[{url}]压缩失败,将重试 \n {e}")
+        logger.error(f"GIF 图片[{url}]压缩失败，将重试\n{e}")
 
 
 # 图片压缩
@@ -139,7 +139,7 @@ async def download_image_detail(url: str, proxy: bool):
             try:
                 pic = await client.get(url, headers=headers)
             except httpx.ConnectError as e:
-                logger.error(f"图片[{url}]下载失败,有可能需要开启代理！ \n{e}")
+                logger.error(f"图片[{url}]下载失败，有可能需要开启代理！\n{e}")
                 return None
             # 如果图片无法获取到，直接返回
             if (len(pic.content) == 0) or (pic.status_code not in STATUS_CODE):
@@ -152,7 +152,7 @@ async def download_image_detail(url: str, proxy: bool):
                 return None
             return pic.content
     except Exception as e:
-        logger.error(f"图片[{url}]下载失败,将重试 \n{e}")
+        logger.error(f"图片[{url}]下载失败，将重试\n{e}")
         raise
 
 

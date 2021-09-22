@@ -26,7 +26,10 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                 )
                 flag = True
             except NetworkError:
-                logger.error(f"网络错误,消息发送失败,将重试 链接：[{item['link']}]")
+                if item.get("count") == 3:
+                    logger.error(f"网络错误，消息发送失败，已达最大重试次数！链接：[{item['link']}]")
+                else:
+                    logger.warning(f"网络错误，消息发送失败，将重试")
             except Exception as e:
                 logger.error(f"E: {e} 链接：[{item['link']}]")
 
@@ -42,7 +45,10 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                 )
                 flag = True
             except NetworkError:
-                logger.error(f"网络错误,消息发送失败,将重试 链接：[{item['link']}]")
+                if item.get("count") == 3:
+                    logger.error(f"网络错误，消息发送失败，已达最大重试次数！链接：[{item['link']}]")
+                else:
+                    logger.warning(f"网络错误，消息发送失败，将重试")
             except Exception as e:
                 logger.error(f"E: {e} 链接：[{item['link']}]")
     return flag

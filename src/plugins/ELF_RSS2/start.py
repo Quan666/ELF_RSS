@@ -94,6 +94,10 @@ def change_rss_json():
 async def start():
     bot = nonebot.get_bot()
 
+    # 启动后检查 data 目录，不存在就创建
+    if not DATA_PATH.is_dir():
+        DATA_PATH.mkdir()
+
     if config.version >= "v2.4.0":
         change_rss_json()
         change_cache_json()

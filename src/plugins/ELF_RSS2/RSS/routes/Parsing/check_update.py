@@ -42,10 +42,13 @@ async def check_update(db: TinyDB, new: list) -> list:
 
 def get_item_date(item: dict) -> Arrow:
     date = item.get("published", item.get("updated"))
-    try:
-        date = parsedate_to_datetime(date)
-    except TypeError:
-        pass
-    finally:
-        date = arrow.get(date)
+    if date:
+        try:
+            date = parsedate_to_datetime(date)
+        except TypeError:
+            pass
+        finally:
+            date = arrow.get(date)
+    else:
+        date = arrow.now()
     return date

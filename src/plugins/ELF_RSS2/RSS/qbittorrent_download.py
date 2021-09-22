@@ -62,10 +62,10 @@ async def get_qb_client():
     except Exception as e:
         bot = nonebot.get_bot()
         msg = (
-            "❌ 无法连接到 qbittorrent ,请检查：\n"
-            "1.是否启动程序\n"
-            "2.是否勾选了“Web用户界面（远程控制）”\n"
-            f"3.连接地址、端口是否正确\nE: {e}"
+            "❌ 无法连接到 qbittorrent ，请检查：\n"
+            "1. 是否启动程序\n"
+            "2. 是否勾选了“Web用户界面（远程控制）”\n"
+            f"3. 连接地址、端口是否正确\n{e}"
         )
         logger.error(msg)
         await bot.send_msg(
@@ -76,7 +76,7 @@ async def get_qb_client():
         qb.get_default_save_path()
     except Exception as e:
         bot = nonebot.get_bot()
-        msg = f"❌ 无法连登录到 qbittorrent ,请检查是否勾选 “对本地主机上的客户端跳过身份验证”。\nE: {e}"
+        msg = f"❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”\n{e}"
         logger.error(msg)
         await bot.send_msg(
             message_type="private", user_id=str(list(config.superusers)[0]), message=msg
@@ -134,7 +134,7 @@ async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
                 qb.download_from_file(res.content)
                 hash_str = get_torrent_b16_hash(res.content)
             except Exception as e:
-                await send_msg(f"下载种子失败,可能需要代理:{e}")
+                await send_msg(f"下载种子失败，可能需要代理\n{e}")
                 return {}
 
     while not info:
@@ -181,7 +181,7 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
         all_time = arrow.now() - down_info[hash_str]["start_time"]
         await send_msg(
             f"👏 {name}\n"
-            f"Hash: {hash_str} \n"
+            f"Hash：{hash_str}\n"
             f"下载完成！耗时：{str(all_time).split('.', 2)[0]}"
         )
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOADING
@@ -193,7 +193,7 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
                         path = config.qb_down_path + tmp["name"]
                     else:
                         path = info["save_path"] + tmp["name"]
-                    await send_msg(f"{name}\nHash: {hash_str} \n开始上传到群：{group_id}")
+                    await send_msg(f"{name}\nHash：{hash_str}\n开始上传到群：{group_id}")
                     try:
                         await bot.call_api(
                             "upload_group_file",
@@ -203,7 +203,7 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
                         )
                     except ActionFailed as e:
                         await send_msg(
-                            f"{name}\nHash: {hash_str} \n上传到群：{group_id}失败！请手动上传！"
+                            f"{name}\nHash：{hash_str}\n上传到群：{group_id}失败！请手动上传！"
                         )
                         logger.error(e)
                 except TimeoutError as e:
@@ -215,9 +215,9 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
         await delete_msg(down_info[hash_str]["downing_tips_msg_id"])
         msg_id = await send_msg(
             f"{name}\n"
-            f"Hash: {hash_str} \n"
+            f"Hash：{hash_str}\n"
             f"下载了 {round(info['total_downloaded'] / info['total_size'] * 100, 2)}%\n"
-            f"平均下载速度：{round(info['dl_speed_avg'] / 1024, 2)} KB/s"
+            f"平均下载速度： {round(info['dl_speed_avg'] / 1024, 2)} KB/s"
         )
         down_info[hash_str]["downing_tips_msg_id"] = msg_id
 
@@ -243,4 +243,4 @@ async def rss_trigger(hash_str: str, group_ids: list, name: str):
         misfire_grace_time=60,  # 允许的误差时间，建议不要省略
         job_defaults=job_defaults,
     )
-    await send_msg(f"👏 {name}\nHash: {hash_str} \n下载任务添加成功！")
+    await send_msg(f"👏 {name}\nHash：{hash_str}\n下载任务添加成功！")

@@ -363,7 +363,7 @@ async def handle_title(
         if similarity.ratio() > 0.6:
             res = ""
     except Exception as e:
-        logger.info(f"{rss.name} 没有正文内容！ E: {e}")
+        logger.info(f"{rss.name} 没有正文内容！{e}")
 
     return res
 
@@ -470,12 +470,15 @@ async def handle_date(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
     date = item.get("published", item.get("updated"))
-    try:
-        date = parsedate_to_datetime(date)
-    except TypeError:
-        pass
-    finally:
-        date = arrow.get(date).to("Asia/Shanghai")
+    if not date:
+        try:
+            date = parsedate_to_datetime(date)
+        except TypeError:
+            pass
+        finally:
+            date = arrow.get(date).to("Asia/Shanghai")
+    else:
+        date = arrow.now()
     return f"日期：{date.format('YYYY年MM月DD日 HH:mm:ss')}"
 
 
@@ -524,7 +527,8 @@ async def after_handler(rss: Rss, state: dict) -> dict:
     if conn is not None:
         conn.close()
 
-    await cache_json_manage(db)
+    new_data_length = len(state.get("new_data"))
+    await cache_json_manage(db, new_data_length)
     db.close()
 
     return {}
