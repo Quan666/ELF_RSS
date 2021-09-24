@@ -470,7 +470,7 @@ async def handle_date(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
     date = item.get("published", item.get("updated"))
-    if not date:
+    if date:
         try:
             date = parsedate_to_datetime(date)
         except TypeError:
