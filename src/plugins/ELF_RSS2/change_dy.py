@@ -216,7 +216,9 @@ async def handle_rss_change(bot: Bot, event: Event, state: dict):
 
         rss_msg_list.append(rss_msg)
 
-    result_msg += result_msg.join(rss_msg_list)
+    result_msg = f"修改了 {len(rss_msg_list)} 条订阅：\n{result_msg}" + result_msg.join(
+        rss_msg_list
+    )
     await RSS_CHANGE.send(f"👏 修改成功\n{result_msg}")
     logger.info(f"👏 修改成功\n{result_msg}")
 
