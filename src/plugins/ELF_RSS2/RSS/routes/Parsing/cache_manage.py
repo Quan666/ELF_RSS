@@ -7,6 +7,7 @@ from nonebot.log import logger
 from pyquery import PyQuery as Pq
 from tinydb import TinyDB
 
+from .check_update import get_item_date
 from .handle_images import download_image
 from ... import rss_class
 from ....config import config
@@ -63,7 +64,9 @@ async def cache_db_manage(conn: sqlite3.connect) -> None:
 async def cache_json_manage(db: TinyDB, new_data_length: int) -> None:
     # 只保留最多 config.limit + new_data_length 条的记录
     limit = config.limit + new_data_length
-    retains = db.all()[-limit:]
+    retains = db.all()
+    retains.sort(key=get_item_date)
+    retains = retains[-limit:]
     db.truncate()
     db.insert_multiple(retains)
 
