@@ -76,7 +76,7 @@ async def handle_check_update(rss: Rss, state: dict):
 
     delete = []
     for index, item in enumerate(change_data):
-        summary = get_summary(item, rss.img_proxy)
+        summary = await get_summary(item, rss.img_proxy)
         is_duplicate, image_hash = await duplicate_exists(
             rss=rss,
             conn=conn,
@@ -101,7 +101,7 @@ async def handle_check_update(rss: Rss, state: dict):
 
 
 # 获取正文
-def get_summary(item: dict, img_proxy: bool) -> str:
+async def get_summary(item: dict, img_proxy: bool) -> str:
     summary = (
         item["content"][0].get("value") if item.get("content") else item["summary"]
     )
