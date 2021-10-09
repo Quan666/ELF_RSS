@@ -1,1 +1,1 @@
-from . import nga, pixiv, south_plus, weibo  # noqa
+from . import nga, pixiv, south_plus, weibo, danbooru  # noqa
