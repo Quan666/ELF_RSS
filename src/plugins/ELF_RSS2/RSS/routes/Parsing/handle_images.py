@@ -17,9 +17,9 @@ STATUS_CODE = [200, 301, 302]
 
 # 通过 ezgif 压缩 GIF
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def resize_gif(url: str, proxy: bool, resize_ratio: int = 2) -> BytesIO:
+async def resize_gif(url: str, resize_ratio: int = 2) -> BytesIO:
     try:
-        async with httpx.AsyncClient(proxies=get_proxy(proxy)) as client:
+        async with httpx.AsyncClient() as client:
             response = await client.post(
                 url="https://s3.ezgif.com/resize",
                 data={"new-image-url": url},
@@ -40,7 +40,7 @@ async def resize_gif(url: str, proxy: bool, resize_ratio: int = 2) -> BytesIO:
                 "method": "gifsicle",
                 "ar": "force",
             }
-            async with httpx.AsyncClient(proxies=get_proxy(proxy)) as fork_client:
+            async with httpx.AsyncClient() as fork_client:
                 response = await fork_client.post(
                     url=next_url + "?ajax=true", data=data, timeout=None
                 )
@@ -52,7 +52,7 @@ async def resize_gif(url: str, proxy: bool, resize_ratio: int = 2) -> BytesIO:
 
 
 # 图片压缩
-async def zip_pic(url: str, proxy: bool, content: bytes):
+async def zip_pic(url: str, content: bytes):
     # 打开一个 JPEG/PNG/GIF 图像文件
     try:
         im = Image.open(BytesIO(content))
@@ -85,7 +85,7 @@ async def zip_pic(url: str, proxy: bool, content: bytes):
             return im
     else:
         if len(content) > config.gif_zip_size * 1024:
-            return await resize_gif(url, proxy)
+            return await resize_gif(url)
         return BytesIO(content)
 
 
@@ -109,7 +109,7 @@ async def fuck_pixiv_cat(url: str) -> str:
     img_id = re.sub("https://pixiv.cat/", "", url)
     img_id = img_id[:-4]
     info_list = img_id.split("-")
-    async with httpx.AsyncClient(proxies={}) as client:
+    async with httpx.AsyncClient() as client:
         try:
             req_json = (
                 await client.get(
@@ -166,7 +166,7 @@ async def download_image(url: str, proxy: bool = False):
 
 async def handle_img_combo(url: str, img_proxy: bool) -> str:
     content = await download_image(url, img_proxy)
-    resize_content = await zip_pic(url, img_proxy, content)
+    resize_content = await zip_pic(url, content)
     img_base64 = await get_pic_base64(resize_content)
     if img_base64:
         return f"[CQ:image,file=base64://{img_base64}]"

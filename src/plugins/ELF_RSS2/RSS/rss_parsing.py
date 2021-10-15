@@ -74,12 +74,22 @@ async def start(rss: rss_class.Rss) -> None:
 # 获取 RSS 并解析为 json ，失败重试
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_rss(rss: rss_class.Rss) -> dict:
+    proxies = get_proxy(rss.img_proxy)
+    # 对本机部署的 RSSHub 不使用代理
+    no_proxy = [
+        "localhost",
+        "127.0.0.1",
+    ]
+    for i in no_proxy:
+        if i in rss.get_url():
+            proxies = None
+
     # 判断是否使用cookies
     cookies = rss.cookies if rss.cookies else None
 
     # 获取 xml
     async with httpx.AsyncClient(
-        proxies=get_proxy(open_proxy=rss.img_proxy), cookies=cookies, headers=HEADERS
+        proxies=proxies, cookies=cookies, headers=HEADERS
     ) as client:
         d = None
         try:
@@ -96,9 +106,7 @@ async def get_rss(rss: rss_class.Rss) -> dict:
             ):
                 logger.warning(f"RSSHub：[{config.rsshub}]访问失败！将使用备用 RSSHub 地址！")
                 for rsshub_url in list(config.rsshub_backup):
-                    async with httpx.AsyncClient(
-                        proxies=get_proxy(open_proxy=rss.img_proxy)
-                    ) as fork_client:
+                    async with httpx.AsyncClient(proxies=proxies) as fork_client:
                         try:
                             r = await fork_client.get(rss.get_url(rsshub=rsshub_url))
                             if r.status_code in STATUS_CODE:
