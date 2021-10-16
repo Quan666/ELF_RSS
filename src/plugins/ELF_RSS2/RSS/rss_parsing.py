@@ -88,10 +88,10 @@ async def get_rss(rss: rss_class.Rss) -> dict:
     cookies = rss.cookies if rss.cookies else None
 
     # 获取 xml
+    d = None
     async with httpx.AsyncClient(
         proxies=proxies, cookies=cookies, headers=HEADERS
     ) as client:
-        d = None
         try:
             r = await client.get(rss.get_url())
             # 解析为 JSON
@@ -104,7 +104,7 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                 not re.match("[hH][tT]{2}[pP][sS]?://", rss.url, flags=0)
                 and config.rsshub_backup
             ):
-                logger.warning(f"RSSHub：[{config.rsshub}]访问失败！将使用备用 RSSHub 地址！")
+                logger.warning(f"[{rss.get_url()}]访问失败！将使用备用 RSSHub 地址！")
                 for rsshub_url in list(config.rsshub_backup):
                     async with httpx.AsyncClient(proxies=proxies) as fork_client:
                         try:
@@ -121,7 +121,8 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                         if d.get("feed"):
                             logger.info(f"[{rss.get_url(rsshub=rsshub_url)}]抓取成功！")
                             break
-        if not d.get("feed"):
-            logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
-            raise TryAgain
-        return d
+        finally:
+            if not d or not d.get("feed"):
+                logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
+                raise TryAgain
+    return d

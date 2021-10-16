@@ -335,7 +335,6 @@ async def handle_title(
 ) -> str:
     # 判断是否开启了只推送图片
     if rss.only_pic:
-        tmp_state["continue"] = False
         return ""
 
     title = item["title"]
