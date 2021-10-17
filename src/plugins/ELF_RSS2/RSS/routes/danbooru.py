@@ -64,7 +64,7 @@ async def handle_img(url: str, img_proxy: bool) -> str:
 
 
 # 如果启用了去重模式，对推送列表进行过滤
-@ParsingBase.append_before_handler(priority=12, rex="danbooru")
+@ParsingBase.append_before_handler(rex="danbooru", priority=12)
 async def handle_check_update(rss: Rss, state: dict):
     change_data = state.get("change_data")
     conn = state.get("conn")

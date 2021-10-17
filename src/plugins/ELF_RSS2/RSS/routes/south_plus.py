@@ -19,9 +19,7 @@ async def handle_summary(
 
 
 # 处理来源
-@ParsingBase.append_handler(
-    parsing_type="source", rex="(south|spring)-plus.net", priority=10, block=True
-)
+@ParsingBase.append_handler(parsing_type="source", rex="(south|spring)-plus.net")
 async def handle_source(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:

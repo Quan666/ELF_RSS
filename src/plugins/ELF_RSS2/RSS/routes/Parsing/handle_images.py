@@ -86,7 +86,7 @@ async def zip_pic(url: str, content: bytes):
                 return await resize_gif(url)
             except RetryError:
                 logger.error(f"GIF 图片[{url}]压缩失败，将发送原图")
-        return BytesIO(content)
+                return BytesIO(content)
 
 
 # 将图片转化为 base64
