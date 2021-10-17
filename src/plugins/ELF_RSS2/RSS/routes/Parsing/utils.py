@@ -11,8 +11,7 @@ def get_proxy(open_proxy: bool) -> dict:
     return (
         httpx.Proxy(
             url="http://" + proxy,
-            # May be "TUNNEL_ONLY" or "FORWARD_ONLY". Defaults to "DEFAULT".
-            mode="TUNNEL_ONLY",
+            mode="DEFAULT",
         )
         if proxy
         else {}

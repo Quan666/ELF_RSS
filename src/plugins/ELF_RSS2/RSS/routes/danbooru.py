@@ -3,6 +3,7 @@ import sqlite3
 
 from nonebot import logger
 from pyquery import PyQuery as Pq
+from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError
 
 from .Parsing import (
     ParsingBase,
@@ -26,10 +27,14 @@ async def handle_picture(
     if rss.only_title:
         return ""
 
-    res = await handle_img(
-        url=item["link"],
-        img_proxy=rss.img_proxy,
-    )
+    try:
+        res = await handle_img(
+            url=item["link"],
+            img_proxy=rss.img_proxy,
+        )
+    except RetryError:
+        res = "预览图获取失败"
+        logger.error(f"[{item['link']}]的预览图获取失败")
 
     # 判断是否开启了只推送图片
     if rss.only_pic:
@@ -39,11 +44,12 @@ async def handle_picture(
 
 
 # 处理图片、视频
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def handle_img(url: str, img_proxy: bool) -> str:
     img_str = ""
 
     # 处理图片
-    async with httpx.AsyncClient(proxies=get_proxy(img_proxy)) as client:
+    async with httpx.AsyncClient(proxies=get_proxy(img_proxy), timeout=None) as client:
         response = await client.get(url)
         d = Pq(response.text)
         img = d("img#image")
@@ -58,7 +64,7 @@ async def handle_img(url: str, img_proxy: bool) -> str:
 
 
 # 如果启用了去重模式，对推送列表进行过滤
-@ParsingBase.append_before_handler(priority=12, rex="danbooru")
+@ParsingBase.append_before_handler(rex="danbooru", priority=12)
 async def handle_check_update(rss: Rss, state: dict):
     change_data = state.get("change_data")
     conn = state.get("conn")
@@ -76,7 +82,11 @@ async def handle_check_update(rss: Rss, state: dict):
 
     delete = []
     for index, item in enumerate(change_data):
-        summary = await get_summary(item, rss.img_proxy)
+        try:
+            summary = await get_summary(item, rss.img_proxy)
+        except RetryError:
+            logger.error(f"[{item['link']}]的预览图获取失败")
+            continue
         is_duplicate, image_hash = await duplicate_exists(
             rss=rss,
             conn=conn,
@@ -101,13 +111,14 @@ async def handle_check_update(rss: Rss, state: dict):
 
 
 # 获取正文
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_summary(item: dict, img_proxy: bool) -> str:
     summary = (
         item["content"][0].get("value") if item.get("content") else item["summary"]
     )
     # 如果图片非视频封面，替换为更清晰的预览图
     summary_doc = Pq(summary)
-    async with httpx.AsyncClient(proxies=get_proxy(img_proxy)) as client:
+    async with httpx.AsyncClient(proxies=get_proxy(img_proxy), timeout=None) as client:
         response = await client.get(item["link"])
         d = Pq(response.text)
         img = d("img#image")
