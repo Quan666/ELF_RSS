@@ -131,16 +131,16 @@ async def download_image_detail(url: str, proxy: bool):
         headers = {"referer": referer}
         try:
             pic = await client.get(url, headers=headers)
-        except httpx.ConnectError as e:
-            logger.error(f"图片[{url}]下载失败，有可能需要开启代理！\n{e}")
-            return None
+        except Exception as e:
+            logger.warning(f"图片[{url}]下载失败！将重试最多 5 次！\n{e}")
+            raise
         # 如果图片无法获取到，直接返回
         if (len(pic.content) == 0) or (pic.status_code not in STATUS_CODE):
             if "pixiv.cat" in url:
                 url = await fuck_pixiv_cat(url=url)
                 return await download_image(url, proxy)
             logger.error(
-                f"[{url}] Content-Type: {pic.headers.get('Content-Type')} status_code: {pic.status_code}"
+                f"图片[{url}]下载失败！ Content-Type: {pic.headers.get('Content-Type')} status_code: {pic.status_code}"
             )
             return None
         return pic.content
@@ -150,7 +150,7 @@ async def download_image(url: str, proxy: bool = False):
     try:
         return await download_image_detail(url=url, proxy=proxy)
     except RetryError:
-        logger.error(f"图片[{url}]下载失败！已达最大重试次数！")
+        logger.error(f"图片[{url}]下载失败！已达最大重试次数！有可能需要开启代理！")
         return None
 
 
