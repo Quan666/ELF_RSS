@@ -38,11 +38,10 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> BytesIO:
             "method": "gifsicle",
             "ar": "force",
         }
-        async with httpx.AsyncClient() as fork_client:
-            response = await fork_client.post(url=next_url + "?ajax=true", data=data)
-            d = Pq(response.text)
-            output_img_url = "https:" + d("img:nth-child(1)").attr("src")
-            return await download_image(output_img_url)
+        response = await client.post(url=next_url + "?ajax=true", data=data)
+        d = Pq(response.text)
+        output_img_url = "https:" + d("img:nth-child(1)").attr("src")
+        return await download_image(output_img_url)
 
 
 # 图片压缩
