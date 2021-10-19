@@ -22,7 +22,6 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> BytesIO:
         response = await client.post(
             url="https://s3.ezgif.com/resize",
             data={"new-image-url": url},
-            timeout=None,
         )
         d = Pq(response.text)
         next_url = d("form").attr("action")
@@ -40,9 +39,7 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> BytesIO:
             "ar": "force",
         }
         async with httpx.AsyncClient() as fork_client:
-            response = await fork_client.post(
-                url=next_url + "?ajax=true", data=data, timeout=None
-            )
+            response = await fork_client.post(url=next_url + "?ajax=true", data=data)
             d = Pq(response.text)
             output_img_url = "https:" + d("img:nth-child(1)").attr("src")
             return await download_image(output_img_url)
@@ -129,9 +126,7 @@ async def fuck_pixiv_cat(url: str) -> str:
 
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def download_image_detail(url: str, proxy: bool):
-    async with httpx.AsyncClient(
-        proxies=get_proxy(open_proxy=proxy), timeout=None
-    ) as client:
+    async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy)) as client:
         referer = re.findall("([hH][tT]{2}[pP][sS]?://.*?)/.*?", url)[0]
         headers = {"referer": referer}
         try:

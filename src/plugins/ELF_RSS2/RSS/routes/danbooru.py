@@ -49,7 +49,7 @@ async def handle_img(url: str, img_proxy: bool) -> str:
     img_str = ""
 
     # 处理图片
-    async with httpx.AsyncClient(proxies=get_proxy(img_proxy), timeout=None) as client:
+    async with httpx.AsyncClient(proxies=get_proxy(img_proxy)) as client:
         response = await client.get(url)
         d = Pq(response.text)
         img = d("img#image")
@@ -118,7 +118,7 @@ async def get_summary(item: dict, img_proxy: bool) -> str:
     )
     # 如果图片非视频封面，替换为更清晰的预览图
     summary_doc = Pq(summary)
-    async with httpx.AsyncClient(proxies=get_proxy(img_proxy), timeout=None) as client:
+    async with httpx.AsyncClient(proxies=get_proxy(img_proxy)) as client:
         response = await client.get(item["link"])
         d = Pq(response.text)
         img = d("img#image")
