@@ -106,21 +106,20 @@ async def get_rss(rss: rss_class.Rss) -> dict:
             ):
                 logger.warning(f"[{rss.get_url()}]访问失败！将使用备用 RSSHub 地址！")
                 for rsshub_url in list(config.rsshub_backup):
-                    async with httpx.AsyncClient(proxies=proxies) as fork_client:
-                        try:
-                            r = await fork_client.get(rss.get_url(rsshub=rsshub_url))
-                            if r.status_code in STATUS_CODE:
-                                d = feedparser.parse(r.content)
-                            else:
-                                raise httpx.HTTPStatusError
-                        except Exception:
-                            logger.warning(
-                                f"[{rss.get_url(rsshub=rsshub_url)}]访问失败！将使用备用 RSSHub 地址！"
-                            )
-                            continue
-                        if d.get("feed"):
-                            logger.info(f"[{rss.get_url(rsshub=rsshub_url)}]抓取成功！")
-                            break
+                    try:
+                        r = await client.get(rss.get_url(rsshub=rsshub_url))
+                        if r.status_code in STATUS_CODE:
+                            d = feedparser.parse(r.content)
+                        else:
+                            raise httpx.HTTPStatusError
+                    except Exception:
+                        logger.warning(
+                            f"[{rss.get_url(rsshub=rsshub_url)}]访问失败！将使用备用 RSSHub 地址！"
+                        )
+                        continue
+                    if d.get("feed"):
+                        logger.info(f"[{rss.get_url(rsshub=rsshub_url)}]抓取成功！")
+                        break
         finally:
             if not d or not d.get("feed"):
                 logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
