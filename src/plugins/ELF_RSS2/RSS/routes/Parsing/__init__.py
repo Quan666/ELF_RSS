@@ -237,43 +237,6 @@ class ParsingRss:
             if handler.block:
                 break
 
-    # 开始解析,用作第一次抓取
-    async def first_start(self, new_rss: dict):
-        # new_data 是完整的 rss 解析后的 dict
-        # 前置处理
-        rss_title = new_rss.get("feed").get("title")
-        new_data = new_rss.get("entries")
-        _file = DATA_PATH / (self.rss.name + ".json")
-        db = TinyDB(
-            _file,
-            storage=CachingMiddleware(JSONStorage),
-            encoding="utf-8",
-            sort_keys=True,
-            indent=4,
-            ensure_ascii=False,
-        )
-        self.state.update(
-            {
-                "rss_title": rss_title,
-                "new_data": new_data,
-                "change_data": [],  # 更新的消息列表
-                "conn": None,  # 数据库连接
-                "tinydb": db,  # 缓存 json
-            }
-        )
-        for handler in self.before_handler:
-            self.state.update(await handler.func(rss=self.rss, state=self.state))
-            if handler.block:
-                break
-        db = self.state.get("tinydb")
-        result = []
-        for i in self.state.get("change_data"):
-            if i.get("to_send"):
-                del i["to_send"]
-            result.append(cache_filter(i))
-        db.insert_multiple(result)
-        db.close()
-
 
 # 检查更新
 @ParsingBase.append_before_handler(priority=10)
