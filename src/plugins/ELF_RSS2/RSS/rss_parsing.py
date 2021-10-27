@@ -49,21 +49,8 @@ async def start(rss: rss_class.Rss) -> None:
     # 检查是否存在rss记录
     _file = DATA_PATH / (rss.name + ".json")
     if not Path.exists(_file):
-        db = TinyDB(
-            _file,
-            storage=CachingMiddleware(JSONStorage),
-            encoding="utf-8",
-            sort_keys=True,
-            indent=4,
-            ensure_ascii=False,
-        )
-        entries = new_rss.get("entries")
-        result = []
-        for i in entries:
-            i["hash"] = dict_hash(i)
-            result.append(cache_filter(i))
-        db.insert_multiple(result)
-        db.close()
+        pr = ParsingRss(rss=rss)
+        await pr.first_start(new_rss=new_rss)
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
 
