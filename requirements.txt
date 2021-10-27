@@ -7,10 +7,10 @@ google-trans-new~=1.1.9
 APScheduler~=3.7.0
 Pillow>=8.1.1
 nonebot2==2.0.0a15
-nb-cli~=0.4.0
+nb-cli~=0.5.1
 nonebot-test~=0.1.0
 nonebot-plugin-apscheduler~=0.1.2
-typing-extensions~=3.7.4.3
+typing-extensions~=3.10.0.2
 python-qbittorrent~=0.4.2
 magneturi~=1.3
 nonebot-adapter-cqhttp~=2.0.0a15
@@ -19,3 +19,4 @@ pydantic~=1.8.1
 tenacity~=7.0.0
 bbcode~=1.1.0
 tinydb~=4.5.1
+arrow~=1.2.0

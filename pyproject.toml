@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ELF_RSS"
-version = "2.4.0"
+version = "2.4.3"
 description = "ELF_RSS"
 authors = ["Quan666"]
 license = "GPL v3"
@@ -32,11 +32,12 @@ pyquery = "~=1.4.3"
 python-qbittorrent = "~=0.4.2"
 tenacity = "~=7.0.0"
 tinydb = "~=4.5.1"
-typing-extensions = "~=3.7.4.3"
+typing-extensions = "~=3.10.0.2"
+arrow = "~=1.2.0"
 
 [tool.poetry.dev-dependencies]
-nonebot-test = "^0.1.0"
-nb-cli = "~=0.4.0"
+nonebot-test = "~=0.1.0"
+nb-cli = "~=0.5.1"
 
 [build-system]
 requires = ["poetry>=0.12"]

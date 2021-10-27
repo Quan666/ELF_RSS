@@ -3,8 +3,8 @@ from nonebot import permission as su
 from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission, unescape
 from nonebot.rule import to_me
 
-from .RSS import rss_class
 from .RSS import my_trigger as tr
+from .RSS import rss_class
 
 RSS_ADD = on_command(
     "add",
@@ -38,7 +38,7 @@ async def handle_rss_add(bot: Bot, event: Event, state: dict):
 
     dy = rss_dy_link.split(" ")
 
-    rss = rss_class.Rss(name="", url="", user_id="-1", group_id="-1")
+    rss = rss_class.Rss()
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅
     try:
         name = dy[0]

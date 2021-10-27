@@ -1,6 +1,6 @@
-# 异步函数超时结束装饰器
 import asyncio
 import functools
+
 from nonebot import logger
 
 

@@ -75,7 +75,7 @@ async def check_update(_file: str, new: list) -> list:
 
 
 # 处理来源
-@ParsingBase.append_handler(parsing_type="source", rex="pixiv", priority=10, block=True)
+@ParsingBase.append_handler(parsing_type="source", rex="pixiv")
 async def handle_source(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:

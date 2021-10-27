@@ -117,6 +117,7 @@ async def handle_html_tag(html) -> str:
         "td",
         "th",
         "tr",
+        "u",
         "ul",
     ]
 

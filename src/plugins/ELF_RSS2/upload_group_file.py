@@ -18,10 +18,10 @@ async def get_qb():
         qb.login()
     except Exception as e:
         msg = (
-            "❌ 无法连接到 qbittorrent ,请检查：\n"
-            "1.是否启动程序\n"
-            "2.是否勾选了“Web用户界面（远程控制）”\n"
-            f"3.连接地址、端口是否正确\nE: {e}"
+            "❌ 无法连接到 qbittorrent ，请检查：\n"
+            "1. 是否启动程序\n"
+            "2. 是否勾选了“Web用户界面（远程控制）”\n"
+            f"3. 连接地址、端口是否正确\n{e}"
         )
         logger.error(msg)
         await upload_group_file.send(msg)
@@ -29,7 +29,7 @@ async def get_qb():
     try:
         qb.get_default_save_path()
     except Exception as e:
-        msg = f"❌ 无法连登录到 qbittorrent ,请检查是否勾选 “对本地主机上的客户端跳过身份验证”。\nE: {e}"
+        msg = f"❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”\n{e}"
         logger.error(msg)
         await upload_group_file.send(msg)
         return None
@@ -59,7 +59,7 @@ async def check_down_status(hash_str: str, group_id: int):
         return
     info = qb.get_torrent(hash_str)
     files = qb.get_torrent_files(hash_str)
-    (bot,) = nonebot.get_bots().values()
+    bot = nonebot.get_bot()
     if info["total_downloaded"] - info["total_size"] >= 0.000000:
         for tmp in files:
             # 异常包起来防止超时报错导致后续不执行

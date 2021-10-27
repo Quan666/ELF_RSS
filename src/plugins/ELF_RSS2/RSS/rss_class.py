@@ -1,5 +1,3 @@
-import json
-import os
 import re
 
 from nonebot.log import logger
@@ -8,84 +6,30 @@ from tinydb import TinyDB, Query
 from tinydb.operations import set
 
 from ..config import config
-
-# 存储目录
-FILE_PATH = str(str(Path.cwd()) + os.sep + "data" + os.sep)
-JSON_PATH = FILE_PATH + "rss.json"
+from ..config import DATA_PATH, JSON_PATH
 
 
 class Rss:
-    # 定义为类属性，可以方便新增属性时不会无法解析配置文件
-    name = ""  # 订阅名
-    url = ""  # 订阅地址
-    user_id = []  # 订阅用户（qq） -1 为空
-    group_id = []  # 订阅群组
-    img_proxy = False
-    time = "5"  # 更新频率 分钟/次
-    translation = False  # 翻译
-    only_title = False  # 仅标题
-    only_pic = False  # 仅图片
-    only_has_pic = False  # 仅含有图片
-    cookies = ""
-    down_torrent: bool = False  # 是否下载种子
-    down_torrent_keyword: str = None  # 过滤关键字，支持正则
-    black_keyword: str = None  # 黑名单关键词
-    is_open_upload_group: bool = True  # 默认开启上传到群
-    duplicate_filter_mode: [str] = None  # 去重模式
-    max_image_number: int = 0  # 图片数量限制，防止消息太长刷屏
-    content_to_remove: [str] = None  # 正文待移除内容，支持正则
-    stop = False  # 停止更新
-
-    def __init__(
-        self,
-        name: str,
-        url: str,
-        user_id: str,
-        group_id: str,
-        time="5",
-        img_proxy=False,
-        translation=False,
-        only_title=False,
-        only_pic=False,
-        only_has_pic=False,
-        cookies: str = "",
-        down_torrent: bool = False,
-        down_torrent_keyword: str = None,
-        black_keyword: str = None,
-        is_open_upload_group: bool = True,
-        duplicate_filter_mode: str = None,
-        max_image_number: int = 0,
-        content_to_remove: str = None,
-        stop=False,
-    ):
-        self.name = name
-        self.url = url
-        if user_id != "-1":
-            self.user_id = user_id.split(",")
-        else:
-            self.user_id = []
-        if group_id != "-1":
-            self.group_id = group_id.split(",")
-        else:
-            self.group_id = []
-        self.time = time
-        self.img_proxy = img_proxy
-        self.translation = translation
-        self.only_title = only_title
-        self.only_pic = only_pic
-        self.only_has_pic = only_has_pic
-        if len(cookies) <= 0 or cookies is None:
-            self.cookies = None
-        else:
-            self.cookies = cookies
-        self.down_torrent = down_torrent
-        self.down_torrent_keyword = down_torrent_keyword
-        self.black_keyword = black_keyword
-        self.is_open_upload_group = is_open_upload_group
-        self.duplicate_filter_mode = duplicate_filter_mode
-        self.max_image_number = max_image_number
-        self.content_to_remove = content_to_remove
-        self.stop = stop
+    def __init__(self):
+        self.name = ""  # 订阅名
+        self.url = ""  # 订阅地址
+        self.user_id = []  # 订阅用户（qq） -1 为空
+        self.group_id = []  # 订阅群组
+        self.img_proxy = False
+        self.time = "5"  # 更新频率 分钟/次
+        self.translation = False  # 翻译
+        self.only_title = False  # 仅标题
+        self.only_pic = False  # 仅图片
+        self.only_has_pic = False  # 仅含有图片
+        self.cookies = ""
+        self.down_torrent = False  # 是否下载种子
+        self.down_torrent_keyword = ""  # 过滤关键字，支持正则
+        self.black_keyword = ""  # 黑名单关键词
+        self.is_open_upload_group = True  # 默认开启上传到群
+        self.duplicate_filter_mode = None  # 去重模式
+        self.max_image_number = 0  # 图片数量限制，防止消息太长刷屏
+        self.content_to_remove = None  # 正文待移除内容，支持正则
+        self.stop = False  # 停止更新
 
     # 返回订阅链接
     def get_url(self, rsshub: str = config.rsshub) -> str:
@@ -102,7 +46,7 @@ class Rss:
     @staticmethod
     def read_rss() -> list:
         # 如果文件不存在
-        if not os.path.isfile(JSON_PATH):
+        if not Path.exists(JSON_PATH):
             return []
         rss_list = []
         db = TinyDB(
@@ -113,10 +57,8 @@ class Rss:
             ensure_ascii=False,
         )
         for rss in db.all():
-            tmp_rss = Rss("", "", "-1", "-1")
-            if not isinstance(rss, str):
-                rss = json.dumps(rss)
-            tmp_rss.__dict__ = json.loads(rss)
+            tmp_rss = Rss()
+            tmp_rss.__dict__.update(rss)
             rss_list.append(tmp_rss)
         return rss_list
 
@@ -178,11 +120,16 @@ class Rss:
         db.remove(Query().name == self.name)
         self.delete_file()
 
-    # 删除订阅json文件
+    # 重命名订阅缓存 json 文件
+    def rename_file(self, target: str):
+        this_file_path = DATA_PATH / (self.name + ".json")
+        if Path.exists(this_file_path):
+            this_file_path.rename(target)
+
+    # 删除订阅缓存 json 文件
     def delete_file(self):
-        this_file_path = str(FILE_PATH + (self.name + ".json"))
-        if os.path.exists(this_file_path):
-            os.remove(this_file_path)
+        this_file_path = DATA_PATH / (self.name + ".json")
+        Path.unlink(this_file_path, missing_ok=True)
 
     def find_group(self, group: str) -> list:
         rss_old = self.read_rss()
@@ -222,7 +169,7 @@ class Rss:
                 self.cookies = None
                 return False
         except Exception as e:
-            logger.error(f"{self.name} 的 Cookies 设置时出错！E: {e}")
+            logger.error(f"{self.name} 的 Cookies 设置时出错！\n{e}")
             return False
 
     def __str__(self) -> str:

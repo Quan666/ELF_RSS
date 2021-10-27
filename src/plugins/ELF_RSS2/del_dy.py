@@ -4,8 +4,8 @@ from nonebot import require
 from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission, unescape
 from nonebot.rule import to_me
 
-from .RSS import rss_class
 from .RSS import my_trigger as tr
+from .RSS import rss_class
 
 SCHEDULER = require("nonebot_plugin_apscheduler").scheduler
 
@@ -32,7 +32,7 @@ async def handle_rss_delete(bot: Bot, event: Event, state: dict):
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
-    rss = rss_class.Rss("", "", "-1", "-1")
+    rss = rss_class.Rss()
     if rss.find_name(name=rss_name):
         rss = rss.find_name(name=rss_name)
     else:
