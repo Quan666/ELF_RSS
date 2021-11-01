@@ -12,7 +12,7 @@ from .Parsing import (
     cache_db_manage,
     duplicate_exists,
 )
-from .Parsing.handle_images import handle_img_combo
+from .Parsing.handle_images import handle_img_combo, get_preview_gif_from_video
 from ..rss_class import Rss
 from ...config import DATA_PATH
 
@@ -56,8 +56,13 @@ async def handle_img(url: str, img_proxy: bool) -> str:
         if img:
             url = img.attr("src")
         else:
-            img_str += "视频封面："
-            url = d("meta[property='og:image']").attr("content")
+            img_str += "视频预览："
+            url = d("video#image").attr("src")
+            try:
+                url = await get_preview_gif_from_video(url)
+            except RetryError:
+                logger.error(f"视频预览获取失败，将发送原视频封面")
+                url = d("meta[property='og:image']").attr("content")
         img_str += await handle_img_combo(url, img_proxy)
 
     return img_str
@@ -116,7 +121,7 @@ async def get_summary(item: dict, img_proxy: bool) -> str:
     summary = (
         item["content"][0].get("value") if item.get("content") else item["summary"]
     )
-    # 如果图片非视频封面，替换为更清晰的预览图
+    # 如果图片非视频封面，替换为更清晰的预览图；否则移除，以此跳过图片去重检查
     summary_doc = Pq(summary)
     async with httpx.AsyncClient(proxies=get_proxy(img_proxy)) as client:
         response = await client.get(item["link"])
@@ -124,4 +129,6 @@ async def get_summary(item: dict, img_proxy: bool) -> str:
         img = d("img#image")
         if img:
             summary_doc("img").attr("src", img.attr("src"))
+        else:
+            summary_doc.remove("img")
     return str(summary_doc)

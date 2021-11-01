@@ -41,7 +41,48 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> BytesIO:
         response = await client.post(url=next_url + "?ajax=true", data=data)
         d = Pq(response.text)
         output_img_url = "https:" + d("img:nth-child(1)").attr("src")
-        return await download_image(output_img_url)
+    return await download_image(output_img_url)
+
+
+# 通过 ezgif 把视频中间 4 秒转 GIF 作为预览
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
+async def get_preview_gif_from_video(url: str) -> str:
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            url="https://s3.ezgif.com/video-to-gif",
+            data={"new-image-url": url},
+        )
+        d = Pq(response.text)
+        video_length = re.search(
+            r"\d\d:\d\d:\d\d", str(d("#main > p.filestats > strong"))
+        ).group()
+        hours = int(video_length.split(":")[0])
+        minutes = int(video_length.split(":")[1])
+        seconds = int(video_length.split(":")[2])
+        video_length_median = (hours * 60 * 60 + minutes * 60 + seconds) // 2
+        next_url = d("form").attr("action")
+        file = d("form > input[type=hidden]:nth-child(1)").attr("value")
+        token = d("form > input[type=hidden]:nth-child(2)").attr("value")
+        default_end = d("#end").attr("value")
+        if default_end == "5":
+            start = video_length_median - 2
+            end = video_length_median + 2
+        else:
+            start = 0
+            end = default_end
+        data = {
+            "file": file,
+            "token": token,
+            "start": start,
+            "end": end,
+            "size": 320,
+            "fps": 25,
+            "method": "ffmpeg",
+        }
+        response = await client.post(url=next_url + "?ajax=true", data=data)
+        d = Pq(response.text)
+        output_img_url = "https:" + d("img:nth-child(1)").attr("src")
+    return output_img_url
 
 
 # 图片压缩
