@@ -352,7 +352,7 @@ async def handle_title(
 
     # 判断标题与正文相似度，避免标题正文一样，或者是标题为正文前N字等情况
     try:
-        summary_html = Pq(item["summary"])
+        summary_html = Pq(get_summary(item))
         if not config.blockquote:
             summary_html.remove("blockquote")
         similarity = difflib.SequenceMatcher(
@@ -362,7 +362,7 @@ async def handle_title(
         if similarity.ratio() > 0.6:
             res = ""
     except Exception as e:
-        logger.info(f"{rss.name} 没有正文内容！{e}")
+        logger.warning(f"{rss.name} 没有正文内容！{e}")
 
     return res
 
@@ -382,7 +382,10 @@ async def handle_summary(
 async def handle_summary(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
-    tmp += await handle_html_tag(html=Pq(get_summary(item)))
+    try:
+        tmp += await handle_html_tag(html=Pq(get_summary(item)))
+    except Exception as e:
+        logger.warning(f"{rss.name} 没有正文内容！{e}")
     return tmp
 
 
@@ -418,11 +421,15 @@ async def handle_picture(
     if rss.only_title:
         return ""
 
-    res = await handle_img(
-        html=Pq(get_summary(item)),
-        img_proxy=rss.img_proxy,
-        img_num=rss.max_image_number,
-    )
+    res = ""
+    try:
+        res += await handle_img(
+            html=Pq(get_summary(item)),
+            img_proxy=rss.img_proxy,
+            img_num=rss.max_image_number,
+        )
+    except Exception as e:
+        logger.warning(f"{rss.name} 没有正文内容！{e}")
 
     # 判断是否开启了只推送图片
     if rss.only_pic:
