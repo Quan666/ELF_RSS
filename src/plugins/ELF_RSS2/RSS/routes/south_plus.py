@@ -21,7 +21,7 @@ async def handle_summary(
 
 
 # 处理图片
-@ParsingBase.append_handler(parsing_type="picture", rex="south|spring)-plus.net")
+@ParsingBase.append_handler(parsing_type="picture", rex="(south|spring)-plus.net")
 async def handle_picture(
     rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
 ) -> str:
