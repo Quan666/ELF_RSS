@@ -224,8 +224,18 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
             url = video.attr("poster")
             img_str += await handle_img_combo(url, img_proxy)
 
-    # 解决 issue 36
+    return img_str
+
+
+# 处理 bbcode 图片
+async def handle_bbcode_img(html, img_proxy: bool, img_num: int) -> str:
+    img_str = ""
+    # 处理图片
     img_list = re.findall(r"\[img](.+?)\[/img]", str(html), flags=re.I)
+    # 只发送限定数量的图片，防止刷屏
+    if 0 < img_num < len(img_list):
+        img_str += f"\n因启用图片数量限制，目前只有 {img_num} 张图片："
+        img_list = img_list[:img_num]
     for img_tmp in img_list:
         img_str += await handle_img_combo(img_tmp, img_proxy)
 
