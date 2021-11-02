@@ -1,10 +1,81 @@
+import httpx
 import re
 
+from nonebot import logger
+from pyquery import PyQuery as Pq
+from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError
 from tinydb import TinyDB, Query
 
-from .Parsing import ParsingBase
+from .Parsing import ParsingBase, get_summary
 from .Parsing.check_update import get_item_date
+from .Parsing.handle_images import handle_img_combo, get_preview_gif_from_video
 from ..rss_class import Rss
+
+
+# 处理图片
+@ParsingBase.append_handler(parsing_type="picture", rex="pixiv")
+async def handle_picture(
+    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+) -> str:
+
+    # 判断是否开启了只推送标题
+    if rss.only_title:
+        return ""
+
+    res = ""
+    try:
+        res += await handle_img(
+            html=Pq(get_summary(item)),
+            link=item["link"],
+            img_proxy=rss.img_proxy,
+            img_num=rss.max_image_number,
+        )
+    except Exception as e:
+        logger.warning(f"{rss.name} 没有正文内容！{e}")
+
+    # 判断是否开启了只推送图片
+    if rss.only_pic:
+        return f"{res}\n"
+
+    return f"{tmp + res}\n"
+
+
+# 处理图片、视频
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
+async def handle_img(html, link: str, img_proxy: bool, img_num: int) -> str:
+    img_str = ""
+    # 处理动图
+    if re.search("类型：ugoira", str(html)):
+        ugoira_id = re.search(r"\d+", link).group()
+        try:
+            url = await get_ugoira_video(ugoira_id)
+            url = await get_preview_gif_from_video(url)
+            img_str += await handle_img_combo(url, img_proxy)
+        except RetryError:
+            logger.warning(f"动图[{link}]的预览图获取失败，将发送原动图封面")
+            url = html("img").attr("src")
+            img_str += await handle_img_combo(url, img_proxy)
+    else:
+        # 处理图片
+        doc_img = list(html("img").items())
+        # 只发送限定数量的图片，防止刷屏
+        if 0 < img_num < len(doc_img):
+            img_str += f"\n因启用图片数量限制，目前只有 {img_num} 张图片："
+            doc_img = doc_img[:img_num]
+        for img in doc_img:
+            url = img.attr("src")
+            img_str += await handle_img_combo(url, img_proxy)
+
+    return img_str
+
+
+# 获取动图为视频
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
+async def get_ugoira_video(ugoira_id: str) -> str:
+    async with httpx.AsyncClient() as client:
+        data = {"id": ugoira_id, "type": "ugoira"}
+        response = await client.post("https://ugoira.huggy.moe/api/illusts", data=data)
+        return response.json().get("data")[0].get("url")
 
 
 # 处理来源
