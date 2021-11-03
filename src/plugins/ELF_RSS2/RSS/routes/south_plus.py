@@ -1,8 +1,10 @@
 import re
 
+from nonebot import logger
 from pyquery import PyQuery as Pq
 
 from .Parsing import ParsingBase, get_summary, handle_bbcode, handle_html_tag
+from .Parsing.handle_images import handle_bbcode_img
 from ..rss_class import Rss
 
 
@@ -16,6 +18,33 @@ async def handle_summary(
     rss_str = await handle_bbcode(html=Pq(get_summary(item)))
     tmp += await handle_html_tag(html=Pq(rss_str))
     return tmp
+
+
+# 处理图片
+@ParsingBase.append_handler(parsing_type="picture", rex="(south|spring)-plus.net")
+async def handle_picture(
+    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+) -> str:
+
+    # 判断是否开启了只推送标题
+    if rss.only_title:
+        return ""
+
+    res = ""
+    try:
+        res += await handle_bbcode_img(
+            html=Pq(get_summary(item)),
+            img_proxy=rss.img_proxy,
+            img_num=rss.max_image_number,
+        )
+    except Exception as e:
+        logger.warning(f"{rss.name} 没有正文内容！{e}")
+
+    # 判断是否开启了只推送图片
+    if rss.only_pic:
+        return f"{res}\n"
+
+    return f"{tmp + res}\n"
 
 
 # 处理来源
