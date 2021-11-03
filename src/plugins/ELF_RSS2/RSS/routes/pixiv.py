@@ -1,15 +1,74 @@
 import httpx
 import re
+import sqlite3
 
 from nonebot import logger
 from pyquery import PyQuery as Pq
-from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError
+from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError, TryAgain
 from tinydb import TinyDB, Query
 
-from .Parsing import ParsingBase, get_summary
+from .Parsing import (
+    ParsingBase,
+    get_summary,
+    cache_db_manage,
+    write_item,
+    duplicate_exists,
+)
 from .Parsing.check_update import get_item_date
 from .Parsing.handle_images import handle_img_combo, get_preview_gif_from_video
 from ..rss_class import Rss
+from ...config import DATA_PATH
+
+
+# 如果启用了去重模式，对推送列表进行过滤
+@ParsingBase.append_before_handler(priority=12, rex="pixiv")
+async def handle_check_update(rss: Rss, state: dict):
+    change_data = state.get("change_data")
+    conn = state.get("conn")
+    db = state.get("tinydb")
+
+    # 检查是否启用去重 使用 duplicate_filter_mode 字段
+    if not rss.duplicate_filter_mode:
+        return {"change_data": change_data}
+
+    if not conn:
+        conn = sqlite3.connect(DATA_PATH / "cache.db")
+        conn.set_trace_callback(logger.debug)
+
+    await cache_db_manage(conn)
+
+    delete = []
+    for index, item in enumerate(change_data):
+        summary = get_summary(item)
+        try:
+            summary_doc = Pq(summary)
+            # 如果图片为动图，通过移除来跳过图片去重检查
+            if re.search("类型：ugoira", str(summary_doc)):
+                summary_doc.remove("img")
+                summary = str(summary_doc)
+        except Exception as e:
+            logger.warning(e)
+        is_duplicate, image_hash = await duplicate_exists(
+            rss=rss,
+            conn=conn,
+            link=item["link"],
+            title=item["title"],
+            summary=summary,
+        )
+        if is_duplicate:
+            write_item(db, item)
+            delete.append(index)
+        else:
+            change_data[index]["image_hash"] = str(image_hash)
+
+    change_data = [
+        item for index, item in enumerate(change_data) if index not in delete
+    ]
+
+    return {
+        "change_data": change_data,
+        "conn": conn,
+    }
 
 
 # 处理图片
@@ -75,7 +134,10 @@ async def get_ugoira_video(ugoira_id: str) -> str:
     async with httpx.AsyncClient() as client:
         data = {"id": ugoira_id, "type": "ugoira"}
         response = await client.post("https://ugoira.huggy.moe/api/illusts", data=data)
-        return response.json().get("data")[0].get("url")
+        url = response.json().get("data")[0].get("url")
+        if not url:
+            raise TryAgain
+        return url
 
 
 # 处理来源

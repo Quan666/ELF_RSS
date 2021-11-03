@@ -52,7 +52,7 @@ async def handle_img(html, img_proxy: bool, img_num: int) -> str:
             try:
                 url = await get_preview_gif_from_video(url)
             except RetryError:
-                logger.error(f"视频预览获取失败，将发送原视频封面")
+                logger.warning(f"视频预览获取失败，将发送原视频封面")
                 url = video.attr("poster")
             img_str += await handle_img_combo(url, img_proxy)
 

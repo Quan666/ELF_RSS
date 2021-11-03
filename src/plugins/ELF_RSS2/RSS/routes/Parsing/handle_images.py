@@ -64,7 +64,7 @@ async def get_preview_gif_from_video(url: str) -> str:
         file = d("form > input[type=hidden]:nth-child(1)").attr("value")
         token = d("form > input[type=hidden]:nth-child(2)").attr("value")
         default_end = d("#end").attr("value")
-        if default_end == "5":
+        if float(default_end) >= 4:
             start = video_length_median - 2
             end = video_length_median + 2
         else:
