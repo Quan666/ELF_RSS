@@ -12,7 +12,11 @@ from .Parsing import (
     cache_db_manage,
     duplicate_exists,
 )
-from .Parsing.handle_images import handle_img_combo, get_preview_gif_from_video
+from .Parsing.handle_images import (
+    handle_img_combo,
+    get_preview_gif_from_video,
+    handle_img_combo_with_content,
+)
 from ..rss_class import Rss
 from ...config import DATA_PATH
 
@@ -29,12 +33,12 @@ async def handle_picture(
 
     try:
         res = await handle_img(
-            url=item["link"],
+            item=item,
             img_proxy=rss.img_proxy,
         )
-    except RetryError as e:
+    except RetryError:
         res = "预览图获取失败"
-        logger.error(f"[{item['link']}]的预览图获取失败 {e}")
+        logger.warning(f"[{item['link']}]的预览图获取失败")
 
     # 判断是否开启了只推送图片
     if rss.only_pic:
@@ -45,12 +49,14 @@ async def handle_picture(
 
 # 处理图片、视频
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def handle_img(url: str, img_proxy: bool) -> str:
+async def handle_img(item: dict, img_proxy: bool) -> str:
+    if item.get("image_content"):
+        return await handle_img_combo_with_content(item.get("image_content"))
     img_str = ""
 
     # 处理图片
     async with httpx.AsyncClient(proxies=get_proxy(img_proxy)) as client:
-        response = await client.get(url)
+        response = await client.get(item["link"])
         d = Pq(response.text)
         img = d("img#image")
         if img:
@@ -90,13 +96,12 @@ async def handle_check_update(rss: Rss, state: dict):
         try:
             summary = await get_summary(item, rss.img_proxy)
         except RetryError:
-            logger.error(f"[{item['link']}]的预览图获取失败")
+            logger.warning(f"[{item['link']}]的预览图获取失败")
             continue
         is_duplicate, image_hash = await duplicate_exists(
             rss=rss,
             conn=conn,
-            link=item["link"],
-            title=item["title"],
+            item=item,
             summary=summary,
         )
         if is_duplicate:

@@ -9,7 +9,7 @@ from nonebot import logger
 from pyquery import PyQuery as Pq
 from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError
 
-from .utils import get_proxy
+from .utils import get_proxy, get_summary
 from ....config import config
 
 STATUS_CODE = [200, 301, 302]
@@ -203,8 +203,19 @@ async def handle_img_combo(url: str, img_proxy: bool) -> str:
     return f"\n图片走丢啦: {url}\n"
 
 
+async def handle_img_combo_with_content(content) -> str:
+    resize_content = await zip_pic("", content)
+    img_base64 = await get_pic_base64(resize_content)
+    if img_base64:
+        return f"[CQ:image,file=base64://{img_base64}]"
+    return f"\n图片走丢啦\n"
+
+
 # 处理图片、视频
-async def handle_img(html, img_proxy: bool, img_num: int) -> str:
+async def handle_img(item: dict, img_proxy: bool, img_num: int) -> str:
+    if item.get("image_content"):
+        return await handle_img_combo_with_content(item.get("image_content"))
+    html = Pq(get_summary(item))
     img_str = ""
     # 处理图片
     doc_img = list(html("img").items())

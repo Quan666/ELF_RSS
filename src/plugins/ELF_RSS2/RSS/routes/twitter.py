@@ -3,7 +3,11 @@ from pyquery import PyQuery as Pq
 from tenacity import RetryError
 
 from .Parsing import ParsingBase, get_summary
-from .Parsing.handle_images import handle_img_combo, get_preview_gif_from_video
+from .Parsing.handle_images import (
+    handle_img_combo,
+    get_preview_gif_from_video,
+    handle_img_combo_with_content,
+)
 from ..rss_class import Rss
 
 
@@ -18,7 +22,7 @@ async def handle_picture(
         return ""
 
     res = await handle_img(
-        html=Pq(get_summary(item)),
+        item=item,
         img_proxy=rss.img_proxy,
         img_num=rss.max_image_number,
     )
@@ -31,7 +35,10 @@ async def handle_picture(
 
 
 # 处理图片、视频
-async def handle_img(html, img_proxy: bool, img_num: int) -> str:
+async def handle_img(item: dict, img_proxy: bool, img_num: int) -> str:
+    if item.get("image_content"):
+        return await handle_img_combo_with_content(item.get("image_content"))
+    html = Pq(get_summary(item))
     img_str = ""
     # 处理图片
     doc_img = list(html("img").items())

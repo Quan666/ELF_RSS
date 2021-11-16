@@ -304,13 +304,11 @@ async def handle_check_update(rss: Rss, state: dict):
 
     delete = []
     for index, item in enumerate(change_data):
-        summary = get_summary(item)
         is_duplicate, image_hash = await duplicate_exists(
             rss=rss,
             conn=conn,
-            link=item["link"],
-            title=item["title"],
-            summary=summary,
+            item=item,
+            summary=get_summary(item),
         )
         if is_duplicate:
             write_item(db, item)
@@ -424,7 +422,7 @@ async def handle_picture(
     res = ""
     try:
         res += await handle_img(
-            html=Pq(get_summary(item)),
+            item=item,
             img_proxy=rss.img_proxy,
             img_num=rss.max_image_number,
         )
@@ -500,7 +498,7 @@ async def handle_message(
 
         if rss.duplicate_filter_mode:
             await insert_into_cache_db(
-                conn=state.get("conn"), item=item, image_hash=item["image_hash"]
+                conn=state.get("conn"), item=item, image_hash=item.get("image_hash")
             )
 
         if item.get("to_send"):
