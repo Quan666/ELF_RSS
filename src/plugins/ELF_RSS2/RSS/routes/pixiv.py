@@ -15,7 +15,11 @@ from .Parsing import (
     duplicate_exists,
 )
 from .Parsing.check_update import get_item_date
-from .Parsing.handle_images import handle_img_combo, get_preview_gif_from_video
+from .Parsing.handle_images import (
+    handle_img_combo,
+    get_preview_gif_from_video,
+    handle_img_combo_with_content,
+)
 from ..rss_class import Rss
 from ...config import DATA_PATH
 
@@ -51,8 +55,7 @@ async def handle_check_update(rss: Rss, state: dict):
         is_duplicate, image_hash = await duplicate_exists(
             rss=rss,
             conn=conn,
-            link=item["link"],
-            title=item["title"],
+            item=item,
             summary=summary,
         )
         if is_duplicate:
@@ -84,8 +87,7 @@ async def handle_picture(
     res = ""
     try:
         res += await handle_img(
-            html=Pq(get_summary(item)),
-            link=item["link"],
+            item=item,
             img_proxy=rss.img_proxy,
             img_num=rss.max_image_number,
         )
@@ -101,7 +103,11 @@ async def handle_picture(
 
 # 处理图片、视频
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def handle_img(html, link: str, img_proxy: bool, img_num: int) -> str:
+async def handle_img(item: dict, img_proxy: bool, img_num: int) -> str:
+    if item.get("image_content"):
+        return await handle_img_combo_with_content(item.get("image_content"))
+    html = Pq(get_summary(item))
+    link = item["link"]
     img_str = ""
     # 处理动图
     if re.search("类型：ugoira", str(html)):

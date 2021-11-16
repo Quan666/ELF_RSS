@@ -73,11 +73,11 @@ async def cache_json_manage(db: TinyDB, new_data_length: int) -> None:
 
 # 去重判断
 async def duplicate_exists(
-    rss: rss_class.Rss, conn: sqlite3.connect, link: str, title: str, summary: str
+    rss: rss_class.Rss, conn: sqlite3.connect, item: dict, summary: str
 ) -> tuple:
     flag = False
-    link = link.replace("'", "''")
-    title = title.replace("'", "''")
+    link = item["link"].replace("'", "''")
+    title = item["title"].replace("'", "''")
     image_hash = None
     cursor = conn.cursor()
     sql = "SELECT * FROM main WHERE 1=1"
@@ -103,10 +103,11 @@ async def duplicate_exists(
                 im = Image.open(BytesIO(content))
             except UnidentifiedImageError:
                 continue
-            image_hash = str(imagehash.average_hash(im))
+            item["image_content"] = content
             # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤直接跳过
             if im.format == "GIF":
                 continue
+            image_hash = str(imagehash.average_hash(im))
             logger.debug(f"image_hash: {image_hash}")
             sql += " AND image_hash=?"
             args.append(image_hash)
