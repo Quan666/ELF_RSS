@@ -106,6 +106,7 @@ async def duplicate_exists(
             item["image_content"] = content
             # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤直接跳过
             if im.format == "GIF":
+                item["gif_url"] = url
                 continue
             image_hash = str(imagehash.average_hash(im))
             logger.debug(f"image_hash: {image_hash}")

@@ -37,7 +37,9 @@ async def handle_picture(
 # 处理图片、视频
 async def handle_img(item: dict, img_proxy: bool, img_num: int) -> str:
     if item.get("image_content"):
-        return await handle_img_combo_with_content(item.get("image_content"))
+        return await handle_img_combo_with_content(
+            item.get("gif_url"), item.get("image_content")
+        )
     html = Pq(get_summary(item))
     img_str = ""
     # 处理图片
