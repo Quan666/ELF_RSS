@@ -51,7 +51,9 @@ async def handle_picture(
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def handle_img(item: dict, img_proxy: bool) -> str:
     if item.get("image_content"):
-        return await handle_img_combo_with_content(item.get("image_content"))
+        return await handle_img_combo_with_content(
+            item.get("gif_url"), item.get("image_content")
+        )
     img_str = ""
 
     # 处理图片
