@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ELF_RSS"
-version = "2.4.4"
+version = "2.4.5"
 description = "ELF_RSS"
 authors = ["Quan666"]
 license = "GPL v3"
