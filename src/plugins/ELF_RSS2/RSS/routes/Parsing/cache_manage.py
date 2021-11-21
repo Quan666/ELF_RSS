@@ -108,7 +108,7 @@ async def duplicate_exists(
             if im.format == "GIF":
                 item["gif_url"] = url
                 continue
-            image_hash = str(imagehash.average_hash(im))
+            image_hash = str(imagehash.dhash(im))
             logger.debug(f"image_hash: {image_hash}")
             sql += " AND image_hash=?"
             args.append(image_hash)
