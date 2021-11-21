@@ -5,5 +5,6 @@ from . import (
     south_plus,
     twitter,
     weibo,
+    yande_re,
     youtube,
 )  # noqa
