@@ -1,5 +1,6 @@
-from nonebot.adapters.cqhttp import Bot
 from typing import List
+
+from nonebot.adapters.cqhttp import Bot
 
 
 async def get_bot_qq(bot: Bot) -> int:

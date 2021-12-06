@@ -1,24 +1,22 @@
 # -*- coding: UTF-8 -*-
 
 import asyncio
+import re
+from pathlib import Path
+
 import feedparser
 import httpx
-import re
-
 from nonebot.log import logger
-from pathlib import Path
-from tenacity import retry, stop_after_attempt, stop_after_delay, RetryError, TryAgain
+from tenacity import RetryError, TryAgain, retry, stop_after_attempt, stop_after_delay
 from tinydb import TinyDB
-from tinydb.storages import JSONStorage
 from tinydb.middlewares import CachingMiddleware
+from tinydb.storages import JSONStorage
 
+from ..config import DATA_PATH, config
 from . import rss_class
 from .routes.Parsing import ParsingRss, get_proxy
 from .routes.Parsing.cache_manage import cache_filter
 from .routes.Parsing.check_update import dict_hash
-from ..config import config
-from ..config import DATA_PATH
-
 
 STATUS_CODE = [200, 301, 302]
 # 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告

@@ -1,10 +1,10 @@
 import os
+from pathlib import Path
+from typing import Any, List
 
 from nonebot import get_driver, logger
 from nonebot.config import BaseConfig
-from pathlib import Path
 from pydantic import AnyHttpUrl, Extra
-from typing import List, Any
 
 DATA_PATH = Path.cwd() / "data"
 JSON_PATH = DATA_PATH / "rss.json"

@@ -1,10 +1,10 @@
 import re
 
-from tinydb import TinyDB, Query
+from tinydb import Query, TinyDB
 
+from ..rss_class import Rss
 from .Parsing import ParsingBase
 from .Parsing.check_update import get_item_date
-from ..rss_class import Rss
 
 
 # 检查更新

@@ -1,4 +1,4 @@
-from tinydb import TinyDB, Query
+from tinydb import Query, TinyDB
 from tinydb.operations import delete
 
 from .cache_manage import cache_filter
