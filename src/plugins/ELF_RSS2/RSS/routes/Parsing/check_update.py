@@ -1,11 +1,10 @@
-import arrow
 import hashlib
-
-from arrow import Arrow
 from email.utils import parsedate_to_datetime
+from typing import Any, Dict
 
-from tinydb import TinyDB, Query
-from typing import Dict, Any
+import arrow
+from arrow import Arrow
+from tinydb import Query, TinyDB
 
 
 # 对 dict 对象计算哈希值，供后续比较

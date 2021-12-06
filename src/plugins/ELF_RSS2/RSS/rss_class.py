@@ -1,12 +1,11 @@
 import re
+from pathlib import Path
 
 from nonebot.log import logger
-from pathlib import Path
-from tinydb import TinyDB, Query
+from tinydb import Query, TinyDB
 from tinydb.operations import set
 
-from ..config import config
-from ..config import DATA_PATH, JSON_PATH
+from ..config import DATA_PATH, JSON_PATH, config
 
 
 class Rss:

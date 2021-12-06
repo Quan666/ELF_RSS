@@ -1,7 +1,7 @@
 import re
 
-from .Parsing import ParsingBase, check_update
 from ..rss_class import Rss
+from .Parsing import ParsingBase, check_update
 
 
 # 检查更新

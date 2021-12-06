@@ -1,5 +1,6 @@
 import copy
 import re
+from typing import List
 
 from nonebot import on_command
 from nonebot import permission as su
@@ -7,12 +8,11 @@ from nonebot import require
 from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission, unescape
 from nonebot.log import logger
 from nonebot.rule import to_me
-from tinydb import TinyDB, Query
-from typing import List
+from tinydb import Query, TinyDB
 
+from .config import DATA_PATH, JSON_PATH
 from .RSS import my_trigger as tr
 from .RSS import rss_class
-from .config import DATA_PATH, JSON_PATH
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 

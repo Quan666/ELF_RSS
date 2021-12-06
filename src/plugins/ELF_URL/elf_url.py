@@ -1,7 +1,7 @@
 from urllib.parse import quote
 
 import httpx
-from nonebot import on_command, logger
+from nonebot import logger, on_command
 from nonebot.adapters.cqhttp import Bot, Event
 from nonebot.rule import to_me
 

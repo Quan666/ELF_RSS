@@ -1,10 +1,11 @@
 import re
 
 import nonebot
-from nonebot import on_command, logger
-from nonebot.adapters.cqhttp import Bot, Event, PrivateMessageEvent, GroupMessageEvent
+from nonebot import logger, on_command
+from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, PrivateMessageEvent
 from nonebot.rule import to_me
 from qbittorrent import Client
+
 from .config import config
 
 upload_group_file = on_command(

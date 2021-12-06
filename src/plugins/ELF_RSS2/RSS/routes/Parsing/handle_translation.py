@@ -1,11 +1,11 @@
-import emoji
 import re
 import unicodedata
 
+import emoji
 from google_trans_new import google_translator
 
-from ....RSS import translation_baidu
 from ....config import config
+from ....RSS import translation_baidu
 
 
 # 翻译

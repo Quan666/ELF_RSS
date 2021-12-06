@@ -1,7 +1,7 @@
-import bbcode
 import re
-
 from html import unescape as html_unescape
+
+import bbcode
 
 from ....config import config
 
