@@ -37,7 +37,7 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
         group_list = await get_bot_group_list(bot)
         for group_id in rss.group_id:
             if int(group_id) not in group_list:
-                logger.error(f"Bot[{bot_qq}]未加入群组[{group_id}] 链接：[{item['link']}]")
+                logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}] 链接：[{item['link']}]")
                 continue
             try:
                 await bot.send_msg(
