@@ -10,7 +10,7 @@ from nonebot import logger, require
 from nonebot.adapters.cqhttp import ActionFailed
 from qbittorrent import Client
 
-from ..bot_info import get_bot_group_list, get_bot_qq
+from ..bot_info import get_bot_group_list
 from ..config import config
 
 # 计划
@@ -41,11 +41,10 @@ async def send_msg(msg: str) -> list:
     logger.info(msg)
     bot = nonebot.get_bot()
     msg_id = []
-    bot_qq = await get_bot_qq(bot)
     group_list = await get_bot_group_list(bot)
     for group_id in config.down_status_msg_group:
         if int(group_id) not in group_list:
-            logger.error(f"Bot[{bot_qq}]未加入群组[{group_id}]")
+            logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}]")
             continue
         msg_id.append(
             await bot.send_msg(

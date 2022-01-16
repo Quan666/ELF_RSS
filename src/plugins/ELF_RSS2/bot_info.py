@@ -3,11 +3,6 @@ from typing import List
 from nonebot.adapters.cqhttp import Bot
 
 
-async def get_bot_qq(bot: Bot) -> int:
-    login_info = await bot.get_login_info()
-    return login_info["user_id"]
-
-
 async def get_bot_friend_list(bot: Bot) -> List[int]:
     friend_list = await bot.get_friend_list()
     return [i["user_id"] for i in friend_list]
