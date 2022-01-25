@@ -1,31 +1,36 @@
 import re
 
 from nonebot import on_command
-from nonebot import permission as su
-from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, permission, unescape
 from nonebot.rule import to_me
+from nonebot.params import CommandArg
+from nonebot.permission import SUPERUSER
+
+from nonebot.adapters.onebot.v11 import Event, Message, GroupMessageEvent, unescape
+from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 
 from .RSS import rss_class
 from .show_dy import handle_rss_list
+
 
 RSS_SHOW_ALL = on_command(
     "show_all",
     aliases={"showall", "select_all", "selectall", "所有订阅"},
     rule=to_me(),
     priority=5,
-    permission=su.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER,
+    permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,
 )
 
 
 @RSS_SHOW_ALL.handle()
-async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
+async def handle_first_receive(event: Event, message: Message = CommandArg()):
+    args = str(message).strip()
     if args:
-        search_keyword = unescape(args)  # 如果用户发送了参数则直接赋值
+        search_keyword = unescape(args)
     else:
         search_keyword = None
 
     group_id = None
+
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
 
@@ -33,8 +38,7 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
     if group_id:
         rss_list = rss.find_group(group=str(group_id))
         if not rss_list:
-            await RSS_SHOW_ALL.send("❌ 当前群组没有任何订阅！")
-            return
+            await RSS_SHOW_ALL.finish("❌ 当前群组没有任何订阅！")
     else:
         rss_list = rss.read_rss()
 
@@ -56,6 +60,6 @@ async def handle_first_receive(bot: Bot, event: Event, state: dict):
 
     if result:
         msg_str = await handle_rss_list(result)
-        await RSS_SHOW_ALL.send(msg_str)
+        await RSS_SHOW_ALL.finish(msg_str)
     else:
-        await RSS_SHOW_ALL.send("❌ 当前没有任何订阅！")
+        await RSS_SHOW_ALL.finish("❌ 当前没有任何订阅！")

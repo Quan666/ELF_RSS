@@ -1,15 +1,27 @@
 import re
-
 import nonebot
-from nonebot import logger, on_command
-from nonebot.adapters.cqhttp import Bot, Event, GroupMessageEvent, PrivateMessageEvent
-from nonebot.rule import to_me
 from qbittorrent import Client
+
+from nonebot import on_command, logger
+from nonebot.rule import to_me
+from nonebot.params import CommandArg
+
+from nonebot.adapters.onebot.v11 import (
+    Bot,
+    Event,
+    Message,
+    PrivateMessageEvent,
+    GroupMessageEvent,
+)
 
 from .config import config
 
+
 upload_group_file = on_command(
-    "upload_file", aliases={"uploadfile"}, rule=to_me(), priority=5
+    "upload_file",
+    aliases={"uploadfile"},
+    rule=to_me(),
+    priority=5,
 )
 
 
@@ -18,12 +30,13 @@ async def get_qb():
         qb = Client(config.qb_web_url)
         qb.login()
     except Exception as e:
-        msg = (
-            "❌ 无法连接到 qbittorrent ，请检查：\n"
-            "1. 是否启动程序\n"
-            "2. 是否勾选了“Web用户界面（远程控制）”\n"
-            f"3. 连接地址、端口是否正确\n{e}"
-        )
+        msg = f"""\
+❌ 无法连接到 qbittorrent ，请检查：
+    1. 是否启动程序
+    2. 是否勾选了 "Web用户界面（远程控制）"
+    3. 连接地址、端口是否正确
+{e}\
+"""
         logger.error(msg)
         await upload_group_file.send(msg)
         return None
@@ -75,8 +88,8 @@ async def check_down_status(hash_str: str, group_id: int):
                     f"Hash: {hash_str}\n"
                     "开始上传"
                 )
-                await bot.call_api(
-                    "upload_group_file", group_id=group_id, file=path, name=tmp["name"]
+                await bot.upload_group_file(
+                    group_id=group_id, file=path, name=tmp["name"]
                 )
             except Exception:
                 continue
@@ -89,11 +102,11 @@ async def check_down_status(hash_str: str, group_id: int):
 
 
 @upload_group_file.handle()
-async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    hash_str = re.search("[a-f0-9]{40}", str(event.get_message()))[0]
+async def handle_first_receive(event: Event, message: Message = CommandArg()):
+    hash_str = re.search("[a-f0-9]{40}", str(message))[0]
     group_id = None
     if isinstance(event, PrivateMessageEvent):
-        group_id = re.search("[0-9]{6,12}", str(event.message).replace(hash_str, ""))[0]
+        group_id = re.search("[0-9]{6,12}", str(message).replace(hash_str, ""))[0]
     elif isinstance(event, GroupMessageEvent):
         group_id = event.group_id
     await check_down_status(hash_str=hash_str, group_id=group_id)

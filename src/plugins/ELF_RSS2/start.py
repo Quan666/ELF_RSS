@@ -1,18 +1,23 @@
 import json
+import nonebot
+
 from pathlib import Path
 
-import nonebot
-from nonebot import logger, on_metaevent
-from nonebot.adapters.cqhttp import Bot, Event, LifecycleMetaEvent
 from tinydb import TinyDB
-from tinydb.middlewares import CachingMiddleware
 from tinydb.storages import JSONStorage
+from tinydb.middlewares import CachingMiddleware
 
-from .config import DATA_PATH, JSON_PATH, config
+from nonebot import logger, on_metaevent, require
+from nonebot.adapters.onebot.v11 import Bot, Event, LifecycleMetaEvent
+
 from .RSS import my_trigger as tr
 from .RSS import rss_class
 from .RSS.routes.Parsing.cache_manage import cache_filter
 from .RSS.routes.Parsing.check_update import dict_hash
+from .config import config, DATA_PATH, JSON_PATH
+
+
+scheduler = require("nonebot_plugin_apscheduler").scheduler
 
 
 # 将 xxx.json (缓存) 改造为 tinydb 数据库
@@ -137,7 +142,7 @@ async def start():
         raise
 
 
-async def check_first_connect(bot: Bot, event: Event, state: dict) -> bool:
+async def check_first_connect(event: Event) -> bool:
     if isinstance(event, LifecycleMetaEvent) and not config.is_start:
         config.is_start = True
         return True
@@ -148,6 +153,6 @@ start_metaevent = on_metaevent(rule=check_first_connect, block=True)
 
 
 @start_metaevent.handle()
-async def _(bot: Bot, event: Event, state: dict):
+async def _():
     # 启动时发送启动成功信息
     await start()

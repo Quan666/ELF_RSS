@@ -1,9 +1,13 @@
 import nonebot
-from nonebot import logger
-from nonebot.adapters.cqhttp import NetworkError
 
-from ....bot_info import get_bot_friend_list, get_bot_group_list
+from nonebot import logger
+from nonebot.adapters.onebot.v11 import NetworkError
+
 from ....RSS import rss_class
+from ....bot_info import (
+    get_bot_friend_list,
+    get_bot_group_list,
+)
 
 
 # 发送消息
@@ -21,9 +25,7 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                 )
                 continue
             try:
-                await bot.send_msg(
-                    message_type="private", user_id=int(user_id), message=str(msg)
-                )
+                await bot.send_private_msg(user_id=int(user_id), message=str(msg))
                 flag = True
             except NetworkError:
                 if item.get("count") == 3:
@@ -40,9 +42,7 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                 logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}] 链接：[{item['link']}]")
                 continue
             try:
-                await bot.send_msg(
-                    message_type="group", group_id=int(group_id), message=str(msg)
-                )
+                await bot.send_group_msg(group_id=int(group_id), message=str(msg))
                 flag = True
             except NetworkError:
                 if item.get("count") == 3:
@@ -51,4 +51,5 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                     logger.warning(f"网络错误，消息发送失败，将重试")
             except Exception as e:
                 logger.error(f"E: {e} 链接：[{item['link']}]")
+
     return flag
