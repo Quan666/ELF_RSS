@@ -1,7 +1,11 @@
 from nonebot import on_command
-from nonebot import permission as su
-from nonebot.adapters.cqhttp import Bot, Event, permission, unescape
 from nonebot.rule import to_me
+from nonebot.typing import T_State
+from nonebot.params import CommandArg, State
+from nonebot.permission import SUPERUSER
+
+from nonebot.adapters.onebot.v11 import Message, unescape
+from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 
 from .RSS import my_trigger as tr
 from .RSS import rss_class
@@ -11,32 +15,35 @@ ADD_COOKIES = on_command(
     aliases={"添加cookies"},
     rule=to_me(),
     priority=5,
-    permission=su.SUPERUSER | permission.GROUP_ADMIN | permission.GROUP_OWNER,
+    permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,
 )
 
 
 @ADD_COOKIES.handle()
-async def handle_first_receive(bot: Bot, event: Event, state: dict):
-    args = str(event.get_message()).strip()  # 首次发送命令时跟随的参数，例：/天气 上海，则args为上海
+async def handle_first_receive(
+    message: Message = CommandArg(), state: T_State = State()
+):
+    args = str(message).strip()
     if args:
-        state["ADD_COOKIES"] = unescape(args)  # 如果用户发送了参数则直接赋值
+        state["COOKIES"] = unescape(args)
 
 
-prompt = (
-    "请输入：\n"
-    "名称 cookies\n"
-    "空格分割\n"
-    "获取方式：\n"
-    "PC端 chrome 浏览器按 F12\n"
-    "找到Console选项卡，输入:\n"
-    "document.cookie\n"
-    "输出的字符串就是了"
-)
+prompt = """\
+请输入：
+    名称 cookies
+空格分割
+
+获取方式：
+    PC端 Chrome 浏览器按 F12
+    找到Console选项卡，输入:
+        document.cookie
+    输出的字符串就是了\
+"""
 
 
-@ADD_COOKIES.got("ADD_COOKIES", prompt=prompt)
-async def handle_add_cookies(bot: Bot, event: Event, state: dict):
-    rss_cookies = unescape(state["ADD_COOKIES"])
+@ADD_COOKIES.got("COOKIES", prompt=prompt)
+async def handle_add_cookies(state: T_State = State()):
+    rss_cookies = unescape(str(state["COOKIES"]))
 
     dy = rss_cookies.split(" ", 1)
 
@@ -45,23 +52,21 @@ async def handle_add_cookies(bot: Bot, event: Event, state: dict):
     try:
         name = dy[0]
     except IndexError:
-        await ADD_COOKIES.send("❌ 输入的订阅名为空！")
-        return
+        await ADD_COOKIES.finish("❌ 输入的订阅名为空！")
 
     if not rss.find_name(name=name):
-        await ADD_COOKIES.send(f"❌ 不存在该订阅: {name}")
-        return
+        await ADD_COOKIES.finish(f"❌ 不存在该订阅: {name}")
+
     rss = rss.find_name(name=name)
 
     try:
         cookies = dy[1]
     except IndexError:
-        await ADD_COOKIES.send("❌ 输入的cookies为空！")
-        return
+        await ADD_COOKIES.finish("❌ 输入的cookies为空！")
 
     rss.name = name
     if rss.set_cookies(cookies):
         await tr.add_job(rss)
-        await ADD_COOKIES.send(f"👏 {rss.name}的Cookies添加成功！\nCookies:{rss.cookies}\n")
+        await ADD_COOKIES.finish(f"👏 {rss.name}的Cookies添加成功！\nCookies:{rss.cookies}\n")
     else:
-        await ADD_COOKIES.send(f"👏 {rss.name}的Cookies添加失败！\nCookies:{rss.cookies}\n")
+        await ADD_COOKIES.finish(f"❌ {rss.name}的Cookies添加失败！\nCookies:{rss.cookies}\n")

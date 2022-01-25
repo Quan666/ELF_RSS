@@ -7,7 +7,7 @@ import httpx
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger
 from nonebot import logger, require
-from nonebot.adapters.cqhttp import ActionFailed
+from nonebot.adapters.onebot.v11 import ActionFailed
 from qbittorrent import Client
 
 from ..bot_info import get_bot_group_list

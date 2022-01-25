@@ -1,6 +1,6 @@
-from typing import List
+from nonebot.adapters.onebot.v11 import Bot
 
-from nonebot.adapters.cqhttp import Bot
+from typing import List
 
 
 async def get_bot_friend_list(bot: Bot) -> List[int]:
