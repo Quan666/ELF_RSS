@@ -195,9 +195,7 @@ async def handle_rss_change(event: Event, state: T_State = State()):
                     or value_to_change == "or"
                 ):
                     await RSS_CHANGE.finish(f"❌ 去重模式参数错误！\n{change_dict}")
-                await handle_change_list(
-                    rss, key_to_change, value_to_change, group_id
-                )
+                await handle_change_list(rss, key_to_change, value_to_change, group_id)
             else:
                 await RSS_CHANGE.finish(f"❌ 参数错误！\n{change_dict}")
 
