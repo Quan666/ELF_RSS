@@ -1,21 +1,18 @@
 import json
-import nonebot
-
 from pathlib import Path
 
-from tinydb import TinyDB
-from tinydb.storages import JSONStorage
-from tinydb.middlewares import CachingMiddleware
-
+import nonebot
 from nonebot import logger, on_metaevent, require
-from nonebot.adapters.onebot.v11 import Bot, Event, LifecycleMetaEvent
+from nonebot.adapters.onebot.v11 import Event, LifecycleMetaEvent
+from tinydb import TinyDB
+from tinydb.middlewares import CachingMiddleware
+from tinydb.storages import JSONStorage
 
+from .config import DATA_PATH, JSON_PATH, config
 from .RSS import my_trigger as tr
 from .RSS import rss_class
 from .RSS.routes.Parsing.cache_manage import cache_filter
 from .RSS.routes.Parsing.check_update import dict_hash
-from .config import config, DATA_PATH, JSON_PATH
-
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 
