@@ -30,7 +30,7 @@ pydantic = "~=1.9.0"
 pyquery = "~=1.4.3"
 python-qbittorrent = "~=0.4.2"
 tenacity = "~=7.0.0"
-tinydb = "~=4.5.1"
+tinydb = ">=4.5.1,<4.7.0"
 typing-extensions = "~=3.10.0.2"
 
 [tool.poetry.dev-dependencies]
