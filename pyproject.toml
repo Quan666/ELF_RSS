@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ELF_RSS"
-version = "2.4.5"
+version = "2.5.0"
 description = "ELF_RSS"
 authors = ["Quan666"]
 license = "GPL v3"
@@ -14,28 +14,28 @@ keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 
 [tool.poetry.dependencies]
 python = "^3.8.3"
-arrow = "~=1.2.0"
-bbcode = "~=1.1.0"
-emoji = "~=0.5.4"
-feedparser = "~=6.0.0"
-google-trans-new = "~=1.1.9"
-httpx = "~=0.18.0"
-ImageHash = "~=4.2.0"
-magneturi = "~=1.3"
-nonebot-adapter-onebot = "~2.0.0b1"
-nonebot-plugin-apscheduler = "~=0.1.2"
+arrow = "^1.2.0"
+bbcode = "^1.1.0"
+emoji = "^0.5.4"
+feedparser = "^6.0.0"
+google-trans-new = "^1.1.9"
+httpx = "^0.18.0"
+ImageHash = "^4.2.0"
+magneturi = "^1.3"
+nonebot-adapter-onebot = "2.0.0b1"
+nonebot-plugin-apscheduler = "^0.1.2"
 nonebot2 = "2.0.0b1"
-Pillow = ">=8.1.1"
-pydantic = "~=1.9.0"
-pyquery = "~=1.4.3"
-python-qbittorrent = "~=0.4.2"
-tenacity = "~=7.0.0"
-tinydb = "~=4.5.1"
-typing-extensions = "~=3.10.0.2"
+Pillow = "^9.0.0"
+pydantic = "^1.9.0"
+pyquery = "^1.4.3"
+python-qbittorrent = "^0.4.2"
+tenacity = "^7.0.0"
+tinydb = "^4.6.1"
+typing-extensions = "^3.10.0.2"
 
 [tool.poetry.dev-dependencies]
-nonebot-test = "~=0.1.0"
-nb-cli = "~=0.6.4"
+nonebot-test = "^0.1.0"
+nb-cli = "^0.6.4"
 
 [build-system]
 requires = ["poetry>=0.12"]
