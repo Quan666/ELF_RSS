@@ -1,15 +1,13 @@
 import copy
 
 from nonebot import on_command
-from nonebot.rule import to_me
+from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message, unescape
+from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
-
-from nonebot.adapters.onebot.v11 import Event, Message, GroupMessageEvent, unescape
-from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
+from nonebot.rule import to_me
 
 from .RSS import rss_class
-
 
 RSS_SHOW = on_command(
     "show",

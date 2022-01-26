@@ -7,4 +7,4 @@ from . import (
     weibo,
     yande_re,
     youtube,
-)  # noqa
+)

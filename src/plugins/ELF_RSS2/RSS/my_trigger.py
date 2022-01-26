@@ -37,7 +37,9 @@ def rss_trigger(rss: rss_class.Rss):
         return
     scheduler = require("nonebot_plugin_apscheduler").scheduler
     # 制作一个“time分钟/次”触发器
-    trigger = IntervalTrigger(minutes=int(rss.time), jitter=10)
+    trigger = IntervalTrigger(
+        minutes=int(rss.time), jitter=10, timezone=scheduler.timezone
+    )
     # 添加任务
     scheduler.add_job(
         func=check_update,  # 要添加任务的函数，不要带参数
