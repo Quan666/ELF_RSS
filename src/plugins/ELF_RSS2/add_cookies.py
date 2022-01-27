@@ -1,10 +1,10 @@
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Message, unescape
+from nonebot.adapters.onebot.v11 import Message
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
-from nonebot.params import CommandArg, State
+from nonebot.matcher import Matcher
+from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
-from nonebot.typing import T_State
 
 from .RSS import my_trigger as tr
 from .RSS import rss_class
@@ -19,12 +19,10 @@ ADD_COOKIES = on_command(
 
 
 @ADD_COOKIES.handle()
-async def handle_first_receive(
-    message: Message = CommandArg(), state: T_State = State()
-):
-    args = str(message).strip()
-    if args:
-        state["COOKIES"] = unescape(args)
+async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()):
+    plain_text = args.extract_plain_text()
+    if plain_text:
+        matcher.set_arg("COOKIES", args)
 
 
 prompt = """\
@@ -41,9 +39,7 @@ prompt = """\
 
 
 @ADD_COOKIES.got("COOKIES", prompt=prompt)
-async def handle_add_cookies(state: T_State = State()):
-    rss_cookies = unescape(str(state["COOKIES"]))
-
+async def handle_add_cookies(rss_cookies: str = ArgPlainText("COOKIES")):
     dy = rss_cookies.split(" ", 1)
 
     rss = rss_class.Rss()

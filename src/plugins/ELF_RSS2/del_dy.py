@@ -1,10 +1,10 @@
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message, unescape
+from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
-from nonebot.params import CommandArg, State
+from nonebot.matcher import Matcher
+from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
-from nonebot.typing import T_State
 
 from .RSS import my_trigger as tr
 from .RSS import rss_class
@@ -19,18 +19,14 @@ RSS_DELETE = on_command(
 
 
 @RSS_DELETE.handle()
-async def handle_first_receive(
-    message: Message = CommandArg(), state: T_State = State()
-):
-    args = str(message).strip()
-    if args:
-        state["RSS_DELETE"] = unescape(args)
+async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()):
+    plain_text = args.extract_plain_text()
+    if plain_text:
+        matcher.set_arg("RSS_DELETE", args)
 
 
 @RSS_DELETE.got("RSS_DELETE", prompt="输入要删除的订阅名")
-async def handle_rss_delete(event: Event, state: T_State = State()):
-    rss_name = unescape(str(state["RSS_DELETE"]))
-
+async def handle_rss_delete(event: Event, rss_name: str = ArgPlainText("RSS_DELETE")):
     group_id = None
 
     if isinstance(event, GroupMessageEvent):

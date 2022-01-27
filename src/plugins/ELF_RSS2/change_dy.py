@@ -3,13 +3,13 @@ import re
 from typing import List
 
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message, unescape
+from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.log import logger
-from nonebot.params import CommandArg, State
+from nonebot.matcher import Matcher
+from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
-from nonebot.typing import T_State
 from tinydb import Query, TinyDB
 
 from .config import DATA_PATH, JSON_PATH
@@ -26,12 +26,10 @@ RSS_CHANGE = on_command(
 
 
 @RSS_CHANGE.handle()
-async def handle_first_receive(
-    message: Message = CommandArg(), state: T_State = State()
-):
-    args = str(message).strip()
-    if args:
-        state["RSS_CHANGE"] = unescape(args)
+async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()):
+    plain_text = args.extract_plain_text()
+    if plain_text:
+        matcher.set_arg("RSS_CHANGE", args)
 
 
 # 处理带多个值的订阅参数
@@ -150,9 +148,9 @@ prompt = """\
 
 
 @RSS_CHANGE.got("RSS_CHANGE", prompt=prompt)
-async def handle_rss_change(event: Event, state: T_State = State()):
-    change_info = unescape(str(state["RSS_CHANGE"]))
-
+async def handle_rss_change(
+    event: Event, change_info: str = ArgPlainText("RSS_CHANGE")
+):
     group_id = None
 
     if isinstance(event, GroupMessageEvent):
@@ -227,8 +225,7 @@ async def handle_rss_change(event: Event, state: T_State = State()):
     result_msg = f"修改了 {len(rss_msg_list)} 条订阅：\n{result_msg}" + result_msg.join(
         rss_msg_list
     )
-    await RSS_CHANGE.send(f"👏 修改成功\n{result_msg}")
-    logger.info(f"👏 修改成功\n{result_msg}")
+    await RSS_CHANGE.finish(f"👏 修改成功\n{result_msg}")
 
 
 # 参数特殊处理：正文待移除内容
