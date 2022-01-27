@@ -20,13 +20,8 @@ RSS_SHOW_ALL = on_command(
 
 
 @RSS_SHOW_ALL.handle()
-async def handle_first_receive(event: Event, message: Message = CommandArg()):
-    args = str(message).strip()
-    if args:
-        search_keyword = unescape(args)
-    else:
-        search_keyword = None
-
+async def handle_rss_show_all(event: Event, args: Message = CommandArg()):
+    search_keyword = args.extract_plain_text()
     group_id = None
 
     if isinstance(event, GroupMessageEvent):

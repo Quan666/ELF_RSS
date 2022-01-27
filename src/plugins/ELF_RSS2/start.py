@@ -112,8 +112,7 @@ async def start():
         for rss_tmp in rss_list:
             if not rss_tmp.stop:
                 await tr.add_job(rss_tmp)  # 创建检查更新任务
-        await bot.send_msg(
-            message_type="private",
+        await bot.send_private_msg(
             user_id=int(list(config.superusers)[0]),
             message=(
                 "ELF_RSS 订阅器启动成功！\n"
@@ -124,8 +123,7 @@ async def start():
         )
         logger.info("ELF_RSS 订阅器启动成功！")
     except Exception as e:
-        await bot.send_msg(
-            message_type="private",
+        await bot.send_private_msg(
             user_id=int(list(config.superusers)[0]),
             message=(
                 "第一次启动，你还没有订阅，记得添加哟！\n"

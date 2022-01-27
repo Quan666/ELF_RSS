@@ -46,11 +46,7 @@ async def send_msg(msg: str) -> list:
         if int(group_id) not in group_list:
             logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}]")
             continue
-        msg_id.append(
-            await bot.send_msg(
-                message_type="group", group_id=int(group_id), message=msg
-            )
-        )
+        msg_id.append(await bot.send_group_msg(group_id=int(group_id), message=msg))
     return msg_id
 
 
@@ -67,9 +63,7 @@ async def get_qb_client():
             f"3. 连接地址、端口是否正确\n{e}"
         )
         logger.error(msg)
-        await bot.send_msg(
-            message_type="private", user_id=str(list(config.superusers)[0]), message=msg
-        )
+        await bot.send_private_msg(user_id=str(list(config.superusers)[0]), message=msg)
         return None
     try:
         qb.get_default_save_path()
@@ -77,9 +71,7 @@ async def get_qb_client():
         bot = nonebot.get_bot()
         msg = f"❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”\n{e}"
         logger.error(msg)
-        await bot.send_msg(
-            message_type="private", user_id=str(list(config.superusers)[0]), message=msg
-        )
+        await bot.send_private_msg(user_id=str(list(config.superusers)[0]), message=msg)
         return None
     return qb
 
