@@ -2,8 +2,11 @@ import nonebot
 from nonebot.adapters.onebot.v11 import NetworkError
 from nonebot.log import logger
 
-from ....bot_info import (get_bot_friend_list, get_bot_group_list,
-                          get_bot_guild_channel_list)
+from ....bot_info import (
+    get_bot_friend_list,
+    get_bot_group_list,
+    get_bot_guild_channel_list,
+)
 from ....RSS import rss_class
 
 
@@ -56,7 +59,9 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
 
             guild_list = await get_bot_guild_channel_list(bot)
             if guild_id not in guild_list:
-                guild_name = (await bot.get_guild_meta_by_guest(guild_id=guild_id))['guild_name']
+                guild_name = (await bot.get_guild_meta_by_guest(guild_id=guild_id))[
+                    "guild_name"
+                ]
                 logger.error(
                     f"Bot[{bot.self_id}]未加入频道 {guild_name}[{guild_id}] 链接：[{item['link']}]"
                 )
@@ -64,7 +69,9 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
 
             channel_list = await get_bot_guild_channel_list(bot, guild_id=guild_id)
             if channel_id not in channel_list:
-                guild_name = (await bot.get_guild_meta_by_guest(guild_id=guild_id))['guild_name']
+                guild_name = (await bot.get_guild_meta_by_guest(guild_id=guild_id))[
+                    "guild_name"
+                ]
                 logger.error(
                     f"Bot[{bot.self_id}]未加入频道[{guild_id}]的子频道[{channel_id}] 链接：[{item['link']}]"
                 )

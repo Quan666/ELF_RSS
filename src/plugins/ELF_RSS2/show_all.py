@@ -35,7 +35,7 @@ async def handle_rss_show_all(event: Event, args: Message = CommandArg()):
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
     rss = rss_class.Rss()
-    
+
     if group_id:
         rss_list = rss.find_group(group=str(group_id))
         if not rss_list:

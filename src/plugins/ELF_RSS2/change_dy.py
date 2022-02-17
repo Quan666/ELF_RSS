@@ -83,8 +83,14 @@ async def handle_change_list(
     if key_to_change == "name":
         await tr.delete_job(rss)
         rss.rename_file(str(DATA_PATH / (value_to_change + ".json")))
-    elif (key_to_change in ["qq", "qun", "channel"] and not group_id and not guild_channel_id) or key_to_change == "mode":
-        value_to_change = handle_property(value_to_change, getattr(rss, attribute_dict[key_to_change])) # type:ignore
+    elif (
+        key_to_change in ["qq", "qun", "channel"]
+        and not group_id
+        and not guild_channel_id
+    ) or key_to_change == "mode":
+        value_to_change = handle_property(
+            value_to_change, getattr(rss, attribute_dict[key_to_change])
+        )  # type:ignore
     elif key_to_change == "time":
         if not re.search(r"[_*/,-]", value_to_change):
             if int(float(value_to_change)) < 1:
@@ -101,15 +107,15 @@ async def handle_change_list(
         "downopen",
         "stop",
     ]:
-        value_to_change = bool(int(value_to_change)) # type:ignore
+        value_to_change = bool(int(value_to_change))  # type:ignore
     elif (
         key_to_change in ["downkey", "wkey", "blackkey", "bkey"]
         and len(value_to_change.strip()) == 0
     ):
-        value_to_change = None # type:ignore
+        value_to_change = None  # type:ignore
     elif key_to_change == "img_num":
-        value_to_change = int(value_to_change) # type:ignore
-    setattr(rss, attribute_dict.get(key_to_change), value_to_change) # type:ignore
+        value_to_change = int(value_to_change)  # type:ignore
+    setattr(rss, attribute_dict.get(key_to_change), value_to_change)  # type:ignore
 
 
 prompt = """\
@@ -175,7 +181,9 @@ async def handle_rss_change(
     if guild_channel_id:
         if re.search(" (qq|qun|channel)=", change_info):
             await RSS_CHANGE.finish("❌ 禁止在子频道中修改订阅账号！如要取消订阅请使用 deldy 命令！")
-        rss_list = [rss for rss in rss_list if str(guild_channel_id) in rss.guild_channel_id]
+        rss_list = [
+            rss for rss in rss_list if str(guild_channel_id) in rss.guild_channel_id
+        ]
 
     if not rss_list:
         await RSS_CHANGE.finish("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组无权操作")
@@ -201,7 +209,9 @@ async def handle_rss_change(
                     or value_to_change == "or"
                 ):
                     await RSS_CHANGE.finish(f"❌ 去重模式参数错误！\n{change_dict}")
-                await handle_change_list(rss, key_to_change, value_to_change, group_id, guild_channel_id)
+                await handle_change_list(
+                    rss, key_to_change, value_to_change, group_id, guild_channel_id
+                )
             else:
                 await RSS_CHANGE.finish(f"❌ 参数错误！\n{change_dict}")
 

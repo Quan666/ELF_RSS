@@ -2,8 +2,12 @@ import re
 
 import nonebot
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import (Event, GroupMessageEvent, Message,
-                                         PrivateMessageEvent)
+from nonebot.adapters.onebot.v11 import (
+    Event,
+    GroupMessageEvent,
+    Message,
+    PrivateMessageEvent,
+)
 from nonebot.log import logger
 from nonebot.params import CommandArg
 from nonebot.rule import to_me
