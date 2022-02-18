@@ -31,7 +31,7 @@ pyquery = "^1.4.3"
 python-qbittorrent = "^0.4.2"
 tenacity = "^7.0.0"
 tinydb = "^4.6.1"
-typing-extensions = "^3.10.0.2"
+typing-extensions = ">=3.10.0.2,<5.0.0.0"
 nonebot-plugin-guild-patch = "^0.1.1"
 
 [tool.poetry.dev-dependencies]
