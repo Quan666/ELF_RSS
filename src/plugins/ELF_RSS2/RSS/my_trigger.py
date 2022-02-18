@@ -26,8 +26,8 @@ async def delete_job(rss: rss_class.Rss):
 
 async def add_job(rss: rss_class.Rss):
     await delete_job(rss)
-    # 加入订阅任务队列,加入前判断是否存在群组或用户，二者不能同时为空
-    if len(rss.user_id) > 0 or len(rss.group_id) > 0:
+    # 加入订阅任务队列,加入前判断是否存在子频道或群组或用户，三者不能同时为空
+    if len(rss.user_id) > 0 or len(rss.group_id) > 0 or len(rss.guild_channel_id) > 0:
         rss_trigger(rss)
 
 

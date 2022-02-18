@@ -1,12 +1,4 @@
 [[package]]
-name = "aiofiles"
-version = "0.5.0"
-description = "File support for asyncio."
-category = "dev"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "anyio"
 version = "3.5.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -423,17 +415,16 @@ apscheduler = ">=3.7.0,<4.0.0"
 nonebot2 = ">=2.0.0-alpha.8,<3.0.0"
 
 [[package]]
-name = "nonebot-test"
-version = "0.1.0"
-description = "Test frontend for nonebot v2+"
-category = "dev"
+name = "nonebot-plugin-guild-patch"
+version = "0.1.1"
+description = "Patch plugin for NoneBot2 QQ guild (go-cqhttp) support."
+category = "main"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.7.3,<4.0.0"
 
 [package.dependencies]
-aiofiles = ">=0.5.0,<0.6.0"
-nonebot2 = ">=2.0.0-alpha.1,<3.0.0"
-python-socketio = ">=4.6.0,<5.0.0"
+nonebot-adapter-onebot = ">=2.0.0-beta.1,<3.0.0"
+nonebot2 = ">=2.0.0-beta.1,<3.0.0"
 
 [[package]]
 name = "nonebot2"
@@ -562,21 +553,6 @@ python-versions = ">=3.5"
 cli = ["click (>=5.0)"]
 
 [[package]]
-name = "python-engineio"
-version = "3.14.2"
-description = "Engine.IO server"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-six = ">=1.9.0"
-
-[package.extras]
-asyncio_client = ["aiohttp (>=3.4)"]
-client = ["requests (>=2.21.0)", "websocket-client (>=0.54.0)"]
-
-[[package]]
 name = "python-qbittorrent"
 version = "0.4.2"
 description = "Python wrapper for qBittorrent >4.1.x"
@@ -600,22 +576,6 @@ text-unidecode = ">=1.3"
 
 [package.extras]
 unidecode = ["Unidecode (>=1.1.1)"]
-
-[[package]]
-name = "python-socketio"
-version = "4.6.1"
-description = "Socket.IO server"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-python-engineio = ">=3.13.0,<4"
-six = ">=1.9.0"
-
-[package.extras]
-asyncio_client = ["aiohttp (>=3.4)", "websockets (>=7.0)"]
-client = ["requests (>=2.21.0)", "websocket-client (>=0.54.0)"]
 
 [[package]]
 name = "pytz"
@@ -907,13 +867,9 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.3"
-content-hash = "a34248c4cd1b797bd9514fd90ce3f32e6ad9bc2fe447a0246992f3f041b74459"
+content-hash = "a9ce76afe0f756ada85a405167805931275f67ab38d7e35747c8385ec24e2e18"
 
 [metadata.files]
-aiofiles = [
-    {file = "aiofiles-0.5.0-py3-none-any.whl", hash = "sha256:377fdf7815cc611870c59cbd07b68b180841d2a2b79812d8c218be02448c2acb"},
-    {file = "aiofiles-0.5.0.tar.gz", hash = "sha256:98e6bcfd1b50f97db4980e182ddd509b7cc35909e903a8fe50d8849e02d815af"},
-]
 anyio = [
     {file = "anyio-3.5.0-py3-none-any.whl", hash = "sha256:b5fa16c5ff93fa1046f2eeb5bbff2dad4d3514d6cda61d02816dba34fa8c3c2e"},
     {file = "anyio-3.5.0.tar.gz", hash = "sha256:a0aeffe2fb1fdf374a8e4b471444f0f3ac4fb9f5a5b542b48824475e0042a5a6"},
@@ -1256,9 +1212,9 @@ nonebot-plugin-apscheduler = [
     {file = "nonebot-plugin-apscheduler-0.1.2.tar.gz", hash = "sha256:1765336cd388dde15f723ed12dbca942b04e4c25d5d7786878e447b09e68b909"},
     {file = "nonebot_plugin_apscheduler-0.1.2-py3-none-any.whl", hash = "sha256:eed7b9e60d08826ae4919f82dc240fc7ec469185271c2271e14438a3e0ca7692"},
 ]
-nonebot-test = [
-    {file = "nonebot-test-0.1.0.tar.gz", hash = "sha256:f83bc095927f55e55cfe61c2ccc388e2536980d6d40412879009a16484487af4"},
-    {file = "nonebot_test-0.1.0-py3-none-any.whl", hash = "sha256:3f981ac001f0f6c4f408d561b11fbe337fddc0a0f0d1e7a6602f34305ff82bcd"},
+nonebot-plugin-guild-patch = [
+    {file = "nonebot-plugin-guild-patch-0.1.1.tar.gz", hash = "sha256:00414fafdc85f9c9cd7ccab190f3793d3c5f5d700af4402165509d2ffc16767a"},
+    {file = "nonebot_plugin_guild_patch-0.1.1-py3-none-any.whl", hash = "sha256:8ad4fcc0f39b7ded3b122df8ffe2b522be4cc8508cd97b87f85af9eb0cb8ac81"},
 ]
 nonebot2 = [
     {file = "nonebot2-2.0.0b1-py3-none-any.whl", hash = "sha256:76ee4271a0ba9b1fbdcb34c50a23df391bed00d5d32d63b7fd018685de8130a4"},
@@ -1386,20 +1342,12 @@ python-dotenv = [
     {file = "python-dotenv-0.19.2.tar.gz", hash = "sha256:a5de49a31e953b45ff2d2fd434bbc2670e8db5273606c1e737cc6b93eff3655f"},
     {file = "python_dotenv-0.19.2-py2.py3-none-any.whl", hash = "sha256:32b2bdc1873fd3a3c346da1c6db83d0053c3c62f28f1f38516070c4c8971b1d3"},
 ]
-python-engineio = [
-    {file = "python-engineio-3.14.2.tar.gz", hash = "sha256:eab4553f2804c1ce97054c8b22cf0d5a9ab23128075248b97e1a5b2f29553085"},
-    {file = "python_engineio-3.14.2-py2.py3-none-any.whl", hash = "sha256:5a9e6086d192463b04a1428ff1f85b6ba631bbb19d453b144ffc04f530542b84"},
-]
 python-qbittorrent = [
     {file = "python-qbittorrent-0.4.2.tar.gz", hash = "sha256:de40900ada01c8913ee92aeb50ac14ffa874fa454d7942cf469b856dc698ad0d"},
 ]
 python-slugify = [
     {file = "python-slugify-5.0.2.tar.gz", hash = "sha256:f13383a0b9fcbe649a1892b9c8eb4f8eab1d6d84b84bb7a624317afa98159cab"},
     {file = "python_slugify-5.0.2-py2.py3-none-any.whl", hash = "sha256:6d8c5df75cd4a7c3a2d21e257633de53f52ab0265cd2d1dc62a730e8194a7380"},
-]
-python-socketio = [
-    {file = "python-socketio-4.6.1.tar.gz", hash = "sha256:cd1f5aa492c1eb2be77838e837a495f117e17f686029ebc03d62c09e33f4fa10"},
-    {file = "python_socketio-4.6.1-py2.py3-none-any.whl", hash = "sha256:5a21da53fdbdc6bb6c8071f40e13d100e0b279ad997681c2492478e06f370523"},
 ]
 pytz = [
     {file = "pytz-2021.3-py2.py3-none-any.whl", hash = "sha256:3672058bc3453457b622aab7a1c3bfd5ab0bdae451512f6cf25f64ed37f5b87c"},

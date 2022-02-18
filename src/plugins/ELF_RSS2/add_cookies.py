@@ -49,19 +49,23 @@ async def handle_add_cookies(rss_cookies: str = ArgPlainText("COOKIES")):
     except IndexError:
         await ADD_COOKIES.finish("❌ 输入的订阅名为空！")
 
-    if not rss.find_name(name=name):
-        await ADD_COOKIES.finish(f"❌ 不存在该订阅: {name}")
-
     rss = rss.find_name(name=name)
 
-    try:
-        cookies = dy[1]
-    except IndexError:
-        await ADD_COOKIES.finish("❌ 输入的cookies为空！")
-
-    rss.name = name
-    if rss.set_cookies(cookies):
-        await tr.add_job(rss)
-        await ADD_COOKIES.finish(f"👏 {rss.name}的Cookies添加成功！\nCookies:{rss.cookies}\n")
+    if rss is None:
+        await ADD_COOKIES.finish(f"❌ 不存在该订阅: {name}")
     else:
-        await ADD_COOKIES.finish(f"❌ {rss.name}的Cookies添加失败！\nCookies:{rss.cookies}\n")
+        try:
+            cookies = dy[1]
+        except IndexError:
+            await ADD_COOKIES.finish("❌ 输入的cookies为空！")
+
+        rss.name = name
+        if rss.set_cookies(cookies):
+            await tr.add_job(rss)
+            await ADD_COOKIES.finish(
+                f"👏 {rss.name}的Cookies添加成功！\nCookies:{rss.cookies}\n"
+            )
+        else:
+            await ADD_COOKIES.finish(
+                f"❌ {rss.name}的Cookies添加失败！\nCookies:{rss.cookies}\n"
+            )

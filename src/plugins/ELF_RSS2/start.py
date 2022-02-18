@@ -2,8 +2,9 @@ import json
 from pathlib import Path
 
 import nonebot
-from nonebot import logger, on_metaevent, require
+from nonebot import on_metaevent, require
 from nonebot.adapters.onebot.v11 import Event, LifecycleMetaEvent
+from nonebot.log import logger
 from tinydb import TinyDB
 from tinydb.middlewares import CachingMiddleware
 from tinydb.storages import JSONStorage

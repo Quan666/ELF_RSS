@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from typing import Union
 
 from nonebot.log import logger
 from tinydb import Query, TinyDB
@@ -14,6 +15,7 @@ class Rss:
         self.url = ""  # 订阅地址
         self.user_id = []  # 订阅用户（qq） -1 为空
         self.group_id = []  # 订阅群组
+        self.guild_channel_id = []  # 订阅子频道
         self.img_proxy = False
         self.time = "5"  # 更新频率 分钟/次
         self.translation = False  # 翻译
@@ -25,7 +27,7 @@ class Rss:
         self.down_torrent_keyword = ""  # 过滤关键字，支持正则
         self.black_keyword = ""  # 黑名单关键词
         self.is_open_upload_group = True  # 默认开启上传到群
-        self.duplicate_filter_mode = None  # 去重模式
+        self.duplicate_filter_mode = []  # 去重模式
         self.max_image_number = 0  # 图片数量限制，防止消息太长刷屏
         self.content_to_remove = None  # 正文待移除内容，支持正则
         self.stop = False  # 停止更新
@@ -62,7 +64,7 @@ class Rss:
         return rss_list
 
     # 查找是否存在当前订阅名 rss 要转换为 rss_
-    def find_name(self, name: str):
+    def find_name(self, name: str) -> Union["Rss", None]:
         # 过滤特殊字符
         name = re.sub(r'[?*:"<>\\/|]', "_", name)
         if name == "rss":
@@ -74,15 +76,21 @@ class Rss:
         return None
 
     # 添加订阅
-    def add_user_or_group(self, user: str = None, group: str = None):
+    def add_user_or_group(
+        self, user: str = None, group: str = None, guild_channel: str = None
+    ):
         if user:
             if str(user) in self.user_id:
                 return
             self.user_id.append(str(user))
-        else:
+        elif group:
             if str(group) in self.group_id:
                 return
             self.group_id.append(str(group))
+        elif guild_channel:
+            if guild_channel in self.guild_channel_id:
+                return
+            self.guild_channel_id.append(guild_channel)
         db = TinyDB(
             JSON_PATH,
             encoding="utf-8",
@@ -105,6 +113,23 @@ class Rss:
             ensure_ascii=False,
         )
         db.update(set("group_id", self.group_id), Query().name == self.name)
+        return True
+
+    # 删除订阅 子频道
+    def delete_guild_channel(self, guild_channel: str) -> bool:
+        if not str(guild_channel) in self.guild_channel_id:
+            return False
+        self.guild_channel_id.remove(str(guild_channel))
+        db = TinyDB(
+            JSON_PATH,
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
+        db.update(
+            set("guild_channel_id", self.guild_channel_id), Query().name == self.name
+        )
         return True
 
     # 删除整个订阅
@@ -130,12 +155,25 @@ class Rss:
         this_file_path = DATA_PATH / (self.name + ".json")
         Path.unlink(this_file_path, missing_ok=True)
 
+    def find_guild_channel(self, guild_channel: str) -> list:
+        rss_old = self.read_rss()
+        result = []
+        for rss_tmp in rss_old:
+            if rss_tmp.guild_channel_id and guild_channel in rss_tmp.guild_channel_id:
+                # 隐私考虑，子频道下不展示除当前子频道外的订阅
+                rss_tmp.guild_channel_id = [guild_channel, "*"]
+                rss_tmp.group_id = ["*"]
+                rss_tmp.user_id = ["*"]
+                result.append(rss_tmp)
+        return result
+
     def find_group(self, group: str) -> list:
         rss_old = self.read_rss()
         result = []
         for rss_tmp in rss_old:
             if rss_tmp.group_id and group in rss_tmp.group_id:
-                # 隐私考虑，群组下不展示除当前群组外的群号和QQ
+                # 隐私考虑，群组下不展示除当前群组外的订阅
+                rss_tmp.guild_channel_id = ["*"]
                 rss_tmp.group_id = [group, "*"]
                 rss_tmp.user_id = ["*"]
                 result.append(rss_tmp)
@@ -186,6 +224,7 @@ class Rss:
             lambda: f"订阅地址：{self.url}\n",
             lambda: f"订阅QQ：{self.user_id}\n" if self.user_id else "",
             lambda: f"订阅群：{self.group_id}\n" if self.group_id else "",
+            lambda: f"订阅子频道：{self.guild_channel_id}\n" if self.guild_channel_id else "",
             lambda: f"更新时间：{self.time}\n",
             lambda: f"代理：{self.img_proxy}\n" if self.img_proxy else "",
             lambda: f"翻译：{self.translation}\n" if self.translation else "",

@@ -2,8 +2,9 @@ import os
 from pathlib import Path
 from typing import Any, List
 
-from nonebot import get_driver, logger
+from nonebot import get_driver
 from nonebot.config import BaseConfig
+from nonebot.log import logger
 from pydantic import AnyHttpUrl, Extra
 
 DATA_PATH = Path.cwd() / "data"
@@ -15,7 +16,7 @@ class ELFConfig(BaseConfig):
         extra = Extra.allow
 
     rss_proxy: str = ""
-    rsshub: AnyHttpUrl = "https://rsshub.app"
+    rsshub: AnyHttpUrl = "https://rsshub.app"  # type: ignore
     rsshub_backup: List[AnyHttpUrl] = []
     db_cache_expire = 30
     limit = 50

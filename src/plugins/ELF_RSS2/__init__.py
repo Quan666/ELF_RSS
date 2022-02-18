@@ -5,6 +5,8 @@ from . import (
     change_dy,
     config,
     del_dy,
+    patch,
+    permission,
     show_all,
     show_dy,
     start,

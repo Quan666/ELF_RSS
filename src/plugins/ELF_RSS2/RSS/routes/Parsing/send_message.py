@@ -1,8 +1,12 @@
 import nonebot
-from nonebot import logger
 from nonebot.adapters.onebot.v11 import NetworkError
+from nonebot.log import logger
 
-from ....bot_info import get_bot_friend_list, get_bot_group_list
+from ....bot_info import (
+    get_bot_friend_list,
+    get_bot_group_list,
+    get_bot_guild_channel_list,
+)
 from ....RSS import rss_class
 
 
@@ -47,5 +51,42 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                     logger.warning(f"网络错误，消息发送失败，将重试")
             except Exception as e:
                 logger.error(f"E: {e} 链接：[{item['link']}]")
+    if rss.guild_channel_id:
+        for guild_channel_id in rss.guild_channel_id:
+            id = guild_channel_id.split("@")
+            guild_id = str(id[0])
+            channel_id = str(id[1])
 
+            guild_list = await get_bot_guild_channel_list(bot)
+            if guild_id not in guild_list:
+                guild_name = (await bot.get_guild_meta_by_guest(guild_id=guild_id))[
+                    "guild_name"
+                ]
+                logger.error(
+                    f"Bot[{bot.self_id}]未加入频道 {guild_name}[{guild_id}] 链接：[{item['link']}]"
+                )
+                continue
+
+            channel_list = await get_bot_guild_channel_list(bot, guild_id=guild_id)
+            if channel_id not in channel_list:
+                guild_name = (await bot.get_guild_meta_by_guest(guild_id=guild_id))[
+                    "guild_name"
+                ]
+                logger.error(
+                    f"Bot[{bot.self_id}]未加入频道[{guild_id}]的子频道[{channel_id}] 链接：[{item['link']}]"
+                )
+                continue
+
+            try:
+                await bot.send_guild_channel_msg(
+                    message=str(msg), guild_id=guild_id, channel_id=channel_id
+                )
+                flag = True
+            except NetworkError:
+                if item.get("count") == 3:
+                    logger.error(f"网络错误，消息发送失败，已达最大重试次数！链接：[{item['link']}]")
+                else:
+                    logger.warning(f"网络错误，消息发送失败，将重试")
+            except Exception as e:
+                logger.error(f"E: {e} 链接：[{item['link']}]")
     return flag
