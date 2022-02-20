@@ -34,8 +34,7 @@ async def handle_rss_delete(event: Event, rss_name: str = ArgPlainText("RSS_DELE
 
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
-    if isinstance(event, GuildMessageEvent):
-        group_id = None
+    elif isinstance(event, GuildMessageEvent):
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
     rss = rss_class.Rss()
@@ -46,7 +45,7 @@ async def handle_rss_delete(event: Event, rss_name: str = ArgPlainText("RSS_DELE
     else:
         if guild_channel_id:
             if rss.delete_guild_channel(guild_channel=guild_channel_id):
-                if not rss.group_id and not rss.user_id and not rss.guild_channel_id:
+                if not any([rss.group_id, rss.user_id, rss.guild_channel_id]):
                     rss.delete_rss()
                     await tr.delete_job(rss)
                 else:
@@ -56,7 +55,7 @@ async def handle_rss_delete(event: Event, rss_name: str = ArgPlainText("RSS_DELE
                 await RSS_DELETE.finish(f"❌ 当前子频道没有订阅： {rss.name} ！")
         elif group_id:
             if rss.delete_group(group=str(group_id)):
-                if not rss.group_id and not rss.user_id and not rss.guild_channel_id:
+                if not any([rss.group_id, rss.user_id, rss.guild_channel_id]):
                     rss.delete_rss()
                     await tr.delete_job(rss)
                 else:

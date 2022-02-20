@@ -51,11 +51,10 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                     logger.warning(f"网络错误，消息发送失败，将重试")
             except Exception as e:
                 logger.error(f"E: {e} 链接：[{item['link']}]")
+
     if rss.guild_channel_id:
         for guild_channel_id in rss.guild_channel_id:
-            id = guild_channel_id.split("@")
-            guild_id = str(id[0])
-            channel_id = str(id[1])
+            guild_id, channel_id = guild_channel_id.split("@")
 
             guild_list = await get_bot_guild_channel_list(bot)
             if guild_id not in guild_list:
@@ -73,7 +72,7 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                     "guild_name"
                 ]
                 logger.error(
-                    f"Bot[{bot.self_id}]未加入频道[{guild_id}]的子频道[{channel_id}] 链接：[{item['link']}]"
+                    f"Bot[{bot.self_id}]未加入频道 {guild_name}[{guild_id}]的子频道[{channel_id}] 链接：[{item['link']}]"
                 )
                 continue
 

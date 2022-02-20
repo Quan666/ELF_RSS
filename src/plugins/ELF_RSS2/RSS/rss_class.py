@@ -80,13 +80,13 @@ class Rss:
         self, user: str = None, group: str = None, guild_channel: str = None
     ):
         if user:
-            if str(user) in self.user_id:
+            if user in self.user_id:
                 return
-            self.user_id.append(str(user))
+            self.user_id.append(user)
         elif group:
-            if str(group) in self.group_id:
+            if group in self.group_id:
                 return
-            self.group_id.append(str(group))
+            self.group_id.append(group)
         elif guild_channel:
             if guild_channel in self.guild_channel_id:
                 return
@@ -117,9 +117,9 @@ class Rss:
 
     # 删除订阅 子频道
     def delete_guild_channel(self, guild_channel: str) -> bool:
-        if not str(guild_channel) in self.guild_channel_id:
+        if guild_channel not in self.guild_channel_id:
             return False
-        self.guild_channel_id.remove(str(guild_channel))
+        self.guild_channel_id.remove(guild_channel)
         db = TinyDB(
             JSON_PATH,
             encoding="utf-8",
