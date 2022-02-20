@@ -44,8 +44,7 @@ async def handle_rss_add(event: Event, rss_dy_link: str = ArgPlainText("RSS_ADD"
 
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
-    if isinstance(event, GuildMessageEvent):
-        user_id = None
+    elif isinstance(event, GuildMessageEvent):
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
     dy = rss_dy_link.split(" ")
@@ -76,8 +75,7 @@ async def handle_rss_add(event: Event, rss_dy_link: str = ArgPlainText("RSS_ADD"
         rss.name = name
         try:
             url = dy[1]
+            rss.url = url
+            await add_group_or_user(rss, group_id, user_id, guild_channel_id)
         except IndexError:
             await RSS_ADD.finish("❌ 输入的订阅地址为空！")
-        rss.url = url
-
-        await add_group_or_user(rss, group_id, user_id, guild_channel_id)

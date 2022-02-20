@@ -30,8 +30,7 @@ async def handle_rss_show_all(event: Event, args: Message = CommandArg()):
 
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
-    if isinstance(event, GuildMessageEvent):
-        group_id = None
+    elif isinstance(event, GuildMessageEvent):
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
     rss = rss_class.Rss()
@@ -41,7 +40,7 @@ async def handle_rss_show_all(event: Event, args: Message = CommandArg()):
         if not rss_list:
             await RSS_SHOW_ALL.finish("❌ 当前群组没有任何订阅！")
     elif guild_channel_id:
-        rss_list = rss.find_guild_channel(guild_channel=str(guild_channel_id))
+        rss_list = rss.find_guild_channel(guild_channel=guild_channel_id)
         if not rss_list:
             await RSS_SHOW_ALL.finish("❌ 当前子频道没有任何订阅！")
     else:

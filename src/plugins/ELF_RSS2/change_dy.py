@@ -164,8 +164,7 @@ async def handle_rss_change(
 
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
-    if isinstance(event, GuildMessageEvent):
-        group_id = None
+    elif isinstance(event, GuildMessageEvent):
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
     name_list = change_info.split(" ")[0].split(",")
@@ -181,9 +180,7 @@ async def handle_rss_change(
     if guild_channel_id:
         if re.search(" (qq|qun|channel)=", change_info):
             await RSS_CHANGE.finish("❌ 禁止在子频道中修改订阅账号！如要取消订阅请使用 deldy 命令！")
-        rss_list = [
-            rss for rss in rss_list if str(guild_channel_id) in rss.guild_channel_id
-        ]
+        rss_list = [rss for rss in rss_list if guild_channel_id in rss.guild_channel_id]
 
     if not rss_list:
         await RSS_CHANGE.finish("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组无权操作")
@@ -243,7 +240,7 @@ async def handle_rss_change(
             rss_msg = str(rss_tmp)
         elif guild_channel_id:
             rss_tmp = copy.deepcopy(rss)
-            rss_tmp.guild_channel_id = [str(guild_channel_id), "*"]
+            rss_tmp.guild_channel_id = [guild_channel_id, "*"]
             rss_tmp.group_id = ["*"]
             rss_tmp.user_id = ["*"]
             rss_msg = str(rss_tmp)

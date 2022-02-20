@@ -80,13 +80,13 @@ class Rss:
         self, user: str = None, group: str = None, guild_channel: str = None
     ):
         if user:
-            if str(user) in self.user_id:
+            if user in self.user_id:
                 return
-            self.user_id.append(str(user))
+            self.user_id.append(user)
         elif group:
-            if str(group) in self.group_id:
+            if group in self.group_id:
                 return
-            self.group_id.append(str(group))
+            self.group_id.append(group)
         elif guild_channel:
             if guild_channel in self.guild_channel_id:
                 return
@@ -117,9 +117,9 @@ class Rss:
 
     # 删除订阅 子频道
     def delete_guild_channel(self, guild_channel: str) -> bool:
-        if not str(guild_channel) in self.guild_channel_id:
+        if guild_channel not in self.guild_channel_id:
             return False
-        self.guild_channel_id.remove(str(guild_channel))
+        self.guild_channel_id.remove(guild_channel)
         db = TinyDB(
             JSON_PATH,
             encoding="utf-8",
@@ -211,6 +211,7 @@ class Rss:
 
     def __str__(self) -> str:
         mode_name = {"link": "链接", "title": "标题", "image": "图片"}
+        mode_msg = ""
         if self.duplicate_filter_mode:
             delimiter = "、"
             if "or" in self.duplicate_filter_mode:
@@ -219,39 +220,26 @@ class Rss:
                 "已启用去重模式，"
                 f"{delimiter.join(mode_name[i] for i in self.duplicate_filter_mode if i != 'or')} 相同时去重"
             )
-        ret_list = (
-            lambda: f"名称：{self.name}\n",
-            lambda: f"订阅地址：{self.url}\n",
-            lambda: f"订阅QQ：{self.user_id}\n" if self.user_id else "",
-            lambda: f"订阅群：{self.group_id}\n" if self.group_id else "",
-            lambda: f"订阅子频道：{self.guild_channel_id}\n" if self.guild_channel_id else "",
-            lambda: f"更新时间：{self.time}\n",
-            lambda: f"代理：{self.img_proxy}\n" if self.img_proxy else "",
-            lambda: f"翻译：{self.translation}\n" if self.translation else "",
-            lambda: f"仅标题：{self.only_title}\n" if self.only_title else "",
-            lambda: f"仅图片：{self.only_pic}\n" if self.only_pic else "",
-            lambda: f"仅含有图片：{self.only_has_pic}\n" if self.only_has_pic else "",
-            lambda: f"白名单关键词：{self.down_torrent_keyword}\n"
-            if self.down_torrent_keyword
-            else "",
-            lambda: f"黑名单关键词：{self.black_keyword}\n" if self.black_keyword else "",
-            lambda: "cookies：True\n" if self.cookies else "",
-            lambda: f"下载种子：{self.down_torrent}\n"
-            if self.down_torrent
-            else "种子自动下载功能未打开\n",
-            lambda: f"是否上传到群：{self.is_open_upload_group}\n"
-            if self.is_open_upload_group
-            else "",
-            lambda: f"{mode_msg}\n" if self.duplicate_filter_mode else "",
-            lambda: f"图片数量限制：{self.max_image_number}\n"
-            if self.max_image_number
-            else "",
-            lambda: f"正文待移除内容：{self.content_to_remove}\n"
-            if self.content_to_remove
-            else "",
-            lambda: f"停止更新：{self.stop}\n" if self.stop else "",
-        )
-        ret = ""
-        for r in ret_list:
-            ret += r()
-        return ret
+        ret_list = [
+            f"名称：{self.name}",
+            f"订阅地址：{self.url}",
+            f"订阅QQ：{self.user_id}" if self.user_id else "",
+            f"订阅群：{self.group_id}" if self.group_id else "",
+            f"订阅子频道：{self.guild_channel_id}" if self.guild_channel_id else "",
+            f"更新时间：{self.time}",
+            f"代理：{self.img_proxy}" if self.img_proxy else "",
+            f"翻译：{self.translation}" if self.translation else "",
+            f"仅标题：{self.only_title}" if self.only_title else "",
+            f"仅图片：{self.only_pic}" if self.only_pic else "",
+            f"仅含有图片：{self.only_has_pic}" if self.only_has_pic else "",
+            f"白名单关键词：{self.down_torrent_keyword}" if self.down_torrent_keyword else "",
+            f"黑名单关键词：{self.black_keyword}" if self.black_keyword else "",
+            "cookies：True" if self.cookies else "",
+            f"下载种子：{self.down_torrent}" if self.down_torrent else "种子自动下载功能未打开",
+            f"是否上传到群：{self.is_open_upload_group}" if self.is_open_upload_group else "",
+            f"{mode_msg}" if self.duplicate_filter_mode else "",
+            f"图片数量限制：{self.max_image_number}" if self.max_image_number else "",
+            f"正文待移除内容：{self.content_to_remove}" if self.content_to_remove else "",
+            f"停止更新：{self.stop}" if self.stop else "",
+        ]
+        return "\n".join([i for i in ret_list if i != ""])

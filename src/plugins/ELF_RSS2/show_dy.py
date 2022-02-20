@@ -46,8 +46,7 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()):
 
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
-    if isinstance(event, GuildMessageEvent):
-        group_id = None
+    elif isinstance(event, GuildMessageEvent):
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
     rss = rss_class.Rss()
@@ -69,10 +68,10 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()):
                 rss_msg = str(rss_tmp)
             elif guild_channel_id:
                 # 隐私考虑，不展示除当前子频道外的订阅
-                if not str(guild_channel_id) in rss.guild_channel_id:
+                if guild_channel_id not in rss.guild_channel_id:
                     await RSS_SHOW.finish(f"❌ 当前群组未订阅 {rss_name} ")
                 rss_tmp = copy.deepcopy(rss)
-                rss_tmp.guild_channel_id = [str(guild_channel_id), "*"]
+                rss_tmp.guild_channel_id = [guild_channel_id, "*"]
                 rss_tmp.group_id = ["*"]
                 rss_tmp.user_id = ["*"]
                 rss_msg = str(rss_tmp)
@@ -83,7 +82,7 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()):
         if not rss_list:
             await RSS_SHOW.finish("❌ 当前群组没有任何订阅！")
     elif guild_channel_id:
-        rss_list = rss.find_guild_channel(guild_channel=str(guild_channel_id))
+        rss_list = rss.find_guild_channel(guild_channel=guild_channel_id)
         if not rss_list:
             await RSS_SHOW.finish("❌ 当前子频道没有任何订阅！")
     else:
