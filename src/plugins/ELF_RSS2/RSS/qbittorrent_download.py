@@ -117,7 +117,7 @@ async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
     info = None
     if re.search(r"magnet:\?xt=urn:btih:", url):
         qb.download_from_link(link=url)
-        hash_str = re.search("[a-f0-9]{40}", url)[0]
+        hash_str = re.search("[A-Fa-f0-9]{40}", url)[0]
     else:
         async with httpx.AsyncClient(proxies=proxy) as client:
             try:

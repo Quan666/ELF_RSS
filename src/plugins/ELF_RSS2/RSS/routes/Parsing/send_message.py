@@ -1,5 +1,4 @@
 import nonebot
-from nonebot.adapters.onebot.v11 import NetworkError
 from nonebot.log import logger
 
 from ....bot_info import (
@@ -16,6 +15,7 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
     flag = False
     if not msg:
         return False
+    error_msg = f"消息发送失败，已达最大重试次数！\n链接：[{item['link']}]"
     if rss.user_id:
         friend_list = await get_bot_friend_list(bot)
         for user_id in rss.user_id:
@@ -27,13 +27,12 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
             try:
                 await bot.send_private_msg(user_id=int(user_id), message=str(msg))
                 flag = True
-            except NetworkError:
-                if item.get("count") == 3:
-                    logger.error(f"网络错误，消息发送失败，已达最大重试次数！链接：[{item['link']}]")
-                else:
-                    logger.warning(f"网络错误，消息发送失败，将重试")
             except Exception as e:
-                logger.error(f"E: {e} 链接：[{item['link']}]")
+                logger.error(f"E: {repr(e)} 链接：[{item['link']}]")
+                if item.get("count") == 3:
+                    await bot.send_private_msg(
+                        user_id=int(user_id), message=f"{error_msg}\nE: {repr(e)}"
+                    )
 
     if rss.group_id:
         group_list = await get_bot_group_list(bot)
@@ -44,13 +43,12 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
             try:
                 await bot.send_group_msg(group_id=int(group_id), message=str(msg))
                 flag = True
-            except NetworkError:
-                if item.get("count") == 3:
-                    logger.error(f"网络错误，消息发送失败，已达最大重试次数！链接：[{item['link']}]")
-                else:
-                    logger.warning(f"网络错误，消息发送失败，将重试")
             except Exception as e:
-                logger.error(f"E: {e} 链接：[{item['link']}]")
+                logger.error(f"E: {repr(e)} 链接：[{item['link']}]")
+                if item.get("count") == 3:
+                    await bot.send_group_msg(
+                        group_id=int(group_id), message=f"E: {repr(e)}\n{error_msg}"
+                    )
 
     if rss.guild_channel_id:
         for guild_channel_id in rss.guild_channel_id:
@@ -81,11 +79,12 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
                     message=str(msg), guild_id=guild_id, channel_id=channel_id
                 )
                 flag = True
-            except NetworkError:
-                if item.get("count") == 3:
-                    logger.error(f"网络错误，消息发送失败，已达最大重试次数！链接：[{item['link']}]")
-                else:
-                    logger.warning(f"网络错误，消息发送失败，将重试")
             except Exception as e:
-                logger.error(f"E: {e} 链接：[{item['link']}]")
+                logger.error(f"E: {repr(e)} 链接：[{item['link']}]")
+                if item.get("count") == 3:
+                    await bot.send_guild_msg(
+                        message=f"E: {repr(e)}\n{error_msg}",
+                        guild_id=guild_id,
+                        channel_id=channel_id,
+                    )
     return flag

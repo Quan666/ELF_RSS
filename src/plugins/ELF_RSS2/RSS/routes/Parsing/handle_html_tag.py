@@ -12,7 +12,7 @@ async def handle_bbcode(html) -> str:
 
     # issue 36 处理 bbcode
     rss_str = re.sub(
-        r"(\[url=.+?])?\[img].+?\[/img](\[/url])?", "", rss_str, flags=re.I
+        r"(\[url=[^]]+])?\[img[^]]*].+\[/img](\[/url])?", "", rss_str, flags=re.I
     )
 
     # 处理一些 bbcode 标签
@@ -32,7 +32,7 @@ async def handle_bbcode(html) -> str:
     ]
 
     for i in bbcode_tags:
-        rss_str = re.sub(rf"\[{i}=.+?]", "", rss_str, flags=re.I)
+        rss_str = re.sub(rf"\[{i}=[^]]+]", "", rss_str, flags=re.I)
         rss_str = re.sub(rf"\[/?{i}]", "", rss_str, flags=re.I)
 
     # 去掉结尾被截断的信息
@@ -73,7 +73,9 @@ async def handle_html_tag(html) -> str:
 
     # <a> 标签处理
     for a in html("a").items():
-        a_str = re.search(r"<a.+?</a>", html_unescape(str(a)), flags=re.DOTALL)[0]
+        a_str = re.search(
+            r"<a [^>]+>.*?</a>", html_unescape(str(a)), flags=re.DOTALL
+        ).group()
         if a.text() and str(a.text()) != a.attr("href"):
             # 去除微博超话
             if re.search(
@@ -127,18 +129,19 @@ async def handle_html_tag(html) -> str:
 
     # 直接去掉标签，留下内部文本信息
     for i in html_tags:
-        rss_str = re.sub(rf'<{i} .+?"/?>', "", rss_str)
-        rss_str = re.sub(rf"</?{i}>", "", rss_str)
+        rss_str = re.sub(f"<{i} [^>]+>", "", rss_str)
+        rss_str = re.sub(f"</?{i}>", "", rss_str)
 
-    rss_str = re.sub('<br .+?"/>|<(br|hr) ?/?>', "\n", rss_str)
+    rss_str = re.sub(r"<br\s?/?>|<br [^>]+>|<hr>", "\n", rss_str)
+    rss_str = re.sub(r"<h\d [^>]+>", "\n", rss_str)
     rss_str = re.sub(r"</?h\d>", "\n", rss_str)
 
     # 删除图片、视频标签
-    rss_str = re.sub(r'<video .+?"?/>|</video>|<img.+?>', "", rss_str)
+    rss_str = re.sub(r"<video[^>]*>(.*?</video>)?|<img[^>]+>", "", rss_str)
 
     # 去掉多余换行
-    while re.search("\n\n\n", rss_str):
-        rss_str = re.sub("\n\n\n", "\n\n", rss_str)
+    while "\n\n\n" in rss_str:
+        rss_str = rss_str.replace("\n\n\n", "\n\n")
     rss_str = rss_str.strip()
 
     if 0 < config.max_length < len(rss_str):

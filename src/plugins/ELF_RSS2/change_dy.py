@@ -192,7 +192,7 @@ async def handle_rss_change(
     change_list = await handle_rm_list(rss_list, change_info)
 
     rss_msg_list = []
-    result_msg = "----------------------\n"
+    result_msg = "\n----------------------\n"
 
     for rss in rss_list:
         rss_name = rss.name
@@ -247,7 +247,7 @@ async def handle_rss_change(
 
         rss_msg_list.append(rss_msg)
 
-    result_msg = f"修改了 {len(rss_msg_list)} 条订阅：\n{result_msg}" + result_msg.join(
+    result_msg = f"修改了 {len(rss_msg_list)} 条订阅：{result_msg}" + result_msg.join(
         rss_msg_list
     )
     await RSS_CHANGE.finish(f"👏 修改成功\n{result_msg}")
