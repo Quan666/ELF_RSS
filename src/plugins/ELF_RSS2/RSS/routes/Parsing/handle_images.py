@@ -167,7 +167,7 @@ async def fuck_pixiv_cat(url: str) -> str:
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def download_image_detail(url: str, proxy: bool):
     async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy)) as client:
-        referer = re.findall("([hH][tT]{2}[pP][sS]?://.*?)/.*?", url)[0]
+        referer = re.search("[hH][tT]{2}[pP][sS]?://[^/]+", url).group()
         headers = {"referer": referer}
         try:
             pic = await client.get(url, headers=headers)
@@ -244,7 +244,7 @@ async def handle_img(item: dict, img_proxy: bool, img_num: int) -> str:
 async def handle_bbcode_img(html, img_proxy: bool, img_num: int) -> str:
     img_str = ""
     # 处理图片
-    img_list = re.findall(r"\[img](.+?)\[/img]", str(html), flags=re.I)
+    img_list = re.findall(r"\[img[^]]*](.+)\[/img]", str(html), flags=re.I)
     # 只发送限定数量的图片，防止刷屏
     if 0 < img_num < len(img_list):
         img_str += f"\n因启用图片数量限制，目前只有 {img_num} 张图片："
