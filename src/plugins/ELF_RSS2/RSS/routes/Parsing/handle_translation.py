@@ -2,7 +2,6 @@ import re
 import unicodedata
 
 import emoji
-
 from translate import Translator
 
 from ....config import config
