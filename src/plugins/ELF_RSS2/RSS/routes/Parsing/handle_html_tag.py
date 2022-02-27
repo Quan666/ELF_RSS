@@ -132,7 +132,7 @@ async def handle_html_tag(html) -> str:
         rss_str = re.sub(f"<{i} [^>]+>", "", rss_str)
         rss_str = re.sub(f"</?{i}>", "", rss_str)
 
-    rss_str = re.sub(r"<br\s?/?>|<br [^>]+>|<hr>", "\n", rss_str)
+    rss_str = re.sub(r"<(br|hr)\s?/?>|<(br|hr) [^>]+>", "\n", rss_str)
     rss_str = re.sub(r"<h\d [^>]+>", "\n", rss_str)
     rss_str = re.sub(r"</?h\d>", "\n", rss_str)
 
