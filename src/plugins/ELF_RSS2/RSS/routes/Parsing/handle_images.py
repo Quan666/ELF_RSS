@@ -2,6 +2,7 @@ import base64
 import random
 import re
 from io import BytesIO
+from typing import Union
 
 import httpx
 from nonebot import logger
@@ -17,7 +18,7 @@ STATUS_CODE = [200, 301, 302]
 
 # 通过 ezgif 压缩 GIF
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def resize_gif(url: str, resize_ratio: int = 2) -> BytesIO:
+async def resize_gif(url: str, resize_ratio: int = 2) -> Union[bytes, None]:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             url="https://s3.ezgif.com/resize",
@@ -41,7 +42,7 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> BytesIO:
         response = await client.post(url=next_url + "?ajax=true", data=data)
         d = Pq(response.text)
         output_img_url = "https:" + d("img:nth-child(1)").attr("src")
-    return await download_image(output_img_url)
+        return await download_image(output_img_url)
 
 
 # 通过 ezgif 把视频中间 4 秒转 GIF 作为预览
@@ -86,8 +87,8 @@ async def get_preview_gif_from_video(url: str) -> str:
 
 
 # 图片压缩
-async def zip_pic(url: str, content: bytes):
-    # 打开一个 JPEG/PNG/GIF 图像文件
+async def zip_pic(url: str, content: bytes) -> Union[Image.Image, bytes, None]:
+    # 打开一个 JPEG/PNG/GIF/WEBP 图像文件
     try:
         im = Image.open(BytesIO(content))
     except UnidentifiedImageError:
@@ -96,6 +97,12 @@ async def zip_pic(url: str, content: bytes):
     # 获得图像文件类型：
     file_type = im.format
     if file_type != "GIF":
+        # 先把 WEBP 图像转为 PNG
+        if file_type == "WEBP":
+            with BytesIO() as output:
+                im.save(output, "PNG")
+                im = Image.open(output)
+                file_type = "PNG"
         # 对图像文件进行缩小处理
         im.thumbnail((config.zip_size, config.zip_size))
         width, height = im.size
@@ -123,22 +130,20 @@ async def zip_pic(url: str, content: bytes):
                 return await resize_gif(url)
             except RetryError:
                 logger.error(f"GIF 图片[{url}]压缩失败，将发送原图")
-        return BytesIO(content)
+        return content
 
 
 # 将图片转化为 base64
 async def get_pic_base64(content) -> str:
     if not content:
         return ""
-    elif isinstance(content, bytes):
-        image_buffer = BytesIO(content)
-    elif isinstance(content, BytesIO):
-        image_buffer = content
-    else:
-        image_buffer = BytesIO()
-        content.save(image_buffer, format=content.format)
-    res = str(base64.b64encode(image_buffer.getvalue()), encoding="utf-8")
-    return res
+    if isinstance(content, Image.Image):
+        with BytesIO() as output:
+            content.save(output, format=content.format)
+            content = output.getvalue()
+    if isinstance(content, bytes):
+        content = str(base64.b64encode(content).decode())
+    return content
 
 
 # 去你的 pixiv.cat
@@ -165,7 +170,7 @@ async def fuck_pixiv_cat(url: str) -> str:
 
 
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def download_image_detail(url: str, proxy: bool):
+async def download_image_detail(url: str, proxy: bool) -> Union[bytes, None]:
     async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy)) as client:
         referer = re.search("[hH][tT]{2}[pP][sS]?://[^/]+", url).group()
         headers = {"referer": referer}
@@ -186,7 +191,7 @@ async def download_image_detail(url: str, proxy: bool):
         return pic.content
 
 
-async def download_image(url: str, proxy: bool = False):
+async def download_image(url: str, proxy: bool = False) -> Union[bytes, None]:
     try:
         return await download_image_detail(url=url, proxy=proxy)
     except RetryError:

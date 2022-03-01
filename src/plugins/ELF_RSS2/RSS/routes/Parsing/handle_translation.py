@@ -2,7 +2,7 @@ import re
 import unicodedata
 
 import emoji
-from google_trans_new import google_translator
+from translate import Translator
 
 from ....config import config
 from ....RSS import translation_baidu
@@ -10,7 +10,7 @@ from ....RSS import translation_baidu
 
 # 翻译
 async def handle_translation(content: str) -> str:
-    translator = google_translator()
+    translator = Translator(to_lang="zh", from_lang="autodetect")
     try:
         text = emoji.demojize(content)
         text = re.sub(r":[A-Za-z_]*:", " ", text)
@@ -23,7 +23,7 @@ async def handle_translation(content: str) -> str:
                 translation_baidu.baidu_translate(re.escape(text))
             )
         else:
-            text = "\n翻译：\n" + str(translator.translate(re.escape(text), lang_tgt="zh"))
+            text = "\n翻译：\n" + str(translator.translate(re.escape(text)))
         text = re.sub(r"\\", "", text)
         text = re.sub(r"百度翻译", "\n", text)
     except Exception as e:
