@@ -8,56 +8,138 @@
 
 ## 开始
 
-1. 解压并运行 go-cqhttp.exe 文件，之后会生成一堆文件，关闭软件
-2. 如版本使用的是 `v1.0.0-beta2` 及其之后的，因配置文件改为 yaml 格式，直接参考[官方文档](https://github.com/Mrs4s/go-cqhttp/blob/master/docs/config.md)  
-    否则，修改 config.json 文件，参考配置如下： 其中 "uin" 是QQ号、password是QQ密码
+1. 解压并运行 `go-cqhttp`，选择使用 `反向 WS` 方式连接，之后会生成配置文件，关闭 `go-cqhttp`
+2. 修改 `config.yml` 文件，参考配置如下： 其中 `uin` 处填写 QQ 号
 
-    ```json
-    {
-        "uin": 123456789,
-        "password": "123456789",
-        "encrypt_password": false,
-        "password_encrypted": "",
-        "enable_db": true,
-        "access_token": "",
-        "relogin": {
-            "enabled": true,
-            "relogin_delay": 3,
-            "max_relogin_times": 0
-        },
-        "_rate_limit": {
-            "enabled": false,
-            "frequency": 1,
-            "bucket_size": 1
-        },
-        "ignore_invalid_cqcode": false,
-        "force_fragmented": true,
-        "heartbeat_interval": 0,
-        "http_config": {
-            "enabled": true,
-            "host": "0.0.0.0",
-            "port": 5700,
-            "timeout": 0,
-            "post_urls": {}
-        },
-        "ws_config": {
-            "enabled": true,
-            "host": "0.0.0.0",
-            "port": 6700
-        },
-        "ws_reverse_servers": [
-            {
-                "enabled": true,
-                "reverse_url": "ws://127.0.0.1:8080/cqhttp/ws",
-                "reverse_api_url": "ws://127.0.0.1:8080/cqhttp/ws/api/",
-                "reverse_event_url": "ws://127.0.0.1:8080/cqhttp/ws/event/",
-                "reverse_reconnect_interval": 3000
-            }
-        ],
-        "post_message_format": "string",
-        "debug": false,
-        "log_level": ""
-    }
+    ```yaml
+    # go-cqhttp 默认配置文件
+
+    account: # 账号相关
+    uin: 1122334455 # QQ账号
+    password: '' # 密码为空时使用扫码登录
+    encrypt: false  # 是否开启密码加密
+    status: 0      # 在线状态 请参考 https://github.com/Mrs4s/go-cqhttp/blob/dev/docs/config.md#在线状态
+    relogin: # 重连设置
+        delay: 3   # 首次重连延迟, 单位秒
+        interval: 3   # 重连间隔
+        max-times: 0  # 最大重连次数, 0为无限制
+
+    # 是否使用服务器下发的新地址进行重连
+    # 注意, 此设置可能导致在海外服务器上连接情况更差
+    use-sso-address: true
+
+    heartbeat:
+    # 心跳频率, 单位秒
+    # -1 为关闭心跳
+    interval: 5
+
+    message:
+    # 上报数据类型
+    # 可选: string,array
+    post-format: string
+    # 是否忽略无效的CQ码, 如果为假将原样发送
+    ignore-invalid-cqcode: false
+    # 是否强制分片发送消息
+    # 分片发送将会带来更快的速度
+    # 但是兼容性会有些问题
+    force-fragment: false
+    # 是否将url分片发送
+    fix-url: false
+    # 下载图片等请求网络代理
+    proxy-rewrite: ''
+    # 是否上报自身消息
+    report-self-message: false
+    # 移除服务端的Reply附带的At
+    remove-reply-at: false
+    # 为Reply附加更多信息
+    extra-reply-data: false
+
+    output:
+    # 日志等级 trace,debug,info,warn,error
+    log-level: warn
+    # 是否启用 DEBUG
+    debug: false # 开启调试模式
+
+    # 默认中间件锚点
+    default-middlewares: &default
+    # 访问密钥, 强烈推荐在公网的服务器设置
+    access-token: ''
+    # 事件过滤器文件目录
+    filter: ''
+    # API限速设置
+    # 该设置为全局生效
+    # 原 cqhttp 虽然启用了 rate_limit 后缀, 但是基本没插件适配
+    # 目前该限速设置为令牌桶算法, 请参考:
+    # https://baike.baidu.com/item/%E4%BB%A4%E7%89%8C%E6%A1%B6%E7%AE%97%E6%B3%95/6597000?fr=aladdin
+    rate-limit:
+        enabled: false # 是否启用限速
+        frequency: 1  # 令牌回复频率, 单位秒
+        bucket: 1     # 令牌桶大小
+
+    database: # 数据库相关设置
+    leveldb:
+        # 是否启用内置leveldb数据库
+        # 启用将会增加10-20MB的内存占用和一定的磁盘空间
+        # 关闭将无法使用 撤回 回复 get_msg 等上下文相关功能
+        enable: true
+
+    # 连接服务列表
+    servers:
+    # HTTP 通信设置
+    - http:
+        # 服务端监听地址
+        host: 127.0.0.1
+        # 服务端监听端口
+        port: 5700
+        # 反向HTTP超时时间, 单位秒
+        # 最小值为5，小于5将会忽略本项设置
+        timeout: 5
+        middlewares:
+            <<: *default # 引用默认中间件
+        # 反向HTTP POST地址列表
+        post:
+        #- url: '' # 地址
+        #  secret: ''           # 密钥
+        #- url: 127.0.0.1:5701 # 地址
+        #  secret: ''          # 密钥
+    # 正向WS设置
+    - ws:
+        # 正向WS服务器监听地址
+        host: 127.0.0.1
+        # 正向WS服务器监听端口
+        port: 6700
+        middlewares:
+            <<: *default # 引用默认中间件
+    # 反向WS设置
+    - ws-reverse:
+        # 反向WS Universal 地址
+        # 注意 设置了此项地址后下面两项将会被忽略
+        universal: ws://127.0.0.1:8080/onebot/v11/ws/
+        # 反向WS API 地址
+        api: ws://your_websocket_api.server
+        # 反向WS Event 地址
+        event: ws://your_websocket_event.server
+        # 重连间隔 单位毫秒
+        reconnect-interval: 3000
+        middlewares:
+            <<: *default # 引用默认中间件
+    # pprof 性能分析服务器, 一般情况下不需要启用.
+    # 如果遇到性能问题请上传报告给开发者处理
+    # 注意: pprof服务不支持中间件、不支持鉴权. 请不要开放到公网
+    - pprof:
+        # 是否禁用pprof性能分析服务器
+        disabled: true
+        # pprof服务器监听地址
+        host: 127.0.0.1
+        # pprof服务器监听端口
+        port: 7700
+
+    # 可添加更多
+    # 添加方式，同一连接方式可添加多个，具体配置说明请查看 go-cqhttp 文档
+    #- http: # http 通信
+    #- ws:   # 正向 Websocket
+    #- ws-reverse: # 反向 Websocket
+    #- pprof: #性能分析服务器
     ```
 
 3. 再次运行 go-cqhttp
