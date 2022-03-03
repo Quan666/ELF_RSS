@@ -82,7 +82,7 @@ async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
             except Exception as e:
                 logger.error(f"E: {repr(e)} 链接：[{item['link']}]")
                 if item.get("count") == 3:
-                    await bot.send_guild_msg(
+                    await bot.send_guild_channel_msg(
                         message=f"E: {repr(e)}\n{error_msg}",
                         guild_id=guild_id,
                         channel_id=channel_id,
