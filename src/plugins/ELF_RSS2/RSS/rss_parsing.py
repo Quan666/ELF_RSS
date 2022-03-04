@@ -7,7 +7,14 @@ from pathlib import Path
 import feedparser
 import httpx
 from nonebot.log import logger
-from tenacity import RetryError, TryAgain, retry, stop_after_attempt, stop_after_delay
+from tenacity import (
+    RetryError,
+    TryAgain,
+    retry,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_fixed,
+)
 from tinydb import TinyDB
 from tinydb.middlewares import CachingMiddleware
 from tinydb.storages import JSONStorage
@@ -70,7 +77,7 @@ async def start(rss: rss_class.Rss) -> None:
 
 
 # 获取 RSS 并解析为 json ，失败重试
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
+@retry(wait=wait_fixed(1), stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_rss(rss: rss_class.Rss) -> dict:
     proxies = get_proxy(rss.img_proxy)
     # 对本机部署的 RSSHub 不使用代理

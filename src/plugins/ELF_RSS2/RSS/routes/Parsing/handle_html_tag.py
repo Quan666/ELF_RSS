@@ -116,8 +116,10 @@ async def handle_html_tag(html) -> str:
         "strong",
         "sub",
         "table",
+        "tbody",
         "td",
         "th",
+        "thead",
         "tr",
         "u",
         "ul",
@@ -137,7 +139,9 @@ async def handle_html_tag(html) -> str:
     rss_str = re.sub(r"</?h\d>", "\n", rss_str)
 
     # 删除图片、视频标签
-    rss_str = re.sub(r"<video[^>]*>(.*?</video>)?|<img[^>]+>", "", rss_str)
+    rss_str = re.sub(
+        r"<video[^>]*>(.*?</video>)?|<img[^>]+>", "", rss_str, flags=re.DOTALL
+    )
 
     # 去掉多余换行
     while "\n\n\n" in rss_str:
