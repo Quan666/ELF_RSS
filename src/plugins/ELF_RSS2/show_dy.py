@@ -28,7 +28,7 @@ async def handle_rss_list(rss_list: list) -> str:
     if rss_stopped_info_list:
         rss_stopped_info_list.sort()
         msg_str += (
-            f"\n----------------------\n"
+            "\n----------------------\n"
             f"其中共有 {len(rss_stopped_info_list)} 条订阅已停止更新：\n\n"
             + "\n\n".join(rss_stopped_info_list)
         )
