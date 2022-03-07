@@ -19,7 +19,7 @@ async def handle_translation(content: str) -> str:
     text = re.sub(r":[A-Za-z_]*:", " ", text)
     try:
         if appid and secret_key:
-            url = f"https://api.fanyi.baidu.com/api/trans/vip/translate"
+            url = "https://api.fanyi.baidu.com/api/trans/vip/translate"
             salt = str(random.randint(32768, 65536))
             sign = hashlib.md5(
                 (appid + content + salt + secret_key).encode()
@@ -33,16 +33,14 @@ async def handle_translation(content: str) -> str:
                 "sign": sign,
             }
             async with httpx.AsyncClient(proxies={}) as client:
-                r = await client.get(url, params=params, timeout=10)
+                r = (await client.get(url, params=params, timeout=10)).json()
             try:
-                i = 0
                 content = ""
-                while i < len(r.json()["trans_result"]):
-                    content += r.json()["trans_result"][i]["dst"] + "\n"
-                    i += 1
+                for i in r["trans_result"]:
+                    content += i["dst"] + "\n"
                 text = "\n百度翻译：\n" + content[:-1]
-            except Exception as e:
-                logger.warning("使用百度翻译错误：" + str(r.json()["error_msg"]) + "，开始尝试使用谷歌翻译")
+            except Exception:
+                logger.warning(f"使用百度翻译错误：{r['error_msg']}，开始尝试使用谷歌翻译")
                 text = "\n谷歌翻译：\n" + str(translator.translate(re.escape(text)))
         else:
             text = "\n谷歌翻译：\n" + str(translator.translate(re.escape(text)))
