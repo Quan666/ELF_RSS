@@ -2,7 +2,7 @@ import re
 import unicodedata
 
 import emoji
-from translate import Translator
+from deep_translator import GoogleTranslator
 
 from ....config import config
 from ....RSS import translation_baidu
@@ -10,7 +10,15 @@ from ....RSS import translation_baidu
 
 # 翻译
 async def handle_translation(content: str) -> str:
-    translator = Translator(to_lang="zh", from_lang="autodetect")
+    proxies = (
+        {
+            "https": config.rss_proxy,
+            "http": config.rss_proxy,
+        }
+        if config.rss_proxy
+        else None
+    )
+    translator = GoogleTranslator(source="auto", target="zh-CN", proxies=proxies)
     try:
         text = emoji.demojize(content)
         text = re.sub(r":[A-Za-z_]*:", " ", text)
