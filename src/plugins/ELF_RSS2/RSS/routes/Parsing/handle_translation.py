@@ -1,11 +1,13 @@
+import hashlib
+import random
 import re
-import unicodedata
 
 import emoji
+import httpx
 from deep_translator import GoogleTranslator
+from nonebot import logger
 
 from ....config import config
-from ....RSS import translation_baidu
 
 
 # 翻译
@@ -19,21 +21,38 @@ async def handle_translation(content: str) -> str:
         else None
     )
     translator = GoogleTranslator(source="auto", target="zh-CN", proxies=proxies)
+    appid = config.baidu_id
+    secret_key = config.baidu_key
+    text = emoji.demojize(content)
+    text = re.sub(r":[A-Za-z_]*:", " ", text)
     try:
-        text = emoji.demojize(content)
-        text = re.sub(r":[A-Za-z_]*:", " ", text)
-        if config.baidu_id and config.baidu_key:
-            content = re.sub(r"\n", "百度翻译 ", content)
-            content = unicodedata.normalize("NFC", content)
-            text = emoji.demojize(content)
-            text = re.sub(r":[A-Za-z_]*:", " ", text)
-            text = "\n翻译(BaiduAPI)：\n" + str(
-                translation_baidu.baidu_translate(re.escape(text))
-            )
+        if appid and secret_key:
+            url = "https://api.fanyi.baidu.com/api/trans/vip/translate"
+            salt = str(random.randint(32768, 65536))
+            sign = hashlib.md5(
+                (appid + content + salt + secret_key).encode()
+            ).hexdigest()
+            params = {
+                "q": content,
+                "from": "auto",
+                "to": "zh",
+                "appid": appid,
+                "salt": salt,
+                "sign": sign,
+            }
+            async with httpx.AsyncClient(proxies={}) as client:
+                r = (await client.get(url, params=params, timeout=10)).json()
+            try:
+                content = ""
+                for i in r["trans_result"]:
+                    content += i["dst"] + "\n"
+                text = "\n百度翻译：\n" + content[:-1]
+            except Exception:
+                logger.warning(f"使用百度翻译错误：{r['error_msg']}，开始尝试使用谷歌翻译")
+                text = "\n谷歌翻译：\n" + str(translator.translate(re.escape(text)))
         else:
-            text = "\n翻译：\n" + str(translator.translate(re.escape(text)))
-        text = re.sub(r"\\", "", text)
-        text = re.sub(r"百度翻译", "\n", text)
+            text = "\n谷歌翻译：\n" + str(translator.translate(re.escape(text)))
+        text = text.replace("\\", "")
     except Exception as e:
         text = "\n翻译失败！" + str(e) + "\n"
     return text
