@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="UTF-8") as fh:
 
 setuptools.setup(
     name="ELF_RSS",
-    version="2.5.2",
+    version="2.5.3",
     author="Quan666",
     author_email="i@oy.mk",
     description="QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub",
