@@ -1,18 +1,26 @@
-import re
-import random
-import httpx
 import hashlib
-import emoji
+import random
+import re
 
-from translate import Translator
+import emoji
+import httpx
+from deep_translator import GoogleTranslator
+from nonebot import logger
 
 from ....config import config
-from nonebot import logger
 
 
 # 翻译
 async def handle_translation(content: str) -> str:
-    translator = Translator(to_lang="zh", from_lang="autodetect")
+    proxies = (
+        {
+            "https": config.rss_proxy,
+            "http": config.rss_proxy,
+        }
+        if config.rss_proxy
+        else None
+    )
+    translator = GoogleTranslator(source="auto", target="zh-CN", proxies=proxies)
     appid = config.baidu_id
     secret_key = config.baidu_key
     text = emoji.demojize(content)
@@ -44,7 +52,7 @@ async def handle_translation(content: str) -> str:
                 text = "\n谷歌翻译：\n" + str(translator.translate(re.escape(text)))
         else:
             text = "\n谷歌翻译：\n" + str(translator.translate(re.escape(text)))
-        text = re.sub(r"\\", "", text)
+        text = text.replace("\\", "")
     except Exception as e:
         text = "\n翻译失败！" + str(e) + "\n"
     return text
