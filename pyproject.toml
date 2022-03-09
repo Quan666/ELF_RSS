@@ -16,7 +16,7 @@ keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 python = "^3.8.3"
 arrow = "^1.2.0"
 bbcode = "^1.1.0"
-emoji = "^0.5.4"
+emoji = ">=0.5.4,<1.8.0"
 feedparser = "^6.0.0"
 deep-translator = "^1.7.0"
 httpx = "^0.18.0"
