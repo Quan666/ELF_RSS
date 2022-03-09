@@ -25,7 +25,6 @@ from .routes.Parsing import ParsingRss, get_proxy
 from .routes.Parsing.cache_manage import cache_filter
 from .routes.Parsing.check_update import dict_hash
 
-STATUS_CODE = [200, 301, 302]
 # 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告
 asyncio.log.logger.setLevel(40)
 HEADERS = {
@@ -76,6 +75,10 @@ async def start(rss: rss_class.Rss) -> None:
     await pr.start(rss_name=rss.name, new_rss=new_rss)
 
 
+async def raise_on_4xx_5xx(response: httpx.Response):
+    response.raise_for_status()
+
+
 # 获取 RSS 并解析为 json ，失败重试
 @retry(wait=wait_fixed(1), stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_rss(rss: rss_class.Rss) -> dict:
@@ -95,15 +98,15 @@ async def get_rss(rss: rss_class.Rss) -> dict:
     # 获取 xml
     d = None
     async with httpx.AsyncClient(
-        proxies=proxies, cookies=cookies, headers=HEADERS
+        proxies=proxies,
+        cookies=cookies,
+        headers=HEADERS,
+        event_hooks={"response": [raise_on_4xx_5xx]},
     ) as client:
         try:
             r = await client.get(rss.get_url())
             # 解析为 JSON
-            if r.status_code in STATUS_CODE:
-                d = feedparser.parse(r.content)
-            else:
-                raise httpx.HTTPStatusError
+            d = feedparser.parse(r.content)
         except Exception:
             if (
                 not re.match("[hH][tT]{2}[pP][sS]?://", rss.url, flags=0)
@@ -113,10 +116,7 @@ async def get_rss(rss: rss_class.Rss) -> dict:
                 for rsshub_url in list(config.rsshub_backup):
                     try:
                         r = await client.get(rss.get_url(rsshub=rsshub_url))
-                        if r.status_code in STATUS_CODE:
-                            d = feedparser.parse(r.content)
-                        else:
-                            raise httpx.HTTPStatusError
+                        d = feedparser.parse(r.content)
                     except Exception:
                         logger.warning(
                             f"[{rss.get_url(rsshub=rsshub_url)}]访问失败！将使用备用 RSSHub 地址！"
