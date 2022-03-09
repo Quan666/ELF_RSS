@@ -13,8 +13,6 @@ from tenacity import RetryError, retry, stop_after_attempt, stop_after_delay
 from ....config import config
 from .utils import get_proxy, get_summary
 
-STATUS_CODE = [200, 301, 302]
-
 
 # 通过 ezgif 压缩 GIF
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
@@ -180,7 +178,11 @@ async def download_image_detail(url: str, proxy: bool) -> Union[bytes, None]:
             logger.warning(f"图片[{url}]下载失败！将重试最多 5 次！\n{e}")
             raise
         # 如果图片无法获取到，直接返回
-        if (len(pic.content) == 0) or (pic.status_code not in STATUS_CODE):
+        if (
+            len(pic.content) == 0
+            or httpx.codes.is_client_error(pic.status_code)
+            or httpx.codes.is_server_error(pic.status_code)
+        ):
             if "pixiv.cat" in url:
                 url = await fuck_pixiv_cat(url=url)
                 return await download_image(url, proxy)
