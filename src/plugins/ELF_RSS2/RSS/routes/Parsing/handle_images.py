@@ -1,6 +1,7 @@
 import base64
 import random
 import re
+import urllib.parse
 from io import BytesIO
 from typing import Union
 
@@ -190,6 +191,14 @@ async def download_image_detail(url: str, proxy: bool) -> Union[bytes, None]:
                 f"图片[{url}]下载失败！ Content-Type: {pic.headers.get('Content-Type')} status_code: {pic.status_code}"
             )
             return None
+        # 如果图片格式为 SVG ，先转换为 PNG
+        if pic.headers.get("Content-Type").startswith("image/svg+xml"):
+            url = (
+                "https://images.weserv.nl/?url="
+                + urllib.parse.quote(url)
+                + "&output=png"
+            )
+            return await download_image(url, proxy)
         return pic.content
 
 
