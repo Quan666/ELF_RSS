@@ -171,7 +171,7 @@ async def fuck_pixiv_cat(url: str) -> str:
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def download_image_detail(url: str, proxy: bool) -> Union[bytes, None]:
     async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy)) as client:
-        referer = re.search("[hH][tT]{2}[pP][sS]?://[^/]+", url).group()
+        referer = f"{httpx.URL(url).scheme}://{httpx.URL(url).host}/"
         headers = {"referer": referer}
         try:
             pic = await client.get(url, headers=headers)

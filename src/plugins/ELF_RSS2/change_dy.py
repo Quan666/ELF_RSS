@@ -108,6 +108,8 @@ async def handle_change_list(
         "stop",
     ]:
         value_to_change = bool(int(value_to_change))  # type:ignore
+        if key_to_change == "stop" and not value_to_change and rss.error_count > 0:
+            rss.error_count = 0
     elif (
         key_to_change in ["downkey", "wkey", "blackkey", "bkey"]
         and len(value_to_change.strip()) == 0
@@ -227,7 +229,7 @@ async def handle_rss_change(
             await tr.add_job(rss)
         else:
             await tr.delete_job(rss)
-            logger.info(f"{rss.name} 已停止更新")
+            logger.info(f"{rss_name} 已停止更新")
         rss_msg = str(rss)
 
         # 隐私考虑，群组下不展示除当前群组外的群号和QQ

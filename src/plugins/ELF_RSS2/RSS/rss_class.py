@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from typing import Union
 
+import httpx
 from nonebot.log import logger
 from tinydb import Query, TinyDB
 from tinydb.operations import set
@@ -30,18 +31,19 @@ class Rss:
         self.duplicate_filter_mode = []  # 去重模式
         self.max_image_number = 0  # 图片数量限制，防止消息太长刷屏
         self.content_to_remove = None  # 正文待移除内容，支持正则
+        self.error_count = 0  # 连续抓取失败的次数，超过 100 就停止更新
         self.stop = False  # 停止更新
 
     # 返回订阅链接
     def get_url(self, rsshub: str = config.rsshub) -> str:
-        if re.match("[hH][tT]{2}[pP][sS]?://", self.url, flags=0):
+        if httpx.URL(self.url).scheme in ["http", "https"]:
             return self.url
         else:
             # 先判断地址是否 / 开头
-            if re.match("/", self.url):
+            if self.url.startswith("/"):
                 return rsshub + self.url
-            else:
-                return rsshub + "/" + self.url
+
+        return rsshub + "/" + self.url
 
     # 读取记录
     @staticmethod
@@ -240,6 +242,7 @@ class Rss:
             f"{mode_msg}" if self.duplicate_filter_mode else "",
             f"图片数量限制：{self.max_image_number}" if self.max_image_number else "",
             f"正文待移除内容：{self.content_to_remove}" if self.content_to_remove else "",
+            f"连续抓取失败的次数：{self.error_count}" if self.error_count else "",
             f"停止更新：{self.stop}" if self.stop else "",
         ]
         return "\n".join([i for i in ret_list if i != ""])
