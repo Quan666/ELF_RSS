@@ -15,13 +15,14 @@ from tenacity import (
     stop_after_delay,
     wait_fixed,
 )
-from tinydb import TinyDB
+from tinydb import Query, TinyDB
 from tinydb.middlewares import CachingMiddleware
 from tinydb.storages import JSONStorage
 
-from ..config import DATA_PATH, config
+from ..config import DATA_PATH, JSON_PATH, config
+from ..RSS import my_trigger as tr
 from . import rss_class
-from .routes.Parsing import ParsingRss, get_proxy
+from .routes.Parsing import ParsingRss, get_proxy, send_msg
 from .routes.Parsing.cache_manage import cache_filter
 from .routes.Parsing.check_update import dict_hash
 
@@ -47,8 +48,10 @@ async def start(rss: rss_class.Rss) -> None:
     try:
         new_rss = await get_rss(rss)
     except RetryError:
-        cookies_str = "及 cookies " if rss.cookies else ""
-        logger.error(f"{rss.name}[{rss.get_url()}]抓取失败！已达最大重试次数！请检查订阅地址{cookies_str}！")
+        rss.error_count += 1
+        logger.warning(f"{rss.name} 抓取失败！已经尝试最多 6 次！")
+        if rss.error_count >= 100:
+            await auto_stop_and_notify_all(rss)
         return
     # 检查是否存在rss记录
     _file = DATA_PATH / (rss.name + ".json")
@@ -73,6 +76,25 @@ async def start(rss: rss_class.Rss) -> None:
 
     pr = ParsingRss(rss=rss)
     await pr.start(rss_name=rss.name, new_rss=new_rss)
+
+
+async def auto_stop_and_notify_all(rss: rss_class.Rss) -> None:
+    rss.stop = True
+    db = TinyDB(
+        JSON_PATH,
+        encoding="utf-8",
+        sort_keys=True,
+        indent=4,
+        ensure_ascii=False,
+    )
+    db.update(rss.__dict__, Query().name == str(rss.name))
+    await tr.delete_job(rss)
+    cookies_str = "及 cookies " if rss.cookies else ""
+    await send_msg(
+        rss=rss,
+        msg=f"{rss.name}[{rss.get_url()}]已经连续抓取失败超过 100 次！已自动停止更新！请检查订阅地址{cookies_str}！",
+        item={},
+    )
 
 
 async def raise_on_4xx_5xx(response: httpx.Response):
@@ -128,5 +150,8 @@ async def get_rss(rss: rss_class.Rss) -> dict:
         finally:
             if not d or not d.get("feed"):
                 logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
+                rss.error_count += 1
                 raise TryAgain
+            if d.get("feed") and rss.error_count > 0:
+                rss.error_count = 0
     return d

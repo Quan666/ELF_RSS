@@ -30,6 +30,7 @@ class Rss:
         self.duplicate_filter_mode = []  # 去重模式
         self.max_image_number = 0  # 图片数量限制，防止消息太长刷屏
         self.content_to_remove = None  # 正文待移除内容，支持正则
+        self.error_count = 0  # 连续抓取失败的次数，超过 100 就停止更新
         self.stop = False  # 停止更新
 
     # 返回订阅链接
@@ -240,6 +241,7 @@ class Rss:
             f"{mode_msg}" if self.duplicate_filter_mode else "",
             f"图片数量限制：{self.max_image_number}" if self.max_image_number else "",
             f"正文待移除内容：{self.content_to_remove}" if self.content_to_remove else "",
+            f"连续抓取失败的次数：{self.error_count}" if self.error_count else "",
             f"停止更新：{self.stop}" if self.stop else "",
         ]
         return "\n".join([i for i in ret_list if i != ""])
