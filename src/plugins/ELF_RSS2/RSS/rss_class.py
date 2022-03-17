@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from typing import Union
 
+import httpx
 from nonebot.log import logger
 from tinydb import Query, TinyDB
 from tinydb.operations import set
@@ -35,14 +36,14 @@ class Rss:
 
     # 返回订阅链接
     def get_url(self, rsshub: str = config.rsshub) -> str:
-        if re.match("[hH][tT]{2}[pP][sS]?://", self.url, flags=0):
+        if httpx.URL(self.url).scheme in ["http", "https"]:
             return self.url
         else:
             # 先判断地址是否 / 开头
-            if re.match("/", self.url):
+            if self.url.startswith("/"):
                 return rsshub + self.url
-            else:
-                return rsshub + "/" + self.url
+
+        return rsshub + "/" + self.url
 
     # 读取记录
     @staticmethod

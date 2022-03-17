@@ -1,7 +1,6 @@
 # -*- coding: UTF-8 -*-
 
 import asyncio
-import re
 from pathlib import Path
 
 import feedparser
@@ -104,15 +103,15 @@ async def raise_on_4xx_5xx(response: httpx.Response):
 # 获取 RSS 并解析为 json ，失败重试
 @retry(wait=wait_fixed(1), stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_rss(rss: rss_class.Rss) -> dict:
-    proxies = get_proxy(rss.img_proxy)
+    rss_url = rss.get_url()
     # 对本机部署的 RSSHub 不使用代理
-    no_proxy = [
+    local_host = [
         "localhost",
         "127.0.0.1",
     ]
-    for i in no_proxy:
-        if i in rss.get_url():
-            proxies = None
+    proxies = (
+        get_proxy(rss.img_proxy) if httpx.URL(rss_url).host not in local_host else None
+    )
 
     # 判断是否使用cookies
     cookies = rss.cookies if rss.cookies else None
@@ -126,30 +125,26 @@ async def get_rss(rss: rss_class.Rss) -> dict:
         event_hooks={"response": [raise_on_4xx_5xx]},
     ) as client:
         try:
-            r = await client.get(rss.get_url())
+            r = await client.get(rss_url)
             # 解析为 JSON
             d = feedparser.parse(r.content)
         except Exception:
-            if (
-                not re.match("[hH][tT]{2}[pP][sS]?://", rss.url, flags=0)
-                and config.rsshub_backup
-            ):
-                logger.warning(f"[{rss.get_url()}]访问失败！将使用备用 RSSHub 地址！")
+            if not httpx.URL(rss.url).scheme and config.rsshub_backup:
+                logger.debug(f"[{rss_url}]访问失败！将使用备用 RSSHub 地址！")
                 for rsshub_url in list(config.rsshub_backup):
+                    rss_url = rss.get_url(rsshub=rsshub_url)
                     try:
-                        r = await client.get(rss.get_url(rsshub=rsshub_url))
+                        r = await client.get(rss_url)
                         d = feedparser.parse(r.content)
                     except Exception:
-                        logger.warning(
-                            f"[{rss.get_url(rsshub=rsshub_url)}]访问失败！将使用备用 RSSHub 地址！"
-                        )
+                        logger.debug(f"[{rss_url}]访问失败！将使用备用 RSSHub 地址！")
                         continue
                     if d.get("feed"):
-                        logger.info(f"[{rss.get_url(rsshub=rsshub_url)}]抓取成功！")
+                        logger.info(f"[{rss_url}]抓取成功！")
                         break
         finally:
             if not d or not d.get("feed"):
-                logger.warning(f"{rss.name} 抓取失败！将重试最多 5 次！")
+                logger.debug(f"{rss.name} 抓取失败！将重试最多 5 次！")
                 rss.error_count += 1
                 raise TryAgain
             if d.get("feed") and rss.error_count > 0:
