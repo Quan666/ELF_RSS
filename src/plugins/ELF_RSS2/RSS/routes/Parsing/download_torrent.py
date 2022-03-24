@@ -1,18 +1,15 @@
-from ... import rss_class
+from typing import Any, Dict, List, Union
+
+from httpx import Proxy
+
 from ...qbittorrent_download import start_down
-from .utils import get_proxy
-
-
-# 下载种子判断
-async def handle_down_torrent(rss: rss_class, item: dict) -> list:
-    if not rss.is_open_upload_group:
-        rss.group_id = []
-    if rss.down_torrent:
-        return await down_torrent(rss=rss, item=item, proxy=get_proxy(rss.img_proxy))
+from ...rss_class import Rss
 
 
 # 创建下载种子任务
-async def down_torrent(rss: rss_class, item: dict, proxy=None) -> list:
+async def down_torrent(
+    rss: Rss, item: Dict[str, Any], proxy: Union[Proxy, Dict[Any, Any]]
+) -> List[str]:
     hash_list = []
     for tmp in item["links"]:
         if (

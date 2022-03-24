@@ -1,6 +1,6 @@
 import hashlib
 from email.utils import parsedate_to_datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import arrow
 from arrow import Arrow
@@ -16,10 +16,12 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 
 
 # 检查更新
-async def check_update(db: TinyDB, new: list) -> list:
+async def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     # 发送失败超过 3 次的消息不再发送
-    to_send_list = db.search((Query().to_send.exists()) & (Query().count <= 3))
+    to_send_list: List[Dict[str, Any]] = db.search(
+        (Query().to_send.exists()) & (Query().count <= 3)
+    )
 
     if not new and not to_send_list:
         return []
@@ -37,15 +39,12 @@ async def check_update(db: TinyDB, new: list) -> list:
     return to_send_list
 
 
-def get_item_date(item: dict) -> Arrow:
+def get_item_date(item: Dict[str, Any]) -> Arrow:
     date = item.get("published", item.get("updated"))
     if date:
         try:
             date = parsedate_to_datetime(date)
         except TypeError:
             pass
-        finally:
-            date = arrow.get(date)
-    else:
-        date = arrow.now()
-    return date
+        return arrow.get(date)
+    return arrow.now()

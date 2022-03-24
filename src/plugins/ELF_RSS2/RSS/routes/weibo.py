@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from nonebot.log import logger
 from pyquery import PyQuery as Pq
 
@@ -10,7 +12,12 @@ from .Parsing.handle_images import handle_img_combo, handle_img_combo_with_conte
 # 处理正文 处理网页 tag
 @ParsingBase.append_handler(parsing_type="summary", rex="weibo", priority=10)
 async def handle_summary(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     summary_html = Pq(get_summary(item))
 
@@ -26,7 +33,12 @@ async def handle_summary(
 # 处理图片
 @ParsingBase.append_handler(parsing_type="picture", rex="weibo")
 async def handle_picture(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
 
     # 判断是否开启了只推送标题
@@ -51,10 +63,10 @@ async def handle_picture(
 
 
 # 处理图片、视频
-async def handle_img(item: dict, img_proxy: bool, img_num: int) -> str:
+async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str:
     if item.get("image_content"):
         return await handle_img_combo_with_content(
-            item.get("gif_url"), item.get("image_content")
+            item.get("gif_url", ""), item["image_content"]
         )
     html = Pq(get_summary(item))
     # 移除多余图标

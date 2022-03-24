@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 import nonebot
 from nonebot.log import logger
 
@@ -6,11 +8,11 @@ from ....bot_info import (
     get_bot_group_list,
     get_bot_guild_channel_list,
 )
-from ....RSS import rss_class
+from ....RSS.rss_class import Rss
 
 
 # 发送消息
-async def send_msg(rss: rss_class.Rss, msg: str, item: dict) -> bool:
+async def send_msg(rss: Rss, msg: str, item: Dict[str, Any]) -> bool:
     bot = nonebot.get_bot()
     flag = False
     if not msg:

@@ -1,4 +1,7 @@
 import re
+from typing import Any, Dict
+
+from tinydb import TinyDB
 
 from ..rss_class import Rss
 from .Parsing import ParsingBase, check_update
@@ -8,9 +11,9 @@ from .Parsing import ParsingBase, check_update
 @ParsingBase.append_before_handler(
     priority=10, rex=r"https\:\/\/yande\.re\/post\/piclens\?tags\="
 )
-async def handle_check_update(rss: Rss, state: dict):
-    db = state.get("tinydb")
-    change_data = await check_update(db, state.get("new_data"))
+async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
+    db = state["tinydb"]
+    change_data = await check_update(db, state["new_data"])
     for i in change_data:
         if i.get("media_content"):
             i["summary"] = re.sub(

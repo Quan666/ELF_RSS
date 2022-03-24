@@ -5,7 +5,7 @@ import re
 import emoji
 import httpx
 from deep_translator import GoogleTranslator
-from nonebot import logger
+from nonebot.log import logger
 
 from ....config import config
 

@@ -2,10 +2,10 @@ import difflib
 import re
 import sqlite3
 from email.utils import parsedate_to_datetime
-from typing import Dict, List
+from typing import Any, Callable, Dict, List
 
 import arrow
-from nonebot import logger
+from nonebot.log import logger
 from pyquery import PyQuery as Pq
 from tinydb import TinyDB
 from tinydb.middlewares import CachingMiddleware
@@ -33,13 +33,17 @@ from .write_rss_data import write_item
 # 订阅器启动的时候将解析器注册到rss实例类？，避免每次推送时再匹配
 class ParsingItem:
     def __init__(
-        self, func: callable, rex: str = "(.*)", priority: int = 10, block: bool = False
+        self,
+        func: Callable[..., Any],
+        rex: str = "(.*)",
+        priority: int = 10,
+        block: bool = False,
     ):
         """
         - **类型**: ``object``
         - **说明**: 解析函数
         """
-        self.func: callable = func
+        self.func: Callable[..., Any] = func
 
         """
         - **类型**: ``str``
@@ -61,7 +65,7 @@ class ParsingItem:
 
 
 # 解析器排序
-def _sort(_list):
+def _sort(_list: List[ParsingItem]) -> List[ParsingItem]:
     _list.sort(key=lambda x: x.priority)
     return _list
 
@@ -104,12 +108,10 @@ class ParsingBase:
         rex: str = "(.*)",
         priority: int = 10,
         block: bool = False,
-    ):
-        def _decorator(func):
-            cls.handler.get(parsing_type).append(
-                ParsingItem(func, rex, priority, block)
-            )
-            cls.handler.update({parsing_type: _sort(cls.handler.get(parsing_type))})
+    ) -> Callable[..., Any]:
+        def _decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            cls.handler[parsing_type].append(ParsingItem(func, rex, priority, block))
+            cls.handler.update({parsing_type: _sort(cls.handler[parsing_type])})
             return func
 
         return _decorator
@@ -117,8 +119,8 @@ class ParsingBase:
     @classmethod
     def append_before_handler(
         cls, rex: str = "(.*)", priority: int = 10, block: bool = False
-    ):
-        def _decorator(func):
+    ) -> Callable[..., Any]:
+        def _decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             cls.before_handler.append(ParsingItem(func, rex, priority, block))
             cls.before_handler = _sort(cls.before_handler)
             return func
@@ -128,8 +130,8 @@ class ParsingBase:
     @classmethod
     def append_after_handler(
         cls, rex: str = "(.*)", priority: int = 10, block: bool = False
-    ):
-        def _decorator(func):
+    ) -> Callable[..., Any]:
+        def _decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             cls.after_handler.append(ParsingItem(func, rex, priority, block))
             cls.after_handler = _sort(cls.after_handler)
             return func
@@ -138,7 +140,7 @@ class ParsingBase:
 
 
 # 对处理器进行过滤
-def _handler_filter(_handler_list: list, _url: str) -> list:
+def _handler_filter(_handler_list: List[ParsingItem], _url: str) -> List[ParsingItem]:
     _result = [h for h in _handler_list if re.search(h.rex, _url)]
     # 删除优先级相同时默认的处理器
     _delete = [
@@ -155,14 +157,14 @@ class ParsingRss:
 
     # 初始化解析实例
     def __init__(self, rss: Rss):
-        self.state = {}  # 用于存储实例处理中上下文数据
-        self.rss = rss
+        self.state: Dict[str, Any] = {}  # 用于存储实例处理中上下文数据
+        self.rss: Rss = rss
 
         # 对处理器进行过滤
-        self.before_handler = _handler_filter(
+        self.before_handler: List[ParsingItem] = _handler_filter(
             ParsingBase.before_handler, self.rss.get_url()
         )
-        self.handler = {}
+        self.handler: Dict[str, List[ParsingItem]] = {}
         for k, v in ParsingBase.handler.items():
             self.handler[k] = _handler_filter(v, self.rss.get_url())
         self.after_handler = _handler_filter(
@@ -170,15 +172,15 @@ class ParsingRss:
         )
 
     # 开始解析
-    async def start(self, rss_name: str, new_rss: dict):
+    async def start(self, rss_name: str, new_rss: Dict[str, Any]) -> None:
         # new_data 是完整的 rss 解析后的 dict
         # 前置处理
-        rss_title = new_rss.get("feed").get("title")
-        new_data = new_rss.get("entries")
+        rss_title = new_rss["feed"]["title"]
+        new_data = new_rss["entries"]
         _file = DATA_PATH / (rss_name + ".json")
         db = TinyDB(
             _file,
-            storage=CachingMiddleware(JSONStorage),
+            storage=CachingMiddleware(JSONStorage),  # type: ignore
             encoding="utf-8",
             sort_keys=True,
             indent=4,
@@ -205,7 +207,7 @@ class ParsingRss:
                 "item_count": 0,
             }
         )
-        for item in self.state.get("change_data"):
+        for item in self.state["change_data"]:
             item_msg = f"【{self.state.get('rss_title')}】更新了!\n----------------------\n"
 
             for handler_list in self.handler.values():
@@ -226,7 +228,7 @@ class ParsingRss:
                     if handler.block or not tmp_state["continue"]:
                         break
                 item_msg += tmp
-            self.state.get("messages").append(item_msg)
+            self.state["messages"].append(item_msg)
 
         # 最后处理
         for handler in self.after_handler:
@@ -237,7 +239,7 @@ class ParsingRss:
 
 # 检查更新
 @ParsingBase.append_before_handler(priority=10)
-async def handle_check_update(rss: Rss, state: dict):
+async def handle_check_update(rss: Rss, state: Dict[str, Any]):
     db = state.get("tinydb")
     change_data = await check_update(db, state.get("new_data"))
     return {"change_data": change_data}
@@ -245,7 +247,7 @@ async def handle_check_update(rss: Rss, state: dict):
 
 # 判断是否满足推送条件
 @ParsingBase.append_before_handler(priority=11)
-async def handle_check_update(rss: Rss, state: dict):
+async def handle_check_update(rss: Rss, state: Dict[str, Any]):
     change_data = state.get("change_data")
     db = state.get("tinydb")
     for item in change_data.copy():
@@ -284,7 +286,7 @@ async def handle_check_update(rss: Rss, state: dict):
 
 # 如果启用了去重模式，对推送列表进行过滤
 @ParsingBase.append_before_handler(priority=12)
-async def handle_check_update(rss: Rss, state: dict):
+async def handle_check_update(rss: Rss, state: Dict[str, Any]):
     change_data = state.get("change_data")
     conn = state.get("conn")
     db = state.get("tinydb")
@@ -294,7 +296,7 @@ async def handle_check_update(rss: Rss, state: dict):
         return {"change_data": change_data}
 
     if not conn:
-        conn = sqlite3.connect(DATA_PATH / "cache.db")
+        conn = sqlite3.connect(str(DATA_PATH / "cache.db"))
         conn.set_trace_callback(logger.debug)
 
     await cache_db_manage(conn)
@@ -326,7 +328,12 @@ async def handle_check_update(rss: Rss, state: dict):
 # 处理标题
 @ParsingBase.append_handler(parsing_type="title")
 async def handle_title(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     # 判断是否开启了只推送图片
     if rss.only_pic:
@@ -338,6 +345,9 @@ async def handle_title(
         title = re.sub(r" - 转发 .*", "", title)
 
     res = f"标题：{title}\n"
+    # 隔开标题和正文
+    if not rss.only_title:
+        res += "\n"
     if rss.translation:
         res += await handle_translation(content=title)
 
@@ -365,7 +375,12 @@ async def handle_title(
 # 处理正文 判断是否是仅推送标题 、是否仅推送图片
 @ParsingBase.append_handler(parsing_type="summary", priority=1)
 async def handle_summary(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     if rss.only_title or rss.only_pic:
         tmp_state["continue"] = False
@@ -375,7 +390,12 @@ async def handle_summary(
 # 处理正文 处理网页 tag
 @ParsingBase.append_handler(parsing_type="summary", priority=10)
 async def handle_summary(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     try:
         tmp += await handle_html_tag(html=Pq(get_summary(item)))
@@ -387,7 +407,12 @@ async def handle_summary(
 # 处理正文 移出指定内容
 @ParsingBase.append_handler(parsing_type="summary", priority=11)
 async def handle_summary(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     # 移除指定内容
     if rss.content_to_remove:
@@ -399,7 +424,12 @@ async def handle_summary(
 # 处理正文 翻译
 @ParsingBase.append_handler(parsing_type="summary", priority=12)
 async def handle_summary(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     if rss.translation:
         tmp += await handle_translation(tmp)
@@ -409,7 +439,12 @@ async def handle_summary(
 # 处理图片
 @ParsingBase.append_handler(parsing_type="picture")
 async def handle_picture(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
 
     # 判断是否开启了只推送标题
@@ -436,7 +471,12 @@ async def handle_picture(
 # 处理来源
 @ParsingBase.append_handler(parsing_type="source")
 async def handle_source(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     return f"链接：{item['link']}\n"
 
@@ -444,7 +484,12 @@ async def handle_source(
 # 处理种子
 @ParsingBase.append_handler(parsing_type="torrent")
 async def handle_torrent(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     res = ""
     if not rss.is_open_upload_group:
@@ -456,19 +501,23 @@ async def handle_torrent(
                 rss=rss, item=item, proxy=get_proxy(rss.img_proxy)
             )
             if hash_list and hash_list[0] is not None:
-                res += "\n磁力：\n"
-                for h in hash_list:
-                    res += f"magnet:?xt=urn:btih:{h}\n"
-                res = res[:-1]
-        except Exception as e:
-            logger.error(f"下载种子时出错：{e}")
+                res = "\n磁力：\n" + "\n".join(
+                    [f"magnet:?xt=urn:btih:{h}" for h in hash_list]
+                )
+        except Exception:
+            logger.exception("下载种子时出错")
     return res
 
 
 # 处理日期
 @ParsingBase.append_handler(parsing_type="date")
 async def handle_date(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     date = item.get("published", item.get("updated"))
     if date:
@@ -486,16 +535,21 @@ async def handle_date(
 # 发送消息
 @ParsingBase.append_handler(parsing_type="after")
 async def handle_message(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
-    db = state.get("tinydb")
+    db = state["tinydb"]
 
     # 发送消息并写入文件
     if await send_msg(rss=rss, msg=item_msg, item=item):
 
         if rss.duplicate_filter_mode:
             await insert_into_cache_db(
-                conn=state.get("conn"), item=item, image_hash=item.get("image_hash")
+                conn=state["conn"], item=item, image_hash=item["image_hash"]
             )
 
         if item.get("to_send"):
@@ -515,10 +569,10 @@ async def handle_message(
 
 
 @ParsingBase.append_after_handler()
-async def after_handler(rss: Rss, state: dict) -> dict:
-    item_count = state.get("item_count")
-    conn = state.get("conn")
-    db = state.get("tinydb")
+async def after_handler(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
+    item_count: int = state["item_count"]
+    conn = state["conn"]
+    db = state["tinydb"]
 
     if item_count > 0:
         logger.info(f"{rss.name} 新消息推送完毕，共计：{item_count}")
@@ -528,7 +582,7 @@ async def after_handler(rss: Rss, state: dict) -> dict:
     if conn is not None:
         conn.close()
 
-    new_data_length = len(state.get("new_data"))
+    new_data_length = len(state["new_data"])
     await cache_json_manage(db, new_data_length)
     db.close()
 

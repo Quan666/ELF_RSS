@@ -1,7 +1,8 @@
 import sqlite3
+from typing import Any, Dict
 
 import httpx
-from nonebot import logger
+from nonebot.log import logger
 from pyquery import PyQuery as Pq
 from tenacity import RetryError, retry, stop_after_attempt, stop_after_delay
 
@@ -24,7 +25,12 @@ from .Parsing.handle_images import (
 # 处理图片
 @ParsingBase.append_handler(parsing_type="picture", rex="danbooru")
 async def handle_picture(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
 
     # 判断是否开启了只推送标题
@@ -48,11 +54,11 @@ async def handle_picture(
 
 
 # 处理图片、视频
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def handle_img(item: dict, img_proxy: bool) -> str:
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+async def handle_img(item: Dict[str, Any], img_proxy: bool) -> str:
     if item.get("image_content"):
         return await handle_img_combo_with_content(
-            item.get("gif_url"), item.get("image_content")
+            item.get("gif_url", ""), item["image_content"]
         )
     img_str = ""
 
@@ -78,17 +84,17 @@ async def handle_img(item: dict, img_proxy: bool) -> str:
 
 # 如果启用了去重模式，对推送列表进行过滤
 @ParsingBase.append_before_handler(rex="danbooru", priority=12)
-async def handle_check_update(rss: Rss, state: dict):
-    change_data = state.get("change_data")
-    conn = state.get("conn")
-    db = state.get("tinydb")
+async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
+    change_data = state["change_data"]
+    conn = state["conn"]
+    db = state["tinydb"]
 
     # 检查是否启用去重 使用 duplicate_filter_mode 字段
     if not rss.duplicate_filter_mode:
         return {"change_data": change_data}
 
     if not conn:
-        conn = sqlite3.connect(DATA_PATH / "cache.db")
+        conn = sqlite3.connect(str(DATA_PATH / "cache.db"))
         conn.set_trace_callback(logger.debug)
 
     await cache_db_manage(conn)
@@ -123,8 +129,8 @@ async def handle_check_update(rss: Rss, state: dict):
 
 
 # 获取正文
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def get_summary(item: dict, img_proxy: bool) -> str:
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+async def get_summary(item: Dict[str, Any], img_proxy: bool) -> str:
     summary = (
         item["content"][0].get("value") if item.get("content") else item["summary"]
     )

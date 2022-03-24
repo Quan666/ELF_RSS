@@ -5,7 +5,7 @@ from nonebot.message import handle_event
 from nonebot_plugin_guild_patch import GuildMessageEvent
 
 
-def _check_at_me(bot: "Bot", event: GuildMessageEvent):
+def _check_at_me(bot: Bot, event: GuildMessageEvent) -> None:
     """
     :说明:
       检查频道消息开头或结尾是否存在 @机器人，去除并赋值 ``event.to_me``
@@ -22,7 +22,7 @@ def _check_at_me(bot: "Bot", event: GuildMessageEvent):
         event.to_me = True
     else:
 
-        def _is_at_me_seg(segment: MessageSegment):
+        def _is_at_me_seg(segment: MessageSegment) -> bool:
             return segment.type == "at" and str(segment.data.get("qq", "")) == str(
                 event.self_tiny_id
             )
@@ -77,4 +77,4 @@ async def patched_handle_event(self: Bot, event: Event) -> None:
         await handle_event(self, event)
 
 
-Bot.handle_event = patched_handle_event
+Bot.handle_event = patched_handle_event  # type: ignore

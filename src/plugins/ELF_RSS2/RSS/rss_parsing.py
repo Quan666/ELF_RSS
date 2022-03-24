@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
-import asyncio
 from pathlib import Path
+from typing import Any, Dict
 
 import feedparser
 import httpx
@@ -20,13 +20,11 @@ from tinydb.storages import JSONStorage
 
 from ..config import DATA_PATH, JSON_PATH, config
 from ..RSS import my_trigger as tr
-from . import rss_class
 from .routes.Parsing import ParsingRss, get_proxy, send_msg
 from .routes.Parsing.cache_manage import cache_filter
 from .routes.Parsing.check_update import dict_hash
+from .rss_class import Rss
 
-# 去掉烦人的 returning true from eof_received() has no effect when using ssl httpx 警告
-asyncio.log.logger.setLevel(40)
 HEADERS = {
     "Accept": "application/xhtml+xml,application/xml,*/*",
     "Accept-Language": "en-US,en;q=0.9",
@@ -38,7 +36,7 @@ HEADERS = {
 
 
 # 入口
-async def start(rss: rss_class.Rss) -> None:
+async def start(rss: Rss) -> None:
     # 网络加载 新RSS
     # 读取 旧RSS 记录
     # 检查更新
@@ -57,13 +55,13 @@ async def start(rss: rss_class.Rss) -> None:
     if not Path.exists(_file):
         db = TinyDB(
             _file,
-            storage=CachingMiddleware(JSONStorage),
+            storage=CachingMiddleware(JSONStorage),  # type: ignore
             encoding="utf-8",
             sort_keys=True,
             indent=4,
             ensure_ascii=False,
         )
-        entries = new_rss.get("entries")
+        entries = new_rss["entries"]
         result = []
         for i in entries:
             i["hash"] = dict_hash(i)
@@ -77,7 +75,7 @@ async def start(rss: rss_class.Rss) -> None:
     await pr.start(rss_name=rss.name, new_rss=new_rss)
 
 
-async def auto_stop_and_notify_all(rss: rss_class.Rss) -> None:
+async def auto_stop_and_notify_all(rss: Rss) -> None:
     rss.stop = True
     db = TinyDB(
         JSON_PATH,
@@ -87,7 +85,7 @@ async def auto_stop_and_notify_all(rss: rss_class.Rss) -> None:
         ensure_ascii=False,
     )
     db.update(rss.__dict__, Query().name == str(rss.name))
-    await tr.delete_job(rss)
+    tr.delete_job(rss)
     cookies_str = "及 cookies " if rss.cookies else ""
     await send_msg(
         rss=rss,
@@ -96,13 +94,14 @@ async def auto_stop_and_notify_all(rss: rss_class.Rss) -> None:
     )
 
 
-async def raise_on_4xx_5xx(response: httpx.Response):
-    response.raise_for_status()
+async def raise_on_4xx_5xx(response: httpx.Response) -> None:
+    if 400 <= response.status_code <= 599:
+        response.raise_for_status()
 
 
 # 获取 RSS 并解析为 json ，失败重试
-@retry(wait=wait_fixed(1), stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def get_rss(rss: rss_class.Rss) -> dict:
+@retry(wait=wait_fixed(1), stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+async def get_rss(rss: Rss) -> Dict[str, Any]:
     rss_url = rss.get_url()
     # 对本机部署的 RSSHub 不使用代理
     local_host = [
@@ -110,14 +109,14 @@ async def get_rss(rss: rss_class.Rss) -> dict:
         "127.0.0.1",
     ]
     proxies = (
-        get_proxy(rss.img_proxy) if httpx.URL(rss_url).host not in local_host else None
+        get_proxy(rss.img_proxy) if httpx.URL(rss_url).host not in local_host else {}
     )
 
     # 判断是否使用cookies
-    cookies = rss.cookies if rss.cookies else None
+    cookies = rss.cookies if rss.cookies else {}
 
     # 获取 xml
-    d = None
+    d: Dict[str, Any] = {}
     async with httpx.AsyncClient(
         proxies=proxies,
         cookies=cookies,

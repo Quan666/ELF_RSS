@@ -1,6 +1,7 @@
 import re
+from typing import Any, Dict
 
-from nonebot import logger
+from nonebot.log import logger
 from pyquery import PyQuery as Pq
 
 from ..rss_class import Rss
@@ -13,7 +14,12 @@ from .Parsing.handle_images import handle_bbcode_img
     parsing_type="summary", rex="(south|spring)-plus.net", priority=10
 )
 async def handle_summary(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     rss_str = await handle_bbcode(html=Pq(get_summary(item)))
     tmp += await handle_html_tag(html=Pq(rss_str))
@@ -23,7 +29,12 @@ async def handle_summary(
 # 处理图片
 @ParsingBase.append_handler(parsing_type="picture", rex="(south|spring)-plus.net")
 async def handle_picture(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
 
     # 判断是否开启了只推送标题
@@ -50,10 +61,15 @@ async def handle_picture(
 # 处理来源
 @ParsingBase.append_handler(parsing_type="source", rex="(south|spring)-plus.net")
 async def handle_source(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     source = item["link"]
     # issue 36 处理链接
     if re.search(r"^//", source):
         source = source.replace("//", "https://")
-    return "链接：" + source + "\n"
+    return f"链接：{source}\n"
