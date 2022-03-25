@@ -1,17 +1,14 @@
 import re
-from typing import Any, Dict, Union
-
-import httpx
-from httpx import Proxy
+from typing import Any, Dict, Optional
 
 from ....config import config
 
 
 # 代理
-def get_proxy(open_proxy: bool) -> Union[Proxy, Dict[Any, Any]]:
+def get_proxy(open_proxy: bool) -> Optional[str]:
     if not open_proxy or not config.rss_proxy:
-        return {}
-    return Proxy(url=f"http://{config.rss_proxy}")
+        return None
+    return f"http://{config.rss_proxy}"
 
 
 # 获取正文

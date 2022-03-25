@@ -1,8 +1,6 @@
 import re
 from typing import Any, Dict
 
-from tinydb import TinyDB
-
 from ..rss_class import Rss
 from .Parsing import ParsingBase, check_update
 

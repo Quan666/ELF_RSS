@@ -2,7 +2,7 @@ import re
 import sqlite3
 from typing import Any, Dict, List
 
-import httpx
+import aiohttp
 from nonebot.log import logger
 from pyquery import PyQuery as Pq
 from tenacity import RetryError, TryAgain, retry, stop_after_attempt, stop_after_delay
@@ -145,10 +145,10 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str
 # 获取动图为视频
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
 async def get_ugoira_video(ugoira_id: str) -> Any:
-    async with httpx.AsyncClient() as client:
+    async with aiohttp.ClientSession() as session:
         data = {"id": ugoira_id, "type": "ugoira"}
-        response = await client.post("https://ugoira.huggy.moe/api/illusts", data=data)
-        url = response.json().get("data")[0].get("url")
+        resp = await session.post("https://ugoira.huggy.moe/api/illusts", data=data)
+        url = (await resp.json()).get("data")[0].get("url")
         if not url:
             raise TryAgain
         return url

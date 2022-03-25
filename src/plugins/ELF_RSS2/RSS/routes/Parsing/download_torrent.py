@@ -1,6 +1,4 @@
-from typing import Any, Dict, List, Union
-
-from httpx import Proxy
+from typing import Any, Dict, List, Optional
 
 from ...qbittorrent_download import start_down
 from ...rss_class import Rss
@@ -8,7 +6,7 @@ from ...rss_class import Rss
 
 # 创建下载种子任务
 async def down_torrent(
-    rss: Rss, item: Dict[str, Any], proxy: Union[Proxy, Dict[Any, Any]]
+    rss: Rss, item: Dict[str, Any], proxy: Optional[str]
 ) -> List[str]:
     hash_list = []
     for tmp in item["links"]:

@@ -2,10 +2,10 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import httpx
 from nonebot.log import logger
 from tinydb import Query, TinyDB
 from tinydb.operations import set
+from yarl import URL
 
 from ..config import DATA_PATH, JSON_PATH, config
 
@@ -38,7 +38,7 @@ class Rss:
 
     # 返回订阅链接
     def get_url(self, rsshub: str = config.rsshub) -> str:
-        if httpx.URL(self.url).scheme in ["http", "https"]:
+        if URL(self.url).scheme in ["http", "https"]:
             return self.url
         else:
             # 先判断地址是否 / 开头

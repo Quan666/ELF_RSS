@@ -1,15 +1,15 @@
 import base64
 import random
 import re
-import urllib.parse
 from io import BytesIO
 from typing import Any, Dict, Optional, Union
 
-import httpx
+import aiohttp
 from nonebot.log import logger
 from PIL import Image, UnidentifiedImageError
 from pyquery import PyQuery as Pq
 from tenacity import RetryError, retry, stop_after_attempt, stop_after_delay
+from yarl import URL
 
 from ....config import config
 from .utils import get_proxy, get_summary
@@ -18,12 +18,12 @@ from .utils import get_proxy, get_summary
 # 通过 ezgif 压缩 GIF
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
 async def resize_gif(url: str, resize_ratio: int = 2) -> Optional[bytes]:
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            url="https://s3.ezgif.com/resize",
+    async with aiohttp.ClientSession() as session:
+        resp = await session.post(
+            "https://s3.ezgif.com/resize",
             data={"new-image-url": url},
         )
-        d = Pq(response.text)
+        d = Pq(await resp.text())
         next_url = d("form").attr("action")
         file = d("form > input[type=hidden]:nth-child(1)").attr("value")
         token = d("form > input[type=hidden]:nth-child(2)").attr("value")
@@ -38,8 +38,8 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> Optional[bytes]:
             "method": "gifsicle",
             "ar": "force",
         }
-        response = await client.post(url=next_url + "?ajax=true", data=data)
-        d = Pq(response.text)
+        resp = await session.post(next_url, params="ajax=true", data=data)
+        d = Pq(await resp.text())
         output_img_url = "https:" + d("img:nth-child(1)").attr("src")
         return await download_image(output_img_url)
 
@@ -47,12 +47,12 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> Optional[bytes]:
 # 通过 ezgif 把视频中间 4 秒转 GIF 作为预览
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
 async def get_preview_gif_from_video(url: str) -> str:
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            url="https://s3.ezgif.com/video-to-gif",
+    async with aiohttp.ClientSession() as session:
+        resp = await session.post(
+            "https://s3.ezgif.com/video-to-gif",
             data={"new-image-url": url},
         )
-        d = Pq(response.text)
+        d = Pq(await resp.text())
         video_length = re.search(
             r"\d\d:\d\d:\d\d", str(d("#main > p.filestats > strong"))
         ).group()  # type: ignore
@@ -79,8 +79,8 @@ async def get_preview_gif_from_video(url: str) -> str:
             "fps": 25,
             "method": "ffmpeg",
         }
-        response = await client.post(url=next_url + "?ajax=true", data=data)
-        d = Pq(response.text)
+        resp = await session.post(next_url, params="ajax=true", data=data)
+        d = Pq(await resp.text())
         return f'https:{d("img:nth-child(1)").attr("src")}'
 
 
@@ -149,21 +149,22 @@ async def fuck_pixiv_cat(url: str) -> str:
     img_id = re.sub("https://pixiv.cat/", "", url)
     img_id = img_id[:-4]
     info_list = img_id.split("-")
-    async with httpx.AsyncClient() as client:
+    async with aiohttp.ClientSession() as session:
         try:
-            req_json = (
-                await client.get(
-                    f"https://api.obfs.dev/api/pixiv/illust?id={info_list[0]}"
-                )
-            ).json()
+            resp = await session.get(
+                f"https://api.obfs.dev/api/pixiv/illust?id={info_list[0]}"
+            )
+            resp_json = await resp.json()
             if len(info_list) >= 2:
                 return str(
-                    req_json["illust"]["meta_pages"][int(info_list[1]) - 1][
+                    resp_json["illust"]["meta_pages"][int(info_list[1]) - 1][
                         "image_urls"
                     ]["original"]
                 )
             else:
-                return str(req_json["illust"]["meta_single_page"]["original_image_url"])
+                return str(
+                    resp_json["illust"]["meta_single_page"]["original_image_url"]
+                )
         except Exception as e:
             logger.error(f"处理pixiv.cat链接时出现问题 ：{e} 链接：[{url}]")
             return url
@@ -171,32 +172,32 @@ async def fuck_pixiv_cat(url: str) -> str:
 
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
 async def download_image_detail(url: str, proxy: bool) -> Optional[bytes]:
-    async with httpx.AsyncClient(proxies=get_proxy(open_proxy=proxy)) as client:
-        referer = f"{httpx.URL(url).scheme}://{httpx.URL(url).host}/"
+    async with aiohttp.ClientSession(raise_for_status=True) as session:
+        referer = f"{URL(url).scheme}://{URL(url).host}/"
         headers = {"referer": referer}
         try:
-            pic = await client.get(url, headers=headers)
+            resp = await session.get(
+                url, headers=headers, proxy=get_proxy(open_proxy=proxy)
+            )
+            # 如果图片无法获取到，直接返回
+            if len(await resp.read()) == 0:
+                if "pixiv.cat" in url:
+                    url = await fuck_pixiv_cat(url=url)
+                    return await download_image(url, proxy)
+                logger.error(
+                    f"图片[{url}]下载失败！ Content-Type: {resp.headers['Content-Type']} status: {resp.status}"
+                )
+                return None
+            # 如果图片格式为 SVG ，先转换为 PNG
+            if resp.headers["Content-Type"].startswith("image/svg+xml"):
+                next_url = str(
+                    URL("https://images.weserv.nl/").with_query(f"url={url}&output=png")
+                )
+                return await download_image(next_url, proxy)
+            return await resp.read()
         except Exception as e:
             logger.warning(f"图片[{url}]下载失败！将重试最多 5 次！\n{e}")
             raise
-        # 如果图片无法获取到，直接返回
-        if len(pic.content) == 0 or 400 <= pic.status_code <= 599:
-            if "pixiv.cat" in url:
-                url = await fuck_pixiv_cat(url=url)
-                return await download_image(url, proxy)
-            logger.error(
-                f"图片[{url}]下载失败！ Content-Type: {pic.headers.get('Content-Type')} status_code: {pic.status_code}"
-            )
-            return None
-        # 如果图片格式为 SVG ，先转换为 PNG
-        if pic.headers.get("Content-Type").startswith("image/svg+xml"):
-            url = (
-                "https://images.weserv.nl/?url="
-                + urllib.parse.quote(url)
-                + "&output=png"
-            )
-            return await download_image(url, proxy)
-        return pic.content
 
 
 async def download_image(url: str, proxy: bool = False) -> Optional[bytes]:

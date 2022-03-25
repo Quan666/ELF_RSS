@@ -3,8 +3,8 @@
 from pathlib import Path
 from typing import Any, Dict
 
+import aiohttp
 import feedparser
-import httpx
 from nonebot.log import logger
 from tenacity import (
     RetryError,
@@ -17,6 +17,7 @@ from tenacity import (
 from tinydb import Query, TinyDB
 from tinydb.middlewares import CachingMiddleware
 from tinydb.storages import JSONStorage
+from yarl import URL
 
 from ..config import DATA_PATH, JSON_PATH, config
 from ..RSS import my_trigger as tr
@@ -94,11 +95,6 @@ async def auto_stop_and_notify_all(rss: Rss) -> None:
     )
 
 
-async def raise_on_4xx_5xx(response: httpx.Response) -> None:
-    if 400 <= response.status_code <= 599:
-        response.raise_for_status()
-
-
 # 获取 RSS 并解析为 json ，失败重试
 @retry(wait=wait_fixed(1), stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
 async def get_rss(rss: Rss) -> Dict[str, Any]:
@@ -108,33 +104,30 @@ async def get_rss(rss: Rss) -> Dict[str, Any]:
         "localhost",
         "127.0.0.1",
     ]
-    proxies = (
-        get_proxy(rss.img_proxy) if httpx.URL(rss_url).host not in local_host else {}
-    )
+    proxy = get_proxy(rss.img_proxy) if URL(rss_url).host not in local_host else None
 
     # 判断是否使用cookies
-    cookies = rss.cookies if rss.cookies else {}
+    cookies = rss.cookies if rss.cookies else None
 
     # 获取 xml
     d: Dict[str, Any] = {}
-    async with httpx.AsyncClient(
-        proxies=proxies,
+    async with aiohttp.ClientSession(
         cookies=cookies,
         headers=HEADERS,
-        event_hooks={"response": [raise_on_4xx_5xx]},
-    ) as client:
+        raise_for_status=True,
+    ) as session:
         try:
-            r = await client.get(rss_url)
+            resp = await session.get(rss_url, proxy=proxy)
             # 解析为 JSON
-            d = feedparser.parse(r.content)
+            d = feedparser.parse(await resp.text())
         except Exception:
-            if not httpx.URL(rss.url).scheme and config.rsshub_backup:
+            if not URL(rss.url).scheme and config.rsshub_backup:
                 logger.debug(f"[{rss_url}]访问失败！将使用备用 RSSHub 地址！")
                 for rsshub_url in list(config.rsshub_backup):
                     rss_url = rss.get_url(rsshub=rsshub_url)
                     try:
-                        r = await client.get(rss_url)
-                        d = feedparser.parse(r.content)
+                        resp = await session.get(rss_url, proxy=proxy)
+                        d = feedparser.parse(await resp.text())
                     except Exception:
                         logger.debug(f"[{rss_url}]访问失败！将使用备用 RSSHub 地址！")
                         continue

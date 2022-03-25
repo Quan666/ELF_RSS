@@ -1,10 +1,10 @@
 import asyncio
 import base64
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
+import aiohttp
 import arrow
-import httpx
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger
 from httpx import Proxy
@@ -98,18 +98,21 @@ def get_torrent_b16_hash(content: bytes) -> str:
 
 
 async def get_torrent_info_from_hash(
-    qb: Client, url: str, proxy: Union[Proxy, Dict[Any, Any]]
+    qb: Client, url: str, proxy: Optional[str]
 ) -> Dict[str, str]:
     info = None
     if re.search(r"magnet:\?xt=urn:btih:", url):
         qb.download_from_link(link=url)
         hash_str = re.search("[A-Fa-f0-9]{40}", url)[0]  # type: ignore
     else:
-        async with httpx.AsyncClient(proxies=proxy) as client:
+        async with aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=100)
+        ) as session:
             try:
-                res = await client.get(url, timeout=100)
-                qb.download_from_file(res.content)
-                hash_str = get_torrent_b16_hash(res.content)
+                resp = await session.get(url, proxy=proxy)
+                content = await resp.read()
+                qb.download_from_file(content)
+                hash_str = get_torrent_b16_hash(content)
             except Exception as e:
                 await send_msg(f"下载种子失败，可能需要代理\n{e}")
                 return {}
@@ -128,7 +131,7 @@ async def get_torrent_info_from_hash(
 
 # 种子地址，种子下载路径，群文件上传 群列表，订阅名称
 async def start_down(
-    url: str, group_ids: List[str], name: str, proxy: Union[Proxy, Dict[Any, Any]]
+    url: str, group_ids: List[str], name: str, proxy: Optional[str]
 ) -> str:
     qb = await get_qb_client()
     if not qb:
