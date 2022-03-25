@@ -1,6 +1,6 @@
 import copy
 import re
-from typing import List, Union
+from typing import Any, List, Optional
 
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
@@ -16,7 +16,7 @@ from tinydb import Query, TinyDB
 from .config import DATA_PATH, JSON_PATH
 from .permission import GUILD_SUPERUSER
 from .RSS import my_trigger as tr
-from .RSS import rss_class
+from .RSS.rss_class import Rss
 
 RSS_CHANGE = on_command(
     "change",
@@ -28,14 +28,14 @@ RSS_CHANGE = on_command(
 
 
 @RSS_CHANGE.handle()
-async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()):
+async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
     plain_text = args.extract_plain_text()
     if plain_text:
         matcher.set_arg("RSS_CHANGE", args)
 
 
 # 处理带多个值的订阅参数
-def handle_property(value: str, property_list: list) -> list:
+def handle_property(value: str, property_list: List[Any]) -> List[Any]:
     # 清空
     if value == "-1":
         return []
@@ -74,14 +74,14 @@ attribute_dict = {
 
 # 处理要修改的订阅参数
 async def handle_change_list(
-    rss: rss_class.Rss,
+    rss: Rss,
     key_to_change: str,
     value_to_change: str,
-    group_id: Union[int, None],
-    guild_channel_id: Union[str, None],
-):
+    group_id: Optional[int],
+    guild_channel_id: Optional[str],
+) -> None:
     if key_to_change == "name":
-        await tr.delete_job(rss)
+        tr.delete_job(rss)
         rss.rename_file(str(DATA_PATH / (value_to_change + ".json")))
     elif (
         key_to_change in ["qq", "qun", "channel"]
@@ -160,7 +160,7 @@ prompt = """\
 @RSS_CHANGE.got("RSS_CHANGE", prompt=prompt)
 async def handle_rss_change(
     event: Event, change_info: str = ArgPlainText("RSS_CHANGE")
-):
+) -> None:
     group_id = None
     guild_channel_id = None
 
@@ -170,9 +170,11 @@ async def handle_rss_change(
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
     name_list = change_info.split(" ")[0].split(",")
-    rss = rss_class.Rss()
-    rss_list = [rss.find_name(name=name) for name in name_list]
-    rss_list = [rss for rss in rss_list if rss]
+    rss_list: List[Rss] = []
+    for name in name_list:
+        rss_tmp = Rss.find_name(name=name)
+        if rss_tmp:
+            rss_list.append(rss_tmp)
 
     if group_id:
         if re.search(" (qq|qun|channel)=", change_info):
@@ -226,9 +228,9 @@ async def handle_rss_change(
 
         # 加入定时任务
         if not rss.stop:
-            await tr.add_job(rss)
+            tr.add_job(rss)
         else:
-            await tr.delete_job(rss)
+            tr.delete_job(rss)
             logger.info(f"{rss_name} 已停止更新")
         rss_msg = str(rss)
 
@@ -256,7 +258,7 @@ async def handle_rss_change(
 
 
 # 参数特殊处理：正文待移除内容
-async def handle_rm_list(rss_list: List[rss_class.Rss], change_info: str) -> list:
+async def handle_rm_list(rss_list: List[Rss], change_info: str) -> List[str]:
     rm_list_exist = re.search(" rm_list='.+'", change_info)
     rm_list = None
 

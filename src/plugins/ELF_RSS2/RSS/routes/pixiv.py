@@ -1,8 +1,9 @@
 import re
 import sqlite3
+from typing import Any, Dict, List
 
-import httpx
-from nonebot import logger
+import aiohttp
+from nonebot.log import logger
 from pyquery import PyQuery as Pq
 from tenacity import RetryError, TryAgain, retry, stop_after_attempt, stop_after_delay
 from tinydb import Query, TinyDB
@@ -26,17 +27,17 @@ from .Parsing.handle_images import (
 
 # 如果启用了去重模式，对推送列表进行过滤
 @ParsingBase.append_before_handler(priority=12, rex="pixiv")
-async def handle_check_update(rss: Rss, state: dict):
-    change_data = state.get("change_data")
-    conn = state.get("conn")
-    db = state.get("tinydb")
+async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
+    change_data = state["change_data"]
+    conn = state["conn"]
+    db = state["tinydb"]
 
     # 检查是否启用去重 使用 duplicate_filter_mode 字段
     if not rss.duplicate_filter_mode:
         return {"change_data": change_data}
 
     if not conn:
-        conn = sqlite3.connect(DATA_PATH / "cache.db")
+        conn = sqlite3.connect(str(DATA_PATH / "cache.db"))
         conn.set_trace_callback(logger.debug)
 
     await cache_db_manage(conn)
@@ -77,7 +78,12 @@ async def handle_check_update(rss: Rss, state: dict):
 # 处理图片
 @ParsingBase.append_handler(parsing_type="picture", rex="pixiv")
 async def handle_picture(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
 
     # 判断是否开启了只推送标题
@@ -102,18 +108,18 @@ async def handle_picture(
 
 
 # 处理图片、视频
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def handle_img(item: dict, img_proxy: bool, img_num: int) -> str:
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str:
     if item.get("image_content"):
         return await handle_img_combo_with_content(
-            item.get("gif_url"), item.get("image_content")
+            item.get("gif_url", ""), item["image_content"]
         )
     html = Pq(get_summary(item))
     link = item["link"]
     img_str = ""
     # 处理动图
     if re.search("类型：ugoira", str(html)):
-        ugoira_id = re.search(r"\d+", link).group()
+        ugoira_id = re.search(r"\d+", link).group()  # type: ignore
         try:
             url = await get_ugoira_video(ugoira_id)
             url = await get_preview_gif_from_video(url)
@@ -137,12 +143,12 @@ async def handle_img(item: dict, img_proxy: bool, img_num: int) -> str:
 
 
 # 获取动图为视频
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def get_ugoira_video(ugoira_id: str) -> str:
-    async with httpx.AsyncClient() as client:
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+async def get_ugoira_video(ugoira_id: str) -> Any:
+    async with aiohttp.ClientSession() as session:
         data = {"id": ugoira_id, "type": "ugoira"}
-        response = await client.post("https://ugoira.huggy.moe/api/illusts", data=data)
-        url = response.json().get("data")[0].get("url")
+        resp = await session.post("https://ugoira.huggy.moe/api/illusts", data=data)
+        url = (await resp.json()).get("data")[0].get("url")
         if not url:
             raise TryAgain
         return url
@@ -151,27 +157,34 @@ async def get_ugoira_video(ugoira_id: str) -> str:
 # 处理来源
 @ParsingBase.append_handler(parsing_type="source", rex="pixiv")
 async def handle_source(
-    rss: Rss, state: dict, item: dict, item_msg: str, tmp: str, tmp_state: dict
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
 ) -> str:
     source = item["link"]
     # 缩短 pixiv 链接
     str_link = re.sub("https://www.pixiv.net/artworks/", "https://pixiv.net/i/", source)
-    return "链接：" + str_link + "\n"
+    return f"链接：{str_link}\n"
 
 
 # 检查更新
 @ParsingBase.append_before_handler(rex="pixiv/ranking", priority=10)
-async def handle_check_update(rss: Rss, state: dict):
-    db = state.get("tinydb")
-    change_data = await check_update(db, state.get("new_data"))
+async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
+    db = state["tinydb"]
+    change_data = await check_update(db, state["new_data"])
     return {"change_data": change_data}
 
 
 # 检查更新
-async def check_update(db: TinyDB, new: list) -> list:
+async def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     # 发送失败超过 3 次的消息不再发送
-    to_send_list = db.search((Query().to_send.exists()) & (Query().count <= 3))
+    to_send_list: List[Dict[str, Any]] = db.search(
+        (Query().to_send.exists()) & (Query().count <= 3)
+    )
 
     if not new and not to_send_list:
         return []

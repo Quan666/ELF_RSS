@@ -1,4 +1,5 @@
 import copy
+from typing import List
 
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
@@ -9,7 +10,7 @@ from nonebot.rule import to_me
 from nonebot_plugin_guild_patch import GuildMessageEvent
 
 from .permission import GUILD_SUPERUSER
-from .RSS import rss_class
+from .RSS.rss_class import Rss
 
 RSS_SHOW = on_command(
     "show",
@@ -20,7 +21,7 @@ RSS_SHOW = on_command(
 )
 
 
-async def handle_rss_list(rss_list: list) -> str:
+async def handle_rss_list(rss_list: List[Rss]) -> str:
     rss_info_list = [f"{i.name}：{i.url}" for i in rss_list]
     rss_info_list.sort()
     msg_str = f"当前共有 {len(rss_info_list)} 条订阅：\n\n" + "\n\n".join(rss_info_list)
@@ -37,7 +38,7 @@ async def handle_rss_list(rss_list: list) -> str:
 
 # 不带订阅名称默认展示当前群组或账号的订阅，带订阅名称就显示该订阅的
 @RSS_SHOW.handle()
-async def handle_rss_show(event: Event, args: Message = CommandArg()):
+async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
     rss_name = args.extract_plain_text()
 
     user_id = event.get_user_id()
@@ -49,10 +50,8 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()):
     elif isinstance(event, GuildMessageEvent):
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
-    rss = rss_class.Rss()
-
     if rss_name:
-        rss = rss.find_name(rss_name)
+        rss = Rss.find_name(rss_name)
         if rss is None:
             await RSS_SHOW.finish(f"❌ 订阅 {rss_name} 不存在！")
         else:
@@ -78,15 +77,15 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()):
             await RSS_SHOW.finish(rss_msg)
 
     if group_id:
-        rss_list = rss.find_group(group=str(group_id))
+        rss_list = Rss.find_group(group=str(group_id))
         if not rss_list:
             await RSS_SHOW.finish("❌ 当前群组没有任何订阅！")
     elif guild_channel_id:
-        rss_list = rss.find_guild_channel(guild_channel=guild_channel_id)
+        rss_list = Rss.find_guild_channel(guild_channel=guild_channel_id)
         if not rss_list:
             await RSS_SHOW.finish("❌ 当前子频道没有任何订阅！")
     else:
-        rss_list = rss.find_user(user=user_id)
+        rss_list = Rss.find_user(user=user_id)
 
     if rss_list:
         msg_str = await handle_rss_list(rss_list)

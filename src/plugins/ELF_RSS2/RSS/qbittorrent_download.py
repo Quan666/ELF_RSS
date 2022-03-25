@@ -1,17 +1,21 @@
 import asyncio
 import base64
 import re
+from typing import Any, Dict, List, Optional
 
+import aiohttp
 import arrow
-import httpx
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger
-from nonebot import logger, require
+from httpx import Proxy
+from nonebot import require
 from nonebot.adapters.onebot.v11 import ActionFailed
+from nonebot.log import logger
 from qbittorrent import Client
 
 from ..bot_info import get_bot_group_list
 from ..config import config
+from .util import convert_size
 
 # 计划
 # 创建一个全局定时器用来检测种子下载情况
@@ -24,8 +28,7 @@ from ..config import config
 DOWN_STATUS_DOWNING = 1  # 下载中
 DOWN_STATUS_UPLOADING = 2  # 上传中
 DOWN_STATUS_UPLOAD_OK = 3  # 上传完成
-down_info = {}
-
+down_info: Dict[str, Dict[str, Any]] = {}
 
 # 示例
 # {
@@ -36,8 +39,9 @@ down_info = {}
 #     }
 # }
 
+
 # 发送通知
-async def send_msg(msg: str) -> list:
+async def send_msg(msg: str) -> List[Dict[str, Any]]:
     logger.info(msg)
     bot = nonebot.get_bot()
     msg_id = []
@@ -50,46 +54,30 @@ async def send_msg(msg: str) -> list:
     return msg_id
 
 
-async def get_qb_client():
+async def get_qb_client() -> Optional[Client]:
     try:
         qb = Client(config.qb_web_url)
         qb.login()
-    except Exception as e:
+    except Exception:
         bot = nonebot.get_bot()
         msg = (
             "❌ 无法连接到 qbittorrent ，请检查：\n"
             "1. 是否启动程序\n"
             "2. 是否勾选了“Web用户界面（远程控制）”\n"
-            f"3. 连接地址、端口是否正确\n{e}"
+            "3. 连接地址、端口是否正确"
         )
-        logger.error(msg)
+        logger.exception(msg)
         await bot.send_private_msg(user_id=str(list(config.superusers)[0]), message=msg)
         return None
     try:
         qb.get_default_save_path()
-    except Exception as e:
+    except Exception:
         bot = nonebot.get_bot()
-        msg = f"❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”\n{e}"
-        logger.error(msg)
+        msg = f"❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”"
+        logger.exception(msg)
         await bot.send_private_msg(user_id=str(list(config.superusers)[0]), message=msg)
         return None
     return qb
-
-
-def get_size(size: int) -> str:
-    kb = 1024
-    mb = kb * 1024
-    gb = mb * 1024
-    tb = gb * 1024
-
-    if size >= tb:
-        return "%.2f TB" % float(size / tb)
-    if size >= gb:
-        return "%.2f GB" % float(size / gb)
-    if size >= mb:
-        return "%.2f MB" % float(size / mb)
-    if size >= kb:
-        return "%.2f KB" % float(size / kb)
 
 
 def get_torrent_b16_hash(content: bytes) -> str:
@@ -104,26 +92,27 @@ def get_torrent_b16_hash(content: bytes) -> str:
     # print(b32Hash)
     b16_hash = base64.b16encode(base64.b32decode(b32_hash))
     b16_hash = b16_hash.lower()
-    b16_hash = str(b16_hash, "utf-8")
     # print("40位info hash值：" + '\n' + b16Hash)
     # print("磁力链：" + '\n' + "magnet:?xt=urn:btih:" + b16Hash)
-    return b16_hash
+    return str(b16_hash, "utf-8")
 
 
-async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
-    if not proxy:
-        proxy = {}
-    qb = await get_qb_client()
+async def get_torrent_info_from_hash(
+    qb: Client, url: str, proxy: Optional[str]
+) -> Dict[str, str]:
     info = None
     if re.search(r"magnet:\?xt=urn:btih:", url):
         qb.download_from_link(link=url)
-        hash_str = re.search("[A-Fa-f0-9]{40}", url)[0]
+        hash_str = re.search("[A-Fa-f0-9]{40}", url)[0]  # type: ignore
     else:
-        async with httpx.AsyncClient(proxies=proxy) as client:
+        async with aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=100)
+        ) as session:
             try:
-                res = await client.get(url, timeout=100)
-                qb.download_from_file(res.content)
-                hash_str = get_torrent_b16_hash(res.content)
+                resp = await session.get(url, proxy=proxy)
+                content = await resp.read()
+                qb.download_from_file(content)
+                hash_str = get_torrent_b16_hash(content)
             except Exception as e:
                 await send_msg(f"下载种子失败，可能需要代理\n{e}")
                 return {}
@@ -134,19 +123,21 @@ async def get_torrent_info_from_hash(url: str, proxy=None) -> dict:
                 info = {
                     "hash": tmp_torrent["hash"],
                     "filename": tmp_torrent["name"],
-                    "size": get_size(tmp_torrent["size"]),
+                    "size": convert_size(tmp_torrent["size"]),
                 }
         await asyncio.sleep(1)
     return info
 
 
 # 种子地址，种子下载路径，群文件上传 群列表，订阅名称
-async def start_down(url: str, group_ids: list, name: str, proxy=None) -> str:
+async def start_down(
+    url: str, group_ids: List[str], name: str, proxy: Optional[str]
+) -> str:
     qb = await get_qb_client()
     if not qb:
         return ""
     # 获取种子 hash
-    info = await get_torrent_info_from_hash(url=url, proxy=proxy)
+    info = await get_torrent_info_from_hash(qb=qb, url=url, proxy=proxy)
     await rss_trigger(
         hash_str=info["hash"],
         group_ids=group_ids,
@@ -161,7 +152,7 @@ async def start_down(url: str, group_ids: list, name: str, proxy=None) -> str:
 
 
 # 检查下载状态
-async def check_down_status(hash_str: str, group_ids: list, name: str):
+async def check_down_status(hash_str: str, group_ids: List[str], name: str) -> None:
     qb = await get_qb_client()
     if not qb:
         return
@@ -192,11 +183,10 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
                             file=path,
                             name=tmp["name"],
                         )
-                    except ActionFailed as e:
-                        await send_msg(
-                            f"{name}\nHash：{hash_str}\n上传到群：{group_id}失败！请手动上传！"
-                        )
-                        logger.error(e)
+                    except ActionFailed:
+                        msg = f"{name}\nHash：{hash_str}\n上传到群：{group_id}失败！请手动上传！"
+                        await send_msg(msg)
+                        logger.exception(msg)
                 except TimeoutError as e:
                     logger.warning(e)
         scheduler = require("nonebot_plugin_apscheduler").scheduler
@@ -214,15 +204,15 @@ async def check_down_status(hash_str: str, group_ids: list, name: str):
 
 
 # 撤回消息
-async def delete_msg(msg_ids: list):
+async def delete_msg(msg_ids: List[Dict[str, Any]]) -> None:
     bot = nonebot.get_bot()
     for msg_id in msg_ids:
         await bot.call_api("delete_msg", message_id=msg_id["message_id"])
 
 
-async def rss_trigger(hash_str: str, group_ids: list, name: str):
+async def rss_trigger(hash_str: str, group_ids: List[str], name: str) -> None:
     scheduler = require("nonebot_plugin_apscheduler").scheduler
-    # 制作一个“time分钟/次”触发器
+    # 制作一个频率为“ n 秒 / 次”的触发器
     trigger = IntervalTrigger(seconds=int(config.down_status_msg_date), jitter=10)
     job_defaults = {"max_instances": 1}
     # 添加任务

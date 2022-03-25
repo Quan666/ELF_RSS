@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from nonebot.adapters import Bot
 
@@ -13,7 +13,9 @@ async def get_bot_group_list(bot: Bot) -> List[int]:
     return [i["group_id"] for i in group_list]
 
 
-async def get_bot_guild_channel_list(bot: Bot, guild_id: str = None) -> List[str]:
+async def get_bot_guild_channel_list(
+    bot: Bot, guild_id: Optional[str] = None
+) -> List[str]:
     guild_list = await bot.get_guild_list()
     if guild_id is None:
         return [i["guild_id"] for i in guild_list]

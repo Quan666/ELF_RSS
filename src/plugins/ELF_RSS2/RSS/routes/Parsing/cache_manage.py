@@ -1,5 +1,6 @@
-import sqlite3
 from io import BytesIO
+from sqlite3 import Connection
+from typing import Any, Dict, Optional, Tuple
 
 import imagehash
 from nonebot.log import logger
@@ -8,13 +9,13 @@ from pyquery import PyQuery as Pq
 from tinydb import TinyDB
 
 from ....config import config
-from ... import rss_class
+from ...rss_class import Rss
 from .check_update import get_item_date
 from .handle_images import download_image
 
 
 # 精简 xxx.json (缓存) 中的字段
-def cache_filter(data: dict) -> dict:
+def cache_filter(data: Dict[str, Any]) -> Dict[str, Any]:
     keys = [
         "id",
         "link",
@@ -34,7 +35,7 @@ def cache_filter(data: dict) -> dict:
 
 
 # 对去重数据库进行管理
-async def cache_db_manage(conn: sqlite3.connect) -> None:
+async def cache_db_manage(conn: Connection) -> None:
     cursor = conn.cursor()
     # 用来去重的 sqlite3 数据表如果不存在就创建一个
     cursor.execute(
@@ -73,8 +74,8 @@ async def cache_json_manage(db: TinyDB, new_data_length: int) -> None:
 
 # 去重判断
 async def duplicate_exists(
-    rss: rss_class.Rss, conn: sqlite3.connect, item: dict, summary: str
-) -> tuple:
+    rss: Rss, conn: Connection, item: Dict[str, Any], summary: str
+) -> Tuple[bool, Optional[str]]:
     flag = False
     link = item["link"].replace("'", "''")
     title = item["title"].replace("'", "''")
@@ -136,7 +137,7 @@ async def duplicate_exists(
 
 # 消息发送后存入去重数据库
 async def insert_into_cache_db(
-    conn: sqlite3.connect, item: dict, image_hash: str
+    conn: Connection, item: Dict[str, Any], image_hash: str
 ) -> None:
     cursor = conn.cursor()
     link = item["link"].replace("'", "''")

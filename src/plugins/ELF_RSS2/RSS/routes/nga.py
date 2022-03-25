@@ -1,4 +1,5 @@
 import re
+from typing import Any, Dict, List
 
 from tinydb import Query, TinyDB
 
@@ -9,9 +10,9 @@ from .Parsing.check_update import get_item_date
 
 # 检查更新
 @ParsingBase.append_before_handler(rex="nga", priority=10)
-async def handle_check_update(rss: Rss, state: dict):
-    new_data = state.get("new_data")
-    db = state.get("tinydb")
+async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
+    new_data = state["new_data"]
+    db = state["tinydb"]
 
     for i in new_data:
         i["link"] = re.sub(r"&rand=\d+", "", i["link"])
@@ -21,10 +22,12 @@ async def handle_check_update(rss: Rss, state: dict):
 
 
 # 检查更新
-async def check_update(db: TinyDB, new: list) -> list:
+async def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     # 发送失败超过 3 次的消息不再发送
-    to_send_list = db.search((Query().to_send.exists()) & (Query().count <= 3))
+    to_send_list: List[Dict[str, Any]] = db.search(
+        (Query().to_send.exists()) & (Query().count <= 3)
+    )
 
     if not new and not to_send_list:
         return []

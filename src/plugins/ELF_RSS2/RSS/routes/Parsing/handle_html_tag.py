@@ -2,12 +2,13 @@ import re
 from html import unescape as html_unescape
 
 import bbcode
+from pyquery import PyQuery as Pq
 
 from ....config import config
 
 
 # 处理 bbcode
-async def handle_bbcode(html) -> str:
+async def handle_bbcode(html: Pq) -> str:
     rss_str = html_unescape(str(html))
 
     # issue 36 处理 bbcode
@@ -51,21 +52,21 @@ async def handle_bbcode(html) -> str:
 
 
 # HTML标签等处理
-async def handle_html_tag(html) -> str:
+async def handle_html_tag(html: Pq) -> str:
     rss_str = html_unescape(str(html))
 
     # 有序/无序列表 标签处理
     for ul in html("ul").items():
         for li in ul("li").items():
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
-            rss_str = rss_str.replace(str(li), f"\n- {li_str_search.group(1)}").replace(
-                "\\n", "\n"
-            )
+            rss_str = rss_str.replace(
+                str(li), f"\n- {li_str_search.group(1)}"  # type: ignore
+            ).replace("\\n", "\n")
     for ol in html("ol").items():
         for index, li in enumerate(ol("li").items()):
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
             rss_str = rss_str.replace(
-                str(li), f"\n{index + 1}. {li_str_search.group(1)}"
+                str(li), f"\n{index + 1}. {li_str_search.group(1)}"  # type: ignore
             ).replace("\\n", "\n")
     rss_str = re.sub("</(ul|ol)>", "\n", rss_str)
     # 处理没有被 ul / ol 标签包围的 li 标签
@@ -75,7 +76,7 @@ async def handle_html_tag(html) -> str:
     for a in html("a").items():
         a_str = re.search(
             r"<a [^>]+>.*?</a>", html_unescape(str(a)), flags=re.DOTALL
-        ).group()
+        ).group()  # type: ignore
         if a.text() and str(a.text()) != a.attr("href"):
             # 去除微博超话
             if re.search(

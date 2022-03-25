@@ -1,3 +1,5 @@
+from typing import Optional
+
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
@@ -9,7 +11,7 @@ from nonebot_plugin_guild_patch import GuildMessageEvent
 
 from .permission import GUILD_SUPERUSER
 from .RSS import my_trigger as tr
-from .RSS import rss_class
+from .RSS.rss_class import Rss
 
 RSS_ADD = on_command(
     "add",
@@ -21,7 +23,7 @@ RSS_ADD = on_command(
 
 
 @RSS_ADD.handle()
-async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()):
+async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
     plain_text = args.extract_plain_text()
     if plain_text:
         matcher.set_arg("RSS_ADD", args)
@@ -37,7 +39,9 @@ prompt = """\
 
 
 @RSS_ADD.got("RSS_ADD", prompt=prompt)
-async def handle_rss_add(event: Event, rss_dy_link: str = ArgPlainText("RSS_ADD")):
+async def handle_rss_add(
+    event: Event, rss_dy_link: str = ArgPlainText("RSS_ADD")
+) -> None:
     user_id = event.get_user_id()
     group_id = None
     guild_channel_id = None
@@ -50,20 +54,25 @@ async def handle_rss_add(event: Event, rss_dy_link: str = ArgPlainText("RSS_ADD"
     dy = rss_dy_link.split(" ")
     name = dy[0]
 
-    rss = rss_class.Rss()
+    rss = Rss()
 
-    async def add_group_or_user(_rss, _group_id, _user_id, _guild_channel_id):
+    async def add_group_or_user(
+        _rss: Rss,
+        _group_id: Optional[int],
+        _user_id: Optional[str],
+        _guild_channel_id: Optional[str],
+    ) -> None:
         if _guild_channel_id:
             _rss.add_user_or_group(guild_channel=_guild_channel_id)
-            await tr.add_job(_rss)
+            tr.add_job(_rss)
             await RSS_ADD.finish("👏 订阅到当前子频道成功！")
         elif _group_id:
             _rss.add_user_or_group(group=str(_group_id))
-            await tr.add_job(_rss)
+            tr.add_job(_rss)
             await RSS_ADD.finish("👏 订阅到当前群组成功！")
         else:
             _rss.add_user_or_group(user=_user_id)
-            await tr.add_job(_rss)
+            tr.add_job(_rss)
             await RSS_ADD.finish("👏 订阅到当前账号成功！")
 
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅

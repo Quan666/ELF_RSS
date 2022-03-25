@@ -9,7 +9,7 @@ from nonebot.rule import to_me
 from nonebot_plugin_guild_patch import GuildMessageEvent
 
 from .permission import GUILD_SUPERUSER
-from .RSS import rss_class
+from .RSS.rss_class import Rss
 from .show_dy import handle_rss_list
 
 RSS_SHOW_ALL = on_command(
@@ -22,7 +22,7 @@ RSS_SHOW_ALL = on_command(
 
 
 @RSS_SHOW_ALL.handle()
-async def handle_rss_show_all(event: Event, args: Message = CommandArg()):
+async def handle_rss_show_all(event: Event, args: Message = CommandArg()) -> None:
     search_keyword = args.extract_plain_text()
 
     group_id = None
@@ -33,24 +33,23 @@ async def handle_rss_show_all(event: Event, args: Message = CommandArg()):
     elif isinstance(event, GuildMessageEvent):
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
-    rss = rss_class.Rss()
-
     if group_id:
-        rss_list = rss.find_group(group=str(group_id))
+        rss_list = Rss.find_group(group=str(group_id))
         if not rss_list:
             await RSS_SHOW_ALL.finish("❌ 当前群组没有任何订阅！")
     elif guild_channel_id:
-        rss_list = rss.find_guild_channel(guild_channel=guild_channel_id)
+        rss_list = Rss.find_guild_channel(guild_channel=guild_channel_id)
         if not rss_list:
             await RSS_SHOW_ALL.finish("❌ 当前子频道没有任何订阅！")
     else:
-        rss_list = rss.read_rss()
+        rss_list = Rss.read_rss()
 
     result = []
     if search_keyword:
         for i in rss_list:
-            test = re.search(search_keyword, i.name, flags=re.I) or re.search(
-                search_keyword, i.url, flags=re.I
+            test = bool(
+                re.search(search_keyword, i.name, flags=re.I)
+                or re.search(search_keyword, i.url, flags=re.I)
             )
             if not group_id and not guild_channel_id and search_keyword.isdigit():
                 if i.user_id:

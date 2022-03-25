@@ -1,42 +1,44 @@
 import re
 from pathlib import Path
-from typing import Union
+from typing import Any, Dict, List, Optional
 
-import httpx
 from nonebot.log import logger
 from tinydb import Query, TinyDB
 from tinydb.operations import set
+from yarl import URL
 
 from ..config import DATA_PATH, JSON_PATH, config
 
 
 class Rss:
-    def __init__(self):
-        self.name = ""  # 订阅名
-        self.url = ""  # 订阅地址
-        self.user_id = []  # 订阅用户（qq） -1 为空
-        self.group_id = []  # 订阅群组
-        self.guild_channel_id = []  # 订阅子频道
-        self.img_proxy = False
-        self.time = "5"  # 更新频率 分钟/次
-        self.translation = False  # 翻译
-        self.only_title = False  # 仅标题
-        self.only_pic = False  # 仅图片
-        self.only_has_pic = False  # 仅含有图片
-        self.cookies = ""
-        self.down_torrent = False  # 是否下载种子
-        self.down_torrent_keyword = ""  # 过滤关键字，支持正则
-        self.black_keyword = ""  # 黑名单关键词
-        self.is_open_upload_group = True  # 默认开启上传到群
-        self.duplicate_filter_mode = []  # 去重模式
-        self.max_image_number = 0  # 图片数量限制，防止消息太长刷屏
-        self.content_to_remove = None  # 正文待移除内容，支持正则
-        self.error_count = 0  # 连续抓取失败的次数，超过 100 就停止更新
-        self.stop = False  # 停止更新
+    def __init__(self, data: Optional[Dict[str, Any]] = None):
+        self.name: str = ""  # 订阅名
+        self.url: str = ""  # 订阅地址
+        self.user_id: List[str] = []  # 订阅用户（qq）
+        self.group_id: List[str] = []  # 订阅群组
+        self.guild_channel_id: List[str] = []  # 订阅子频道
+        self.img_proxy: bool = False
+        self.time: str = "5"  # 更新频率 分钟/次
+        self.translation: bool = False  # 翻译
+        self.only_title: bool = False  # 仅标题
+        self.only_pic: bool = False  # 仅图片
+        self.only_has_pic: bool = False  # 仅含有图片
+        self.cookies: Dict[str, str] = {}
+        self.down_torrent: bool = False  # 是否下载种子
+        self.down_torrent_keyword: str = ""  # 过滤关键字，支持正则
+        self.black_keyword: str = ""  # 黑名单关键词
+        self.is_open_upload_group: bool = True  # 默认开启上传到群
+        self.duplicate_filter_mode: List[str] = []  # 去重模式
+        self.max_image_number: int = 0  # 图片数量限制，防止消息太长刷屏
+        self.content_to_remove: Optional[str] = None  # 正文待移除内容，支持正则
+        self.error_count: int = 0  # 连续抓取失败的次数，超过 100 就停止更新
+        self.stop: bool = False  # 停止更新
+        if data:
+            self.__dict__.update(data)
 
     # 返回订阅链接
     def get_url(self, rsshub: str = config.rsshub) -> str:
-        if httpx.URL(self.url).scheme in ["http", "https"]:
+        if URL(self.url).scheme in ["http", "https"]:
             return self.url
         else:
             # 先判断地址是否 / 开头
@@ -47,11 +49,10 @@ class Rss:
 
     # 读取记录
     @staticmethod
-    def read_rss() -> list:
+    def read_rss() -> List["Rss"]:
         # 如果文件不存在
         if not Path.exists(JSON_PATH):
             return []
-        rss_list = []
         db = TinyDB(
             JSON_PATH,
             encoding="utf-8",
@@ -59,19 +60,16 @@ class Rss:
             indent=4,
             ensure_ascii=False,
         )
-        for rss in db.all():
-            tmp_rss = Rss()
-            tmp_rss.__dict__.update(rss)
-            rss_list.append(tmp_rss)
-        return rss_list
+        return [Rss(rss) for rss in db.all()]
 
     # 查找是否存在当前订阅名 rss 要转换为 rss_
-    def find_name(self, name: str) -> Union["Rss", None]:
+    @staticmethod
+    def find_name(name: str) -> Optional["Rss"]:
         # 过滤特殊字符
         name = re.sub(r'[?*:"<>\\/|]', "_", name)
         if name == "rss":
             name = "rss_"
-        feed_list = self.read_rss()
+        feed_list = Rss.read_rss()
         for feed in feed_list:
             if feed.name == name:
                 return feed
@@ -79,8 +77,11 @@ class Rss:
 
     # 添加订阅
     def add_user_or_group(
-        self, user: str = None, group: str = None, guild_channel: str = None
-    ):
+        self,
+        user: Optional[str] = None,
+        group: Optional[str] = None,
+        guild_channel: Optional[str] = None,
+    ) -> None:
         if user:
             if user in self.user_id:
                 return
@@ -114,7 +115,7 @@ class Rss:
             indent=4,
             ensure_ascii=False,
         )
-        db.update(set("group_id", self.group_id), Query().name == self.name)
+        db.update(set("group_id", self.group_id), Query().name == self.name)  # type: ignore
         return True
 
     # 删除订阅 子频道
@@ -130,12 +131,12 @@ class Rss:
             ensure_ascii=False,
         )
         db.update(
-            set("guild_channel_id", self.guild_channel_id), Query().name == self.name
+            set("guild_channel_id", self.guild_channel_id), Query().name == self.name  # type: ignore
         )
         return True
 
     # 删除整个订阅
-    def delete_rss(self):
+    def delete_rss(self) -> None:
         db = TinyDB(
             JSON_PATH,
             encoding="utf-8",
@@ -147,18 +148,19 @@ class Rss:
         self.delete_file()
 
     # 重命名订阅缓存 json 文件
-    def rename_file(self, target: str):
+    def rename_file(self, target: str) -> None:
         this_file_path = DATA_PATH / (self.name + ".json")
         if Path.exists(this_file_path):
             this_file_path.rename(target)
 
     # 删除订阅缓存 json 文件
-    def delete_file(self):
+    def delete_file(self) -> None:
         this_file_path = DATA_PATH / (self.name + ".json")
         Path.unlink(this_file_path, missing_ok=True)
 
-    def find_guild_channel(self, guild_channel: str) -> list:
-        rss_old = self.read_rss()
+    @staticmethod
+    def find_guild_channel(guild_channel: str) -> List["Rss"]:
+        rss_old = Rss.read_rss()
         result = []
         for rss_tmp in rss_old:
             if rss_tmp.guild_channel_id and guild_channel in rss_tmp.guild_channel_id:
@@ -169,8 +171,9 @@ class Rss:
                 result.append(rss_tmp)
         return result
 
-    def find_group(self, group: str) -> list:
-        rss_old = self.read_rss()
+    @staticmethod
+    def find_group(group: str) -> List["Rss"]:
+        rss_old = Rss.read_rss()
         result = []
         for rss_tmp in rss_old:
             if rss_tmp.group_id and group in rss_tmp.group_id:
@@ -181,34 +184,31 @@ class Rss:
                 result.append(rss_tmp)
         return result
 
-    def find_user(self, user: str) -> list:
-        rss_old = self.read_rss()
+    @staticmethod
+    def find_user(user: str) -> List["Rss"]:
+        rss_old = Rss.read_rss()
         result = [rss for rss in rss_old if user in rss.user_id]
         return result
 
     def set_cookies(self, cookies_str: str) -> bool:
         try:
-            if len(cookies_str) >= 10:
-                cookies = {}
-                for line in cookies_str.split(";"):
-                    if line.find("=") != -1:
-                        name, value = line.strip().split("=")
-                        cookies[name] = value
-                self.cookies = cookies
-                db = TinyDB(
-                    JSON_PATH,
-                    encoding="utf-8",
-                    sort_keys=True,
-                    indent=4,
-                    ensure_ascii=False,
-                )
-                db.update(set("cookies", cookies), Query().name == self.name)
-                return True
-            else:
-                self.cookies = None
-                return False
-        except Exception as e:
-            logger.error(f"{self.name} 的 Cookies 设置时出错！\n{e}")
+            cookies = {}
+            for line in cookies_str.split(";"):
+                if "=" in line:
+                    key, value = line.strip().split("=", 1)
+                    cookies[key] = value
+            self.cookies = cookies
+            db = TinyDB(
+                JSON_PATH,
+                encoding="utf-8",
+                sort_keys=True,
+                indent=4,
+                ensure_ascii=False,
+            )
+            db.update(set("cookies", cookies), Query().name == self.name)  # type: ignore
+            return True
+        except Exception:
+            logger.exception(f"{self.name} 的 Cookies 设置时出错！")
             return False
 
     def __str__(self) -> str:

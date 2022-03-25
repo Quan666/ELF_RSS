@@ -9,7 +9,7 @@ from nonebot_plugin_guild_patch import GuildMessageEvent
 
 from .permission import GUILD_SUPERUSER
 from .RSS import my_trigger as tr
-from .RSS import rss_class
+from .RSS.rss_class import Rss
 
 RSS_DELETE = on_command(
     "deldy",
@@ -21,14 +21,16 @@ RSS_DELETE = on_command(
 
 
 @RSS_DELETE.handle()
-async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()):
+async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
     plain_text = args.extract_plain_text()
     if plain_text:
         matcher.set_arg("RSS_DELETE", args)
 
 
 @RSS_DELETE.got("RSS_DELETE", prompt="输入要删除的订阅名")
-async def handle_rss_delete(event: Event, rss_name: str = ArgPlainText("RSS_DELETE")):
+async def handle_rss_delete(
+    event: Event, rss_name: str = ArgPlainText("RSS_DELETE")
+) -> None:
     group_id = None
     guild_channel_id = None
 
@@ -37,8 +39,7 @@ async def handle_rss_delete(event: Event, rss_name: str = ArgPlainText("RSS_DELE
     elif isinstance(event, GuildMessageEvent):
         guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
 
-    rss = rss_class.Rss()
-    rss = rss.find_name(name=rss_name)
+    rss = Rss.find_name(name=rss_name)
 
     if rss is None:
         await RSS_DELETE.finish("❌ 删除失败！不存在该订阅！")
@@ -47,9 +48,9 @@ async def handle_rss_delete(event: Event, rss_name: str = ArgPlainText("RSS_DELE
             if rss.delete_guild_channel(guild_channel=guild_channel_id):
                 if not any([rss.group_id, rss.user_id, rss.guild_channel_id]):
                     rss.delete_rss()
-                    await tr.delete_job(rss)
+                    tr.delete_job(rss)
                 else:
-                    await tr.add_job(rss)
+                    tr.add_job(rss)
                 await RSS_DELETE.finish(f"👏 当前子频道取消订阅 {rss.name} 成功！")
             else:
                 await RSS_DELETE.finish(f"❌ 当前子频道没有订阅： {rss.name} ！")
@@ -57,13 +58,13 @@ async def handle_rss_delete(event: Event, rss_name: str = ArgPlainText("RSS_DELE
             if rss.delete_group(group=str(group_id)):
                 if not any([rss.group_id, rss.user_id, rss.guild_channel_id]):
                     rss.delete_rss()
-                    await tr.delete_job(rss)
+                    tr.delete_job(rss)
                 else:
-                    await tr.add_job(rss)
+                    tr.add_job(rss)
                 await RSS_DELETE.finish(f"👏 当前群组取消订阅 {rss.name} 成功！")
             else:
                 await RSS_DELETE.finish(f"❌ 当前群组没有订阅： {rss.name} ！")
         else:
             rss.delete_rss()
-            await tr.delete_job(rss)
+            tr.delete_job(rss)
             await RSS_DELETE.finish(f"👏 订阅 {rss.name} 删除成功！")

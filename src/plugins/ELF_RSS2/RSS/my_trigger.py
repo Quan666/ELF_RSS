@@ -1,44 +1,51 @@
 import re
+from typing import List
 
 from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
+from apscheduler.job import Job
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger  # 间隔触发器
 from nonebot import require
 from nonebot.log import logger
 
-from . import rss_class, rss_parsing, util
+from . import rss_parsing, util
+from .rss_class import Rss
 
 
 # 检测某个rss更新 #任务体
 @util.time_out(time=300)  # 20s  任务超时时间
-async def check_update(rss: rss_class.Rss):
+async def check_update(rss: Rss) -> None:
     logger.info(f"{rss.name} 检查更新")
     await rss_parsing.start(rss)
 
 
-async def delete_job(rss: rss_class.Rss):
+def delete_job(rss: Rss) -> None:
     scheduler = require("nonebot_plugin_apscheduler").scheduler
-    try:
+    if scheduler.get_job(rss.name):
         scheduler.remove_job(rss.name)
-    except Exception as e:
-        logger.debug(e)
 
 
-async def add_job(rss: rss_class.Rss):
-    await delete_job(rss)
+def get_jobs() -> List[Job]:
+    scheduler = require("nonebot_plugin_apscheduler").scheduler
+    jobs: List[Job] = scheduler.get_jobs()
+    return jobs
+
+
+def add_job(rss: Rss) -> None:
+    delete_job(rss)
     # 加入订阅任务队列,加入前判断是否存在子频道或群组或用户，三者不能同时为空
     if any([rss.user_id, rss.group_id, rss.guild_channel_id]):
         rss_trigger(rss)
 
 
-def rss_trigger(rss: rss_class.Rss):
+def rss_trigger(rss: Rss) -> None:
     if re.search(r"[_*/,-]", rss.time):
         my_trigger_cron(rss)
         return
     scheduler = require("nonebot_plugin_apscheduler").scheduler
     # 制作一个“time分钟/次”触发器
     trigger = IntervalTrigger(
-        minutes=int(rss.time), jitter=10, timezone=scheduler.timezone
+        minutes=int(rss.time), jitter=10, timezone="Asia/Shanghai"
     )
     # 添加任务
     scheduler.add_job(
@@ -59,7 +66,7 @@ def rss_trigger(rss: rss_class.Rss):
 # 参考 https://www.runoob.com/linux/linux-comm-crontab.html
 
 
-def my_trigger_cron(rss: rss_class.Rss):
+def my_trigger_cron(rss: Rss) -> None:
     # 解析参数
     tmp_list = rss.time.split("_")
     times_list = ["*/5", "*", "*", "*", "*"]
@@ -76,8 +83,8 @@ def my_trigger_cron(rss: rss_class.Rss):
             day_of_week=times_list[4],
             timezone="Asia/Shanghai",
         )
-    except Exception as e:
-        logger.error(f"创建定时器错误！cron:{times_list} E：{e}")
+    except Exception:
+        logger.exception(f"创建定时器错误！cron:{times_list}")
         return
     scheduler = require("nonebot_plugin_apscheduler").scheduler
 

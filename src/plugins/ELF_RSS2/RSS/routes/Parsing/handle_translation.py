@@ -2,10 +2,10 @@ import hashlib
 import random
 import re
 
+import aiohttp
 import emoji
-import httpx
 from deep_translator import GoogleTranslator
-from nonebot import logger
+from nonebot.log import logger
 
 from ....config import config
 
@@ -40,16 +40,19 @@ async def handle_translation(content: str) -> str:
                 "salt": salt,
                 "sign": sign,
             }
-            async with httpx.AsyncClient(proxies={}) as client:
-                r = (await client.get(url, params=params, timeout=10)).json()
-            try:
-                content = ""
-                for i in r["trans_result"]:
-                    content += i["dst"] + "\n"
-                text = "\n百度翻译：\n" + content[:-1]
-            except Exception:
-                logger.warning(f"使用百度翻译错误：{r['error_msg']}，开始尝试使用谷歌翻译")
-                text = "\n谷歌翻译：\n" + str(translator.translate(re.escape(text)))
+            async with aiohttp.ClientSession() as session:
+                resp = await session.get(
+                    url, params=params, timeout=aiohttp.ClientTimeout(10)
+                )
+                data = await resp.json()
+                try:
+                    content = ""
+                    for i in data["trans_result"]:
+                        content += i["dst"] + "\n"
+                    text = "\n百度翻译：\n" + content[:-1]
+                except Exception:
+                    logger.warning(f"使用百度翻译错误：{data['error_msg']}，开始尝试使用谷歌翻译")
+                    text = "\n谷歌翻译：\n" + str(translator.translate(re.escape(text)))
         else:
             text = "\n谷歌翻译：\n" + str(translator.translate(re.escape(text)))
         text = text.replace("\\", "")
