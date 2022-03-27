@@ -7,7 +7,6 @@ import aiohttp
 import arrow
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger
-from httpx import Proxy
 from nonebot import require
 from nonebot.adapters.onebot.v11 import ActionFailed
 from nonebot.log import logger
