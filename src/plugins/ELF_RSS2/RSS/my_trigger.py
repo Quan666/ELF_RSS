@@ -1,8 +1,6 @@
 import re
-from typing import List
 
 from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
-from apscheduler.job import Job
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger  # 间隔触发器
 from nonebot import require
@@ -23,12 +21,6 @@ def delete_job(rss: Rss) -> None:
     scheduler = require("nonebot_plugin_apscheduler").scheduler
     if scheduler.get_job(rss.name):
         scheduler.remove_job(rss.name)
-
-
-def get_jobs() -> List[Job]:
-    scheduler = require("nonebot_plugin_apscheduler").scheduler
-    jobs: List[Job] = scheduler.get_jobs()
-    return jobs
 
 
 def add_job(rss: Rss) -> None:

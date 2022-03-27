@@ -44,10 +44,9 @@ async def start() -> None:
         )
         logger.info("第一次启动，你还没有订阅，记得添加哟！")
     # 创建检查更新任务
-    if not tr.get_jobs():
-        for rss_tmp in rss_list:
-            if not rss_tmp.stop:
-                tr.add_job(rss_tmp)
+    for rss_tmp in rss_list:
+        if not rss_tmp.stop:
+            tr.add_job(rss_tmp)
     await bot.send_private_msg(
         user_id=int(list(config.superusers)[0]),
         message=f"ELF_RSS 订阅器启动成功！\n{boot_message}",
