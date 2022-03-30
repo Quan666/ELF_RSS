@@ -8,7 +8,7 @@ from ....config import config
 
 
 # 处理 bbcode
-async def handle_bbcode(html: Pq) -> str:
+def handle_bbcode(html: Pq) -> str:
     rss_str = html_unescape(str(html))
 
     # issue 36 处理 bbcode
@@ -52,7 +52,7 @@ async def handle_bbcode(html: Pq) -> str:
 
 
 # HTML标签等处理
-async def handle_html_tag(html: Pq) -> str:
+def handle_html_tag(html: Pq) -> str:
     rss_str = html_unescape(str(html))
 
     # 有序/无序列表 标签处理

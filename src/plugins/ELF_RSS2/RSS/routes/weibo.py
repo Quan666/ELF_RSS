@@ -25,7 +25,7 @@ async def handle_summary(
     if not config.blockquote:
         summary_html.remove("blockquote")
 
-    tmp += await handle_html_tag(html=summary_html)
+    tmp += handle_html_tag(html=summary_html)
 
     return tmp
 

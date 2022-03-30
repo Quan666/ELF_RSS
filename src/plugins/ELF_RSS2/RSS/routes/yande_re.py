@@ -11,7 +11,7 @@ from .Parsing import ParsingBase, check_update
 )
 async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     db = state["tinydb"]
-    change_data = await check_update(db, state["new_data"])
+    change_data = check_update(db, state["new_data"])
     for i in change_data:
         if i.get("media_content"):
             i["summary"] = re.sub(

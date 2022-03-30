@@ -73,7 +73,7 @@ attribute_dict = {
 
 
 # 处理要修改的订阅参数
-async def handle_change_list(
+def handle_change_list(
     rss: Rss,
     key_to_change: str,
     value_to_change: str,
@@ -193,7 +193,7 @@ async def handle_rss_change(
             await RSS_CHANGE.finish("❌ 禁止将多个订阅批量改名！会因为名称相同起冲突！")
 
     # 参数特殊处理：正文待移除内容
-    change_list = await handle_rm_list(rss_list, change_info)
+    change_list = handle_rm_list(rss_list, change_info)
 
     rss_msg_list = []
     result_msg = "\n----------------------\n"
@@ -210,7 +210,7 @@ async def handle_rss_change(
                     or value_to_change == "or"
                 ):
                     await RSS_CHANGE.finish(f"❌ 去重模式参数错误！\n{change_dict}")
-                await handle_change_list(
+                handle_change_list(
                     rss, key_to_change, value_to_change, group_id, guild_channel_id
                 )
             else:
@@ -258,7 +258,7 @@ async def handle_rss_change(
 
 
 # 参数特殊处理：正文待移除内容
-async def handle_rm_list(rss_list: List[Rss], change_info: str) -> List[str]:
+def handle_rm_list(rss_list: List[Rss], change_info: str) -> List[str]:
     rm_list_exist = re.search(" rm_list='.+'", change_info)
     rm_list = None
 

@@ -17,12 +17,12 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]
     for i in new_data:
         i["link"] = re.sub(r"&rand=\d+", "", i["link"])
 
-    change_data = await check_update(db, new_data)
+    change_data = check_update(db, new_data)
     return {"change_data": change_data}
 
 
 # 检查更新
-async def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     # 发送失败超过 3 次的消息不再发送
     to_send_list: List[Dict[str, Any]] = db.search(

@@ -16,7 +16,7 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 
 
 # 检查更新
-async def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     # 发送失败超过 3 次的消息不再发送
     to_send_list: List[Dict[str, Any]] = db.search(

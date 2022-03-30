@@ -241,7 +241,7 @@ class ParsingRss:
 @ParsingBase.append_before_handler(priority=10)
 async def handle_check_update(rss: Rss, state: Dict[str, Any]):
     db = state.get("tinydb")
-    change_data = await check_update(db, state.get("new_data"))
+    change_data = check_update(db, state.get("new_data"))
     return {"change_data": change_data}
 
 
@@ -299,7 +299,7 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]):
         conn = sqlite3.connect(str(DATA_PATH / "cache.db"))
         conn.set_trace_callback(logger.debug)
 
-    await cache_db_manage(conn)
+    cache_db_manage(conn)
 
     delete = []
     for index, item in enumerate(change_data):
@@ -398,7 +398,7 @@ async def handle_summary(
     tmp_state: Dict[str, Any],
 ) -> str:
     try:
-        tmp += await handle_html_tag(html=Pq(get_summary(item)))
+        tmp += handle_html_tag(html=Pq(get_summary(item)))
     except Exception as e:
         logger.warning(f"{rss.name} 没有正文内容！{e}")
     return tmp
@@ -548,7 +548,7 @@ async def handle_message(
     if await send_msg(rss=rss, msg=item_msg, item=item):
 
         if rss.duplicate_filter_mode:
-            await insert_into_cache_db(
+            insert_into_cache_db(
                 conn=state["conn"], item=item, image_hash=item["image_hash"]
             )
 
@@ -583,7 +583,7 @@ async def after_handler(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
         conn.close()
 
     new_data_length = len(state["new_data"])
-    await cache_json_manage(db, new_data_length)
+    cache_json_manage(db, new_data_length)
     db.close()
 
     return {}

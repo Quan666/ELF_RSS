@@ -132,7 +132,7 @@ async def zip_pic(url: str, content: bytes) -> Union[Image.Image, bytes, None]:
 
 
 # 将图片转化为 base64
-async def get_pic_base64(content: Union[Image.Image, bytes, None]) -> str:
+def get_pic_base64(content: Union[Image.Image, bytes, None]) -> str:
     if not content:
         return ""
     if isinstance(content, Image.Image):
@@ -212,7 +212,7 @@ async def handle_img_combo(url: str, img_proxy: bool) -> str:
     content = await download_image(url, img_proxy)
     if content:
         resize_content = await zip_pic(url, content)
-        img_base64 = await get_pic_base64(resize_content)
+        img_base64 = get_pic_base64(resize_content)
         if img_base64:
             return f"[CQ:image,file=base64://{img_base64}]"
     return f"\n图片走丢啦: {url}\n"
@@ -220,7 +220,7 @@ async def handle_img_combo(url: str, img_proxy: bool) -> str:
 
 async def handle_img_combo_with_content(gif_url: str, content: bytes) -> str:
     resize_content = await zip_pic(gif_url, content)
-    img_base64 = await get_pic_base64(resize_content)
+    img_base64 = get_pic_base64(resize_content)
     if img_base64:
         return f"[CQ:image,file=base64://{img_base64}]"
     return f"\n图片走丢啦\n"

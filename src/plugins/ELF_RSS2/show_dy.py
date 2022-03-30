@@ -21,7 +21,7 @@ RSS_SHOW = on_command(
 )
 
 
-async def handle_rss_list(rss_list: List[Rss]) -> str:
+def handle_rss_list(rss_list: List[Rss]) -> str:
     rss_info_list = [f"{i.name}：{i.url}" for i in rss_list]
     rss_info_list.sort()
     msg_str = f"当前共有 {len(rss_info_list)} 条订阅：\n\n" + "\n\n".join(rss_info_list)
@@ -88,7 +88,7 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
         rss_list = Rss.find_user(user=user_id)
 
     if rss_list:
-        msg_str = await handle_rss_list(rss_list)
+        msg_str = handle_rss_list(rss_list)
         await RSS_SHOW.finish(msg_str)
     else:
         await RSS_SHOW.finish("❌ 当前没有任何订阅！")

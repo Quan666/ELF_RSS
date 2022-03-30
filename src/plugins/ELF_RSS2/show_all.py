@@ -64,7 +64,7 @@ async def handle_rss_show_all(event: Event, args: Message = CommandArg()) -> Non
         result = rss_list
 
     if result:
-        msg_str = await handle_rss_list(result)
+        msg_str = handle_rss_list(result)
         await RSS_SHOW_ALL.finish(msg_str)
     else:
         await RSS_SHOW_ALL.finish("❌ 当前没有任何订阅！")

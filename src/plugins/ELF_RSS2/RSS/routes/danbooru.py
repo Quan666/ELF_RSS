@@ -97,7 +97,7 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]
         conn = sqlite3.connect(str(DATA_PATH / "cache.db"))
         conn.set_trace_callback(logger.debug)
 
-    await cache_db_manage(conn)
+    cache_db_manage(conn)
 
     delete = []
     for index, item in enumerate(change_data):
