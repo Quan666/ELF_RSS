@@ -3,6 +3,7 @@ from html import unescape as html_unescape
 
 import bbcode
 from pyquery import PyQuery as Pq
+from yarl import URL
 
 from ....config import config
 
@@ -43,7 +44,7 @@ def handle_bbcode(html: Pq) -> str:
 
     # 检查正文是否为 bbcode ，没有成对的标签也当作不是，从而不进行处理
     bbcode_search = re.search(r"\[/(\w+)]", rss_str)
-    if bbcode_search and re.search(rf"\[{bbcode_search.group(1)}", rss_str):
+    if bbcode_search and re.search(f"\\[{bbcode_search[1]}", rss_str):
         parser = bbcode.Parser()
         parser.escape_html = False
         rss_str = parser.format(rss_str)
@@ -60,13 +61,13 @@ def handle_html_tag(html: Pq) -> str:
         for li in ul("li").items():
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
             rss_str = rss_str.replace(
-                str(li), f"\n- {li_str_search.group(1)}"  # type: ignore
+                str(li), f"\n- {li_str_search[1]}"  # type: ignore
             ).replace("\\n", "\n")
     for ol in html("ol").items():
         for index, li in enumerate(ol("li").items()):
             li_str_search = re.search("<li>(.+)</li>", repr(str(li)))
             rss_str = rss_str.replace(
-                str(li), f"\n{index + 1}. {li_str_search.group(1)}"  # type: ignore
+                str(li), f"\n{index + 1}. {li_str_search[1]}"  # type: ignore
             ).replace("\\n", "\n")
     rss_str = re.sub("</(ul|ol)>", "\n", rss_str)
     # 处理没有被 ul / ol 标签包围的 li 标签
@@ -85,11 +86,17 @@ def handle_html_tag(html: Pq) -> str:
             ):
                 rss_str = rss_str.replace(a_str, "")
             # 去除微博话题对应链接 及 微博用户主页链接，只保留文本
-            elif ("weibo.cn" in a.attr("href") and a.children("span.surl-text")) or (
-                "weibo.com" in a.attr("href") and a.text().startswith("@")
+            elif (
+                a.attr("href").startswith("https://m.weibo.cn/search?containerid=")
+                and re.search("#.+#", a.text())
+            ) or (
+                a.attr("href").startswith("https://weibo.com/n/")
+                and a.text().startswith("@")
             ):
                 rss_str = rss_str.replace(a_str, a.text())
             else:
+                if a.attr("href").startswith("https://weibo.cn/sinaurl?u="):
+                    a.attr("href", URL(a.attr("href")).query["u"])
                 rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
         else:
             rss_str = rss_str.replace(a_str, f" {a.attr('href')}\n")
@@ -150,6 +157,6 @@ def handle_html_tag(html: Pq) -> str:
     rss_str = rss_str.strip()
 
     if 0 < config.max_length < len(rss_str):
-        rss_str = rss_str[: config.max_length] + "..."
+        rss_str = f"{rss_str[: config.max_length]}..."
 
     return rss_str
