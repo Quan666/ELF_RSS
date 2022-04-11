@@ -25,8 +25,7 @@ def handle_rss_list(rss_list: List[Rss]) -> str:
     rss_info_list = [f"{i.name}：{i.url}" for i in rss_list]
     rss_info_list.sort()
     msg_str = f"当前共有 {len(rss_info_list)} 条订阅：\n\n" + "\n\n".join(rss_info_list)
-    rss_stopped_info_list = [f"{i.name}：{i.url}" for i in rss_list if i.stop]
-    if rss_stopped_info_list:
+    if rss_stopped_info_list := [f"{i.name}：{i.url}" for i in rss_list if i.stop]:
         rss_stopped_info_list.sort()
         msg_str += (
             "\n----------------------\n"
@@ -48,7 +47,7 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
     elif isinstance(event, GuildMessageEvent):
-        guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
+        guild_channel_id = f"{event.guild_id}@{event.channel_id}"
 
     if rss_name:
         rss = Rss.find_name(rss_name)
@@ -58,7 +57,7 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
             rss_msg = str(rss)
             if group_id:
                 # 隐私考虑，不展示除当前群组外的订阅
-                if not str(group_id) in rss.group_id:
+                if str(group_id) not in rss.group_id:
                     await RSS_SHOW.finish(f"❌ 当前群组未订阅 {rss_name} ")
                 rss_tmp = copy.deepcopy(rss)
                 rss_tmp.guild_channel_id = ["*"]

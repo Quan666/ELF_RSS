@@ -60,15 +60,14 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str
         img_str += await handle_img_combo(url, img_proxy)
 
     # 处理视频
-    doc_video = html("video")
-    if doc_video:
+    if doc_video := html("video"):
         img_str += "\n视频预览："
         for video in doc_video.items():
             url = video.attr("src")
             try:
                 url = await get_preview_gif_from_video(url)
             except RetryError:
-                logger.warning(f"视频预览获取失败，将发送原视频封面")
+                logger.warning("视频预览获取失败，将发送原视频封面")
                 url = video.attr("poster")
             img_str += await handle_img_combo(url, img_proxy)
 

@@ -40,8 +40,7 @@ def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def get_item_date(item: Dict[str, Any]) -> Arrow:
-    date = item.get("published", item.get("updated"))
-    if date:
+    if date := item.get("published", item.get("updated")):
         try:
             date = parsedate_to_datetime(date)
         except TypeError:

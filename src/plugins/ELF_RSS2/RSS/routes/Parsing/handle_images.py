@@ -212,18 +212,16 @@ async def handle_img_combo(url: str, img_proxy: bool) -> str:
     content = await download_image(url, img_proxy)
     if content:
         resize_content = await zip_pic(url, content)
-        img_base64 = get_pic_base64(resize_content)
-        if img_base64:
+        if img_base64 := get_pic_base64(resize_content):
             return f"[CQ:image,file=base64://{img_base64}]"
     return f"\n图片走丢啦: {url}\n"
 
 
 async def handle_img_combo_with_content(gif_url: str, content: bytes) -> str:
     resize_content = await zip_pic(gif_url, content)
-    img_base64 = get_pic_base64(resize_content)
-    if img_base64:
+    if img_base64 := get_pic_base64(resize_content):
         return f"[CQ:image,file=base64://{img_base64}]"
-    return f"\n图片走丢啦\n"
+    return "\n图片走丢啦\n"
 
 
 # 处理图片、视频
@@ -245,8 +243,7 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str
         img_str += await handle_img_combo(url, img_proxy)
 
     # 处理视频
-    doc_video = html("video")
-    if doc_video:
+    if doc_video := html("video"):
         img_str += "\n视频封面："
         for video in doc_video.items():
             url = video.attr("poster")

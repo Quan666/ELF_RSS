@@ -24,8 +24,7 @@ RSS_ADD = on_command(
 
 @RSS_ADD.handle()
 async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
-    plain_text = args.extract_plain_text()
-    if plain_text:
+    if args.extract_plain_text():
         matcher.set_arg("RSS_ADD", args)
 
 

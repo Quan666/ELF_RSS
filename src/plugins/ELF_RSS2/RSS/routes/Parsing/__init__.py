@@ -147,7 +147,7 @@ def _handler_filter(_handler_list: List[ParsingItem], _url: str) -> List[Parsing
         (h.func.__name__, "(.*)", h.priority) for h in _result if h.rex != "(.*)"
     ]
     _result = [
-        h for h in _result if not ((h.func.__name__, h.rex, h.priority) in _delete)
+        h for h in _result if (h.func.__name__, h.rex, h.priority) not in _delete
     ]
     return _result
 
@@ -177,7 +177,7 @@ class ParsingRss:
         # 前置处理
         rss_title = new_rss["feed"]["title"]
         new_data = new_rss["entries"]
-        _file = DATA_PATH / (rss_name + ".json")
+        _file = DATA_PATH / f"{rss_name}.json"
         db = TinyDB(
             _file,
             storage=CachingMiddleware(JSONStorage),  # type: ignore

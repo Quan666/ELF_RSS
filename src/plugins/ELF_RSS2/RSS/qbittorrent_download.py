@@ -72,7 +72,7 @@ async def get_qb_client() -> Optional[Client]:
         qb.get_default_save_path()
     except Exception:
         bot = nonebot.get_bot()
-        msg = f"❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”"
+        msg = "❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”"
         logger.exception(msg)
         await bot.send_private_msg(user_id=str(list(config.superusers)[0]), message=msg)
         return None

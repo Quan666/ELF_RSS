@@ -52,7 +52,7 @@ async def start(rss: Rss) -> None:
             await auto_stop_and_notify_all(rss)
         return
     # 检查是否存在rss记录
-    _file = DATA_PATH / (rss.name + ".json")
+    _file = DATA_PATH / f"{rss.name}.json"
     if not Path.exists(_file):
         db = TinyDB(
             _file,
@@ -107,7 +107,7 @@ async def get_rss(rss: Rss) -> Dict[str, Any]:
     proxy = get_proxy(rss.img_proxy) if URL(rss_url).host not in local_host else None
 
     # 判断是否使用cookies
-    cookies = rss.cookies if rss.cookies else None
+    cookies = rss.cookies or None
 
     # 获取 xml
     d: Dict[str, Any] = {}

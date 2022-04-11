@@ -29,8 +29,7 @@ RSS_CHANGE = on_command(
 
 @RSS_CHANGE.handle()
 async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
-    plain_text = args.extract_plain_text()
-    if plain_text:
+    if args.extract_plain_text():
         matcher.set_arg("RSS_CHANGE", args)
 
 
@@ -82,9 +81,9 @@ def handle_change_list(
 ) -> None:
     if key_to_change == "name":
         tr.delete_job(rss)
-        rss.rename_file(str(DATA_PATH / (value_to_change + ".json")))
+        rss.rename_file(str(DATA_PATH / f"{value_to_change}.json"))
     elif (
-        key_to_change in ["qq", "qun", "channel"]
+        key_to_change in {"qq", "qun", "channel"}
         and not group_id
         and not guild_channel_id
     ) or key_to_change == "mode":
@@ -97,7 +96,7 @@ def handle_change_list(
                 value_to_change = "1"
             else:
                 value_to_change = str(int(float(value_to_change)))
-    elif key_to_change in [
+    elif key_to_change in {
         "proxy",
         "tl",
         "ot",
@@ -106,12 +105,12 @@ def handle_change_list(
         "upgroup",
         "downopen",
         "stop",
-    ]:
+    }:
         value_to_change = bool(int(value_to_change))  # type:ignore
         if key_to_change == "stop" and not value_to_change and rss.error_count > 0:
             rss.error_count = 0
     elif (
-        key_to_change in ["downkey", "wkey", "blackkey", "bkey"]
+        key_to_change in {"downkey", "wkey", "blackkey", "bkey"}
         and len(value_to_change.strip()) == 0
     ):
         value_to_change = None  # type:ignore
@@ -167,13 +166,12 @@ async def handle_rss_change(
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
     elif isinstance(event, GuildMessageEvent):
-        guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
+        guild_channel_id = f"{event.guild_id}@{event.channel_id}"
 
     name_list = change_info.split(" ")[0].split(",")
     rss_list: List[Rss] = []
     for name in name_list:
-        rss_tmp = Rss.find_name(name=name)
-        if rss_tmp:
+        if rss_tmp := Rss.find_name(name=name):
             rss_list.append(rss_tmp)
 
     if group_id:
@@ -188,9 +186,8 @@ async def handle_rss_change(
 
     if not rss_list:
         await RSS_CHANGE.finish("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组无权操作")
-    else:
-        if len(rss_list) > 1 and " name=" in change_info:
-            await RSS_CHANGE.finish("❌ 禁止将多个订阅批量改名！会因为名称相同起冲突！")
+    elif len(rss_list) > 1 and " name=" in change_info:
+        await RSS_CHANGE.finish("❌ 禁止将多个订阅批量改名！会因为名称相同起冲突！")
 
     # 参数特殊处理：正文待移除内容
     change_list = handle_rm_list(rss_list, change_info)
@@ -268,11 +265,10 @@ def handle_rm_list(rss_list: List[Rss], change_info: str) -> List[str]:
         change_info = change_info.replace(rm_list_exist[0], "")
 
     if rm_list:
-        if len(rm_list) == 1 and rm_list[0] == "-1":
-            for rss in rss_list:
+        for rss in rss_list:
+            if len(rm_list) == 1 and rm_list[0] == "-1":
                 setattr(rss, "content_to_remove", None)
-        else:
-            for rss in rss_list:
+            else:
                 setattr(rss, "content_to_remove", rm_list)
 
     change_list = change_info.split(" ")

@@ -46,9 +46,7 @@ async def handle_translation(content: str) -> str:
                 )
                 data = await resp.json()
                 try:
-                    content = ""
-                    for i in data["trans_result"]:
-                        content += i["dst"] + "\n"
+                    content = "".join(i["dst"] + "\n" for i in data["trans_result"])
                     text = "\n百度翻译：\n" + content[:-1]
                 except Exception:
                     logger.warning(f"使用百度翻译错误：{data['error_msg']}，开始尝试使用谷歌翻译")

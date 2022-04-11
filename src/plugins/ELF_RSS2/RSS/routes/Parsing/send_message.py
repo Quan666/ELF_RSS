@@ -27,7 +27,7 @@ async def send_msg(rss: Rss, msg: str, item: Dict[str, Any]) -> bool:
                 )
                 continue
             try:
-                await bot.send_private_msg(user_id=int(user_id), message=str(msg))
+                await bot.send_private_msg(user_id=int(user_id), message=msg)
                 flag = True
             except Exception as e:
                 logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
@@ -45,7 +45,7 @@ async def send_msg(rss: Rss, msg: str, item: Dict[str, Any]) -> bool:
                 )
                 continue
             try:
-                await bot.send_group_msg(group_id=int(group_id), message=str(msg))
+                await bot.send_group_msg(group_id=int(group_id), message=msg)
                 flag = True
             except Exception as e:
                 logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
@@ -80,7 +80,7 @@ async def send_msg(rss: Rss, msg: str, item: Dict[str, Any]) -> bool:
 
             try:
                 await bot.send_guild_channel_msg(
-                    message=str(msg), guild_id=guild_id, channel_id=channel_id
+                    message=msg, guild_id=guild_id, channel_id=channel_id
                 )
                 flag = True
             except Exception as e:

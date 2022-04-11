@@ -116,7 +116,7 @@ async def duplicate_exists(
         if mode == "link":
             sql += " AND link=?"
             args.append(link)
-        if mode == "title":
+        elif mode == "title":
             sql += " AND title=?"
             args.append(title)
     if "or" in rss.duplicate_filter_mode:

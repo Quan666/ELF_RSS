@@ -22,8 +22,7 @@ RSS_DELETE = on_command(
 
 @RSS_DELETE.handle()
 async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
-    plain_text = args.extract_plain_text()
-    if plain_text:
+    if args.extract_plain_text():
         matcher.set_arg("RSS_DELETE", args)
 
 
@@ -37,34 +36,33 @@ async def handle_rss_delete(
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
     elif isinstance(event, GuildMessageEvent):
-        guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
+        guild_channel_id = f"{event.guild_id}@{event.channel_id}"
 
     rss = Rss.find_name(name=rss_name)
 
     if rss is None:
         await RSS_DELETE.finish("❌ 删除失败！不存在该订阅！")
-    else:
-        if guild_channel_id:
-            if rss.delete_guild_channel(guild_channel=guild_channel_id):
-                if not any([rss.group_id, rss.user_id, rss.guild_channel_id]):
-                    rss.delete_rss()
-                    tr.delete_job(rss)
-                else:
-                    tr.add_job(rss)
-                await RSS_DELETE.finish(f"👏 当前子频道取消订阅 {rss.name} 成功！")
+    elif guild_channel_id:
+        if rss.delete_guild_channel(guild_channel=guild_channel_id):
+            if not any([rss.group_id, rss.user_id, rss.guild_channel_id]):
+                rss.delete_rss()
+                tr.delete_job(rss)
             else:
-                await RSS_DELETE.finish(f"❌ 当前子频道没有订阅： {rss.name} ！")
-        elif group_id:
-            if rss.delete_group(group=str(group_id)):
-                if not any([rss.group_id, rss.user_id, rss.guild_channel_id]):
-                    rss.delete_rss()
-                    tr.delete_job(rss)
-                else:
-                    tr.add_job(rss)
-                await RSS_DELETE.finish(f"👏 当前群组取消订阅 {rss.name} 成功！")
-            else:
-                await RSS_DELETE.finish(f"❌ 当前群组没有订阅： {rss.name} ！")
+                tr.add_job(rss)
+            await RSS_DELETE.finish(f"👏 当前子频道取消订阅 {rss.name} 成功！")
         else:
-            rss.delete_rss()
-            tr.delete_job(rss)
-            await RSS_DELETE.finish(f"👏 订阅 {rss.name} 删除成功！")
+            await RSS_DELETE.finish(f"❌ 当前子频道没有订阅： {rss.name} ！")
+    elif group_id:
+        if rss.delete_group(group=str(group_id)):
+            if not any([rss.group_id, rss.user_id, rss.guild_channel_id]):
+                rss.delete_rss()
+                tr.delete_job(rss)
+            else:
+                tr.add_job(rss)
+            await RSS_DELETE.finish(f"👏 当前群组取消订阅 {rss.name} 成功！")
+        else:
+            await RSS_DELETE.finish(f"❌ 当前群组没有订阅： {rss.name} ！")
+    else:
+        rss.delete_rss()
+        tr.delete_job(rss)
+        await RSS_DELETE.finish(f"👏 订阅 {rss.name} 删除成功！")
