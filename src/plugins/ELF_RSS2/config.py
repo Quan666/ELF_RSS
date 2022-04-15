@@ -42,10 +42,9 @@ class ELFConfig(BaseConfig):
 
     def __getattr__(self, name: str) -> Any:
         data = self.dict()
-        for k, v in data.items():
-            if k.casefold() == name.casefold():
-                return v
-        return None
+        return next(
+            (v for k, v in data.items() if k.casefold() == name.casefold()), None
+        )
 
 
 config = ELFConfig(**get_driver().config.dict())

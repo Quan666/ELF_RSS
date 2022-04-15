@@ -21,8 +21,8 @@ async def handle_summary(
     tmp: str,
     tmp_state: Dict[str, Any],
 ) -> str:
-    rss_str = await handle_bbcode(html=Pq(get_summary(item)))
-    tmp += await handle_html_tag(html=Pq(rss_str))
+    rss_str = handle_bbcode(html=Pq(get_summary(item)))
+    tmp += handle_html_tag(html=Pq(rss_str))
     return tmp
 
 

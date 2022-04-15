@@ -16,7 +16,7 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 
 
 # 检查更新
-async def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     # 发送失败超过 3 次的消息不再发送
     to_send_list: List[Dict[str, Any]] = db.search(
@@ -40,8 +40,7 @@ async def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, 
 
 
 def get_item_date(item: Dict[str, Any]) -> Arrow:
-    date = item.get("published", item.get("updated"))
-    if date:
+    if date := item.get("published", item.get("updated")):
         try:
             date = parsedate_to_datetime(date)
         except TypeError:

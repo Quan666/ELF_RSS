@@ -25,7 +25,7 @@ async def handle_summary(
     if not config.blockquote:
         summary_html.remove("blockquote")
 
-    tmp += await handle_html_tag(html=summary_html)
+    tmp += handle_html_tag(html=summary_html)
 
     return tmp
 
@@ -83,8 +83,7 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str
         img_str += await handle_img_combo(url, img_proxy)
 
     # 处理视频
-    doc_video = html("video")
-    if doc_video:
+    if doc_video := html("video"):
         img_str += "\n视频封面："
         for video in doc_video.items():
             url = video.attr("poster")

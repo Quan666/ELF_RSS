@@ -35,7 +35,7 @@ def cache_filter(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # 对去重数据库进行管理
-async def cache_db_manage(conn: Connection) -> None:
+def cache_db_manage(conn: Connection) -> None:
     cursor = conn.cursor()
     # 用来去重的 sqlite3 数据表如果不存在就创建一个
     cursor.execute(
@@ -62,7 +62,7 @@ async def cache_db_manage(conn: Connection) -> None:
 
 
 # 对缓存 json 进行管理
-async def cache_json_manage(db: TinyDB, new_data_length: int) -> None:
+def cache_json_manage(db: TinyDB, new_data_length: int) -> None:
     # 只保留最多 config.limit + new_data_length 条的记录
     limit = config.limit + new_data_length
     retains = db.all()
@@ -116,7 +116,7 @@ async def duplicate_exists(
         if mode == "link":
             sql += " AND link=?"
             args.append(link)
-        if mode == "title":
+        elif mode == "title":
             sql += " AND title=?"
             args.append(title)
     if "or" in rss.duplicate_filter_mode:
@@ -136,7 +136,7 @@ async def duplicate_exists(
 
 
 # 消息发送后存入去重数据库
-async def insert_into_cache_db(
+def insert_into_cache_db(
     conn: Connection, item: Dict[str, Any], image_hash: str
 ) -> None:
     cursor = conn.cursor()

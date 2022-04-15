@@ -40,7 +40,7 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]
         conn = sqlite3.connect(str(DATA_PATH / "cache.db"))
         conn.set_trace_callback(logger.debug)
 
-    await cache_db_manage(conn)
+    cache_db_manage(conn)
 
     delete = []
     for index, item in enumerate(change_data):
@@ -174,12 +174,12 @@ async def handle_source(
 @ParsingBase.append_before_handler(rex="pixiv/ranking", priority=10)
 async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     db = state["tinydb"]
-    change_data = await check_update(db, state["new_data"])
+    change_data = check_update(db, state["new_data"])
     return {"change_data": change_data}
 
 
 # 检查更新
-async def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     # 发送失败超过 3 次的消息不再发送
     to_send_list: List[Dict[str, Any]] = db.search(

@@ -66,8 +66,7 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool) -> str:
     async with aiohttp.ClientSession() as session:
         resp = await session.get(item["link"], proxy=get_proxy(img_proxy))
         d = Pq(await resp.text())
-        img = d("img#image")
-        if img:
+        if img := d("img#image"):
             url = img.attr("src")
         else:
             img_str += "视频预览："
@@ -75,7 +74,7 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool) -> str:
             try:
                 url = await get_preview_gif_from_video(url)
             except RetryError:
-                logger.warning(f"视频预览获取失败，将发送原视频封面")
+                logger.warning("视频预览获取失败，将发送原视频封面")
                 url = d("meta[property='og:image']").attr("content")
         img_str += await handle_img_combo(url, img_proxy)
 
@@ -97,7 +96,7 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]
         conn = sqlite3.connect(str(DATA_PATH / "cache.db"))
         conn.set_trace_callback(logger.debug)
 
-    await cache_db_manage(conn)
+    cache_db_manage(conn)
 
     delete = []
     for index, item in enumerate(change_data):
@@ -139,8 +138,7 @@ async def get_summary(item: Dict[str, Any], img_proxy: bool) -> str:
     async with aiohttp.ClientSession() as session:
         resp = await session.get(item["link"], proxy=get_proxy(img_proxy))
         d = Pq(await resp.text())
-        img = d("img#image")
-        if img:
+        if img := d("img#image"):
             summary_doc("img").attr("src", img.attr("src"))
         else:
             summary_doc.remove("img")

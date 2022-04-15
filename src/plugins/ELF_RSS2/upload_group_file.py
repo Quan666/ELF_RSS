@@ -42,7 +42,7 @@ async def get_qb() -> Any:
     try:
         qb.get_default_save_path()
     except Exception:
-        msg = f"❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”"
+        msg = "❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”"
         logger.exception(msg)
         await upload_group_file.send(msg)
         return None
