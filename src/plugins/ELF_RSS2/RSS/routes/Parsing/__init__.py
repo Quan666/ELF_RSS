@@ -404,7 +404,7 @@ async def handle_summary(
     return tmp
 
 
-# 处理正文 移出指定内容
+# 处理正文 移除指定内容
 @ParsingBase.append_handler(parsing_type="summary", priority=11)
 async def handle_summary(
     rss: Rss,
@@ -418,6 +418,10 @@ async def handle_summary(
     if rss.content_to_remove:
         for pattern in rss.content_to_remove:
             tmp = re.sub(pattern, "", tmp)
+        # 去除多余换行
+        while "\n\n\n" in tmp:
+            tmp = tmp.replace("\n\n\n", "\n\n")
+        tmp = tmp.strip()
     return tmp
 
 
