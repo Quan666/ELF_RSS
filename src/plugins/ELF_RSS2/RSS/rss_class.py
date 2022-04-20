@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from nonebot.log import logger
 from tinydb import Query, TinyDB
-from tinydb.operations import set
+from tinydb.operations import set as tinydb_set
 from yarl import URL
 
 from ..config import DATA_PATH, JSON_PATH, config
@@ -111,7 +111,7 @@ class Rss:
             indent=4,
             ensure_ascii=False,
         )
-        db.update(set("group_id", self.group_id), Query().name == self.name)  # type: ignore
+        db.update(tinydb_set("group_id", self.group_id), Query().name == self.name)  # type: ignore
         return True
 
     # 删除订阅 子频道
@@ -127,7 +127,7 @@ class Rss:
             ensure_ascii=False,
         )
         db.update(
-            set("guild_channel_id", self.guild_channel_id), Query().name == self.name  # type: ignore
+            tinydb_set("guild_channel_id", self.guild_channel_id), Query().name == self.name  # type: ignore
         )
         return True
 
@@ -200,7 +200,7 @@ class Rss:
                 indent=4,
                 ensure_ascii=False,
             )
-            db.update(set("cookies", cookies), Query().name == self.name)  # type: ignore
+            db.update(tinydb_set("cookies", cookies), Query().name == self.name)  # type: ignore
             return True
         except Exception:
             logger.exception(f"{self.name} 的 Cookies 设置时出错！")

@@ -75,7 +75,7 @@ async def check_down_status(hash_str: str, group_id: int) -> None:
                     group_id=group_id, file=path, name=tmp["name"]
                 )
             except Exception:
-                continue
+                pass
     else:
         await upload_group_file.send(
             f"Hash: {hash_str}\n"

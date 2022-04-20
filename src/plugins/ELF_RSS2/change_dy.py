@@ -160,14 +160,12 @@ prompt = """\
 async def handle_rss_change(
     event: Event, change_info: str = ArgPlainText("RSS_CHANGE")
 ) -> None:
-    group_id = None
-    guild_channel_id = None
-
-    if isinstance(event, GroupMessageEvent):
-        group_id = event.group_id
-    elif isinstance(event, GuildMessageEvent):
-        guild_channel_id = f"{event.guild_id}@{event.channel_id}"
-
+    group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
+    guild_channel_id = (
+        f"{event.guild_id}@{event.channel_id}"
+        if isinstance(event, GuildMessageEvent)
+        else None
+    )
     name_list = change_info.split(" ")[0].split(",")
     rss_list: List[Rss] = []
     for name in name_list:
@@ -192,9 +190,23 @@ async def handle_rss_change(
     # 参数特殊处理：正文待移除内容
     change_list = handle_rm_list(rss_list, change_info)
 
-    rss_msg_list = []
-    result_msg = "\n----------------------\n"
+    separator = "\n----------------------\n"
+    rss_msg_list = await batch_change_rss(
+        change_list, group_id, guild_channel_id, rss_list
+    )
+    result_msg = f"修改了 {len(rss_msg_list)} 条订阅：{separator}" + separator.join(
+        rss_msg_list
+    )
+    await RSS_CHANGE.finish(f"👏 修改成功\n{result_msg}")
 
+
+async def batch_change_rss(
+    change_list: List[str],
+    group_id: Optional[int],
+    guild_channel_id: Optional[str],
+    rss_list: List[Rss],
+) -> List[str]:
+    rss_msg_list = []
     for rss in rss_list:
         rss_name = rss.name
         for change_dict in change_list:
@@ -247,11 +259,7 @@ async def handle_rss_change(
             rss_msg = str(rss_tmp)
 
         rss_msg_list.append(rss_msg)
-
-    result_msg = f"修改了 {len(rss_msg_list)} 条订阅：{result_msg}" + result_msg.join(
-        rss_msg_list
-    )
-    await RSS_CHANGE.finish(f"👏 修改成功\n{result_msg}")
+    return rss_msg_list
 
 
 # 参数特殊处理：正文待移除内容
