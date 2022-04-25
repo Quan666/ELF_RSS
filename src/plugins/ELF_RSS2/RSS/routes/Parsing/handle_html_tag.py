@@ -90,7 +90,7 @@ def handle_html_tag(html: Pq) -> str:
                 a.attr("href").startswith("https://m.weibo.cn/search?containerid=")
                 and re.search("#.+#", a.text())
             ) or (
-                a.attr("href").startswith("https://weibo.com/n/")
+                a.attr("href").startswith("https://weibo.com/")
                 and a.text().startswith("@")
             ):
                 rss_str = rss_str.replace(a_str, a.text())
