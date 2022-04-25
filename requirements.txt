@@ -11,7 +11,7 @@ nonebot-adapter-onebot==2.0.0b1
 nonebot-plugin-apscheduler~=0.1.2
 nonebot-plugin-guild-patch~=0.1.1
 nonebot2==2.0.0b1
-Pillow~=9.0.0
+Pillow~=9.1.0
 pydantic~=1.9.0
 pyquery~=1.4.3
 python-qbittorrent~=0.4.2
