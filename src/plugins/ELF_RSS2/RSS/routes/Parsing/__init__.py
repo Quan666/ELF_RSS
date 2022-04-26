@@ -15,7 +15,6 @@ from ....config import DATA_PATH, config
 from ....RSS.rss_class import Rss
 from .cache_manage import (
     cache_db_manage,
-    cache_filter,
     cache_json_manage,
     duplicate_exists,
     insert_into_cache_db,
@@ -39,28 +38,13 @@ class ParsingItem:
         priority: int = 10,
         block: bool = False,
     ):
-        """
-        - **类型**: ``object``
-        - **说明**: 解析函数
-        """
+        # 解析函数
         self.func: Callable[..., Any] = func
-
-        """
-        - **类型**: ``str``
-        - **说明**: 匹配的订阅地址正则，"(.*)" 是全都匹配
-        """
+        # 匹配的订阅地址正则，"(.*)" 是全都匹配
         self.rex: str = rex
-
-        """
-        - **类型**: ``int``
-        - **说明**: 优先级，数字越小优先级越高。优先级相同时，会抛弃默认处理方式，即抛弃 rex="(.*)" 
-        """
+        # 优先级，数字越小优先级越高。优先级相同时，会抛弃默认处理方式，即抛弃 rex="(.*)"
         self.priority: int = priority
-
-        """
-        - **类型**: ``bool``
-        - **说明**: 是否阻止执行之后的处理，默认不阻止。抛弃默认处理方式，只需要 block==True and priority<10
-        """
+        # 是否阻止执行之后的处理，默认不阻止。抛弃默认处理方式，只需要 block==True and priority<10
         self.block: bool = block
 
 
