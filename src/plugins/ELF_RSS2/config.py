@@ -31,6 +31,8 @@ class ELFConfig(BaseConfig):
     baidu_key: str = ""
 
     is_open_auto_down_torrent: bool = False
+    qb_username: str = None
+    qb_password: str = None
     qb_web_url: str = "http://127.0.0.1:8081"
     qb_down_path: str = ""  # qb的文件下载地址，这个地址必须是 go-cqhttp能访问到的
     down_status_msg_group: List[int] = []
