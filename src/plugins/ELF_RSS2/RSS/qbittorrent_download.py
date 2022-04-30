@@ -45,11 +45,12 @@ async def send_msg(msg: str) -> List[Dict[str, Any]]:
     bot = nonebot.get_bot()
     msg_id = []
     group_list = await get_bot_group_list(bot)
-    for group_id in config.down_status_msg_group:
-        if int(group_id) not in group_list:
-            logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}]")
-            continue
-        msg_id.append(await bot.send_group_msg(group_id=group_id, message=msg))
+    if config.down_status_msg_group:
+        for group_id in config.down_status_msg_group:
+            if int(group_id) not in group_list:
+                logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}]")
+                continue
+            msg_id.append(await bot.send_group_msg(group_id=group_id, message=msg))
     return msg_id
 
 
