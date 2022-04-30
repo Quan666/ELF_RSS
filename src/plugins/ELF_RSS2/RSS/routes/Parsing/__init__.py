@@ -546,10 +546,6 @@ async def handle_message(
         state["item_count"] += 1
     else:
         item["to_send"] = True
-        if not item.get("count"):
-            item["count"] = 1
-        else:
-            item["count"] += 1
 
     write_item(db, item)
 

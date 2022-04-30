@@ -29,7 +29,6 @@ def cache_filter(data: Dict[str, Any]) -> Dict[str, Any]:
             "content",
             "summary",
             "to_send",
-            "count",
         ]
     return {k: data[k] for k in keys if k in data}
 
