@@ -27,7 +27,9 @@ async def send_msg(rss: Rss, msg: str, item: Dict[str, Any]) -> bool:
     if rss.group_id:
         flag = await send_group_msg(bot, msg, rss.group_id, item, error_msg)
     if rss.guild_channel_id:
-        flag = await send_private_msg(bot, msg, rss.guild_channel_id, item, error_msg)
+        flag = await send_guild_channel_msg(
+            bot, msg, rss.guild_channel_id, item, error_msg
+        )
     return flag
 
 
