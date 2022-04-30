@@ -45,18 +45,22 @@ async def send_msg(msg: str) -> List[Dict[str, Any]]:
     bot = nonebot.get_bot()
     msg_id = []
     group_list = await get_bot_group_list(bot)
-    for group_id in config.down_status_msg_group:
-        if int(group_id) not in group_list:
-            logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}]")
-            continue
-        msg_id.append(await bot.send_group_msg(group_id=group_id, message=msg))
+    if config.down_status_msg_group:
+        for group_id in config.down_status_msg_group:
+            if int(group_id) not in group_list:
+                logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}]")
+                continue
+            msg_id.append(await bot.send_group_msg(group_id=group_id, message=msg))
     return msg_id
 
 
 async def get_qb_client() -> Optional[Client]:
     try:
         qb = Client(config.qb_web_url)
-        qb.login()
+        if config.qb_username and config.qb_password:
+            qb.login(config.qb_username, config.qb_password)
+        else:
+            qb.login()
     except Exception:
         bot = nonebot.get_bot()
         msg = (
@@ -72,7 +76,7 @@ async def get_qb_client() -> Optional[Client]:
         qb.get_default_save_path()
     except Exception:
         bot = nonebot.get_bot()
-        msg = "❌ 无法连登录到 qbittorrent ，请检查是否勾选“对本地主机上的客户端跳过身份验证”"
+        msg = "❌ 无法连登录到 qbittorrent ，请检查相关配置是否正确"
         logger.exception(msg)
         await bot.send_private_msg(user_id=str(list(config.superusers)[0]), message=msg)
         return None
