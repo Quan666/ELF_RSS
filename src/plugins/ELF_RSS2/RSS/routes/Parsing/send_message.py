@@ -2,6 +2,7 @@ import asyncio
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Tuple, Union
 
+import arrow
 import nonebot
 from nonebot.adapters import Bot
 from nonebot.log import logger
@@ -92,10 +93,14 @@ async def send_private_msg(
     bot: Bot, msg: str, user_id: int, item: Dict[str, Any], error_msg: str
 ) -> bool:
     flag = False
+    start_time = arrow.now()
     while True:
         async with sending_lock[(user_id, "private")]:
             try:
                 await bot.send_private_msg(user_id=user_id, message=msg)
+                await asyncio.sleep(
+                    max(1 - (arrow.now() - start_time).total_seconds(), 0)
+                )
                 flag = True
             except Exception as e:
                 logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
@@ -114,10 +119,14 @@ async def send_group_msg(
     bot: Bot, msg: str, group_id: int, item: Dict[str, Any], error_msg: str
 ) -> bool:
     flag = False
+    start_time = arrow.now()
     while True:
         async with sending_lock[(group_id, "group")]:
             try:
                 await bot.send_group_msg(group_id=group_id, message=msg)
+                await asyncio.sleep(
+                    max(1 - (arrow.now() - start_time).total_seconds(), 0)
+                )
                 flag = True
             except Exception as e:
                 logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
@@ -170,12 +179,16 @@ async def send_guild_channel_msg(
     error_msg: str,
 ) -> bool:
     flag = False
+    start_time = arrow.now()
     guild_id, channel_id = guild_channel_id.split("@")
     while True:
         async with sending_lock[(guild_channel_id, "guild_channel")]:
             try:
                 await bot.send_guild_channel_msg(
                     message=msg, guild_id=guild_id, channel_id=channel_id
+                )
+                await asyncio.sleep(
+                    max(1 - (arrow.now() - start_time).total_seconds(), 0)
                 )
                 flag = True
             except Exception as e:
