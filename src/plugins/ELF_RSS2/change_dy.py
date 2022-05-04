@@ -237,7 +237,7 @@ async def batch_change_rss(
 
         # 加入定时任务
         if not rss.stop:
-            tr.add_job(rss)
+            await tr.add_job(rss)
         else:
             tr.delete_job(rss)
             logger.info(f"{rss_name} 已停止更新")

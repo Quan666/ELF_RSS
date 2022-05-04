@@ -9,8 +9,7 @@ from tinydb import Query, TinyDB
 
 # 对 dict 对象计算哈希值，供后续比较
 def dict_hash(dictionary: Dict[str, Any]) -> str:
-    keys = ["id", "link", "published", "updated", "title"]
-    string = "|".join([dictionary[k] for k in keys if k in dictionary])
+    string = str(dictionary.get("guid", dictionary.get("link")))
     result = hashlib.md5(string.encode())
     return result.hexdigest()
 
@@ -18,10 +17,8 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 # 检查更新
 def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
-    # 发送失败超过 3 次的消息不再发送
-    to_send_list: List[Dict[str, Any]] = db.search(
-        (Query().to_send.exists()) & (Query().count <= 3)
-    )
+    # 发送失败 1 次
+    to_send_list: List[Dict[str, Any]] = db.search(Query().to_send.exists())
 
     if not new and not to_send_list:
         return []

@@ -23,11 +23,13 @@ def delete_job(rss: Rss) -> None:
         scheduler.remove_job(rss.name)
 
 
-def add_job(rss: Rss) -> None:
+# 加入订阅任务队列并立即执行一次
+async def add_job(rss: Rss) -> None:
     delete_job(rss)
-    # 加入订阅任务队列,加入前判断是否存在子频道或群组或用户，三者不能同时为空
+    # 加入前判断是否存在子频道或群组或用户，三者不能同时为空
     if any([rss.user_id, rss.group_id, rss.guild_channel_id]):
         rss_trigger(rss)
+        await check_update(rss)
 
 
 def rss_trigger(rss: Rss) -> None:

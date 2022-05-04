@@ -63,15 +63,15 @@ async def handle_rss_add(
     ) -> None:
         if _guild_channel_id:
             _rss.add_user_or_group(guild_channel=_guild_channel_id)
-            tr.add_job(_rss)
+            await tr.add_job(_rss)
             await RSS_ADD.finish("👏 订阅到当前子频道成功！")
         elif _group_id:
             _rss.add_user_or_group(group=str(_group_id))
-            tr.add_job(_rss)
+            await tr.add_job(_rss)
             await RSS_ADD.finish("👏 订阅到当前群组成功！")
         else:
             _rss.add_user_or_group(user=_user_id)
-            tr.add_job(_rss)
+            await tr.add_job(_rss)
             await RSS_ADD.finish("👏 订阅到当前账号成功！")
 
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅

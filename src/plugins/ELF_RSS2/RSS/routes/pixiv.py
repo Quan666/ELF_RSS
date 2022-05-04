@@ -181,10 +181,8 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]
 # 检查更新
 def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
-    # 发送失败超过 3 次的消息不再发送
-    to_send_list: List[Dict[str, Any]] = db.search(
-        (Query().to_send.exists()) & (Query().count <= 3)
-    )
+    # 发送失败 1 次
+    to_send_list: List[Dict[str, Any]] = db.search(Query().to_send.exists())
 
     if not new and not to_send_list:
         return []

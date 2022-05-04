@@ -17,7 +17,7 @@ from .handle_images import download_image
 # 精简 xxx.json (缓存) 中的字段
 def cache_filter(data: Dict[str, Any]) -> Dict[str, Any]:
     keys = [
-        "id",
+        "guid",
         "link",
         "published",
         "updated",

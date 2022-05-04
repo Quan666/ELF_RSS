@@ -48,7 +48,7 @@ async def handle_rss_delete(
                 rss.delete_rss()
                 tr.delete_job(rss)
             else:
-                tr.add_job(rss)
+                await tr.add_job(rss)
             await RSS_DELETE.finish(f"👏 当前子频道取消订阅 {rss.name} 成功！")
         else:
             await RSS_DELETE.finish(f"❌ 当前子频道没有订阅： {rss.name} ！")
@@ -58,7 +58,7 @@ async def handle_rss_delete(
                 rss.delete_rss()
                 tr.delete_job(rss)
             else:
-                tr.add_job(rss)
+                await tr.add_job(rss)
             await RSS_DELETE.finish(f"👏 当前群组取消订阅 {rss.name} 成功！")
         else:
             await RSS_DELETE.finish(f"❌ 当前群组没有订阅： {rss.name} ！")

@@ -49,7 +49,7 @@ async def handle_add_cookies(rss_cookies: str = ArgPlainText("COOKIES")) -> None
     else:
         rss.name = name
         if rss.set_cookies(cookies):
-            tr.add_job(rss)
+            await tr.add_job(rss)
             await ADD_COOKIES.finish(
                 f"👏 {rss.name}的Cookies添加成功！\nCookies:{rss.cookies}\n"
             )

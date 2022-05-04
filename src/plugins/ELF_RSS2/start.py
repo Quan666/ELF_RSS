@@ -1,3 +1,5 @@
+import asyncio
+
 import arrow
 import nonebot
 from nonebot import on_metaevent, require
@@ -43,12 +45,10 @@ async def start() -> None:
             message=f"第一次启动，你还没有订阅，记得添加哟！\n{boot_message}",
         )
         logger.info("第一次启动，你还没有订阅，记得添加哟！")
-    # 创建检查更新任务
-    for rss_tmp in rss_list:
-        if not rss_tmp.stop:
-            tr.add_job(rss_tmp)
     await bot.send_private_msg(
         user_id=int(list(config.superusers)[0]),
         message=f"ELF_RSS 订阅器启动成功！\n{boot_message}",
     )
     logger.info("ELF_RSS 订阅器启动成功！")
+    # 创建检查更新任务
+    await asyncio.gather(*[tr.add_job(rss) for rss in rss_list if not rss.stop])
