@@ -7,6 +7,7 @@ from nonebot.log import logger
 from PIL import Image, UnidentifiedImageError
 from pyquery import PyQuery as Pq
 from tinydb import Query, TinyDB
+from tinydb.operations import delete
 
 from ..config import config
 from ..rss_class import Rss

@@ -37,7 +37,7 @@ HEADERS = {
 
 
 # 入口
-async def start(rss: Rss) -> None:
+async def start(rss: Rss) -> bool:
     # 网络加载 新RSS
     # 读取 旧RSS 记录
     # 检查更新
@@ -50,7 +50,7 @@ async def start(rss: Rss) -> None:
         logger.warning(f"{rss.name} 抓取失败！已经尝试最多 6 次！")
         if rss.error_count >= 100:
             await auto_stop_and_notify_all(rss)
-        return
+        return False
     # 检查是否存在rss记录
     _file = DATA_PATH / f"{rss.name}.json"
     if not Path.exists(_file):
@@ -70,10 +70,11 @@ async def start(rss: Rss) -> None:
         db.insert_multiple(result)
         db.close()
         logger.info(f"{rss.name} 第一次抓取成功！")
-        return
+        return True
 
     pr = ParsingRss(rss=rss)
     await pr.start(rss_name=rss.name, new_rss=new_rss)
+    return True
 
 
 async def auto_stop_and_notify_all(rss: Rss) -> None:

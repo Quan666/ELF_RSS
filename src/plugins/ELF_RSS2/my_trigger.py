@@ -14,12 +14,13 @@ wait_for = 5 * 60
 
 
 # 检测某个rss更新
-async def check_update(rss: Rss) -> None:
+async def check_update(rss: Rss) -> bool:
     logger.info(f"{rss.name} 检查更新")
     try:
-        await asyncio.wait_for(rss_parsing.start(rss), timeout=wait_for)
+        return await asyncio.wait_for(rss_parsing.start(rss), timeout=wait_for)
     except asyncio.TimeoutError:
         logger.error(f"{rss.name} 检查更新超时，结束此次任务!")
+        return False
 
 
 def delete_job(rss: Rss) -> None:
@@ -29,12 +30,13 @@ def delete_job(rss: Rss) -> None:
 
 
 # 加入订阅任务队列并立即执行一次
-async def add_job(rss: Rss) -> None:
+async def add_job(rss: Rss) -> bool:
     delete_job(rss)
     # 加入前判断是否存在子频道或群组或用户，三者不能同时为空
     if any([rss.user_id, rss.group_id, rss.guild_channel_id]):
         rss_trigger(rss)
-        await check_update(rss)
+        return await check_update(rss)
+    return False
 
 
 def rss_trigger(rss: Rss) -> None:

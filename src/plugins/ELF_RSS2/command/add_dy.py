@@ -39,8 +39,15 @@ prompt = """\
 
 @RSS_ADD.got("RSS_ADD", prompt=prompt)
 async def handle_rss_add(
-    event: Event, rss_dy_link: str = ArgPlainText("RSS_ADD")
+    event: Event, name_and_url: str = ArgPlainText("RSS_ADD")
 ) -> None:
+
+    try:
+        name, url = name_and_url.split(" ")
+    except ValueError:
+        await RSS_ADD.reject(prompt)
+        return
+
     user_id = event.get_user_id()
     group_id = None
     guild_channel_id = None
@@ -48,42 +55,41 @@ async def handle_rss_add(
     if isinstance(event, GroupMessageEvent):
         group_id = event.group_id
     elif isinstance(event, GuildMessageEvent):
-        guild_channel_id = str(event.guild_id) + "@" + str(event.channel_id)
-
-    dy = rss_dy_link.split(" ")
-    name = dy[0]
+        guild_channel_id = f"{str(event.guild_id)}@{str(event.channel_id)}"
 
     rss = Rss()
-
-    async def add_group_or_user(
-        _rss: Rss,
-        _group_id: Optional[int],
-        _user_id: Optional[str],
-        _guild_channel_id: Optional[str],
-    ) -> None:
-        if _guild_channel_id:
-            _rss.add_user_or_group(guild_channel=_guild_channel_id)
-            await tr.add_job(_rss)
-            await RSS_ADD.finish("👏 订阅到当前子频道成功！")
-        elif _group_id:
-            _rss.add_user_or_group(group=str(_group_id))
-            await tr.add_job(_rss)
-            await RSS_ADD.finish("👏 订阅到当前群组成功！")
-        else:
-            _rss.add_user_or_group(user=_user_id)
-            await tr.add_job(_rss)
-            await RSS_ADD.finish("👏 订阅到当前账号成功！")
-
     # 判断是否有该名称订阅，有就将当前qq或群加入订阅
-    rss_tmp = rss.find_name(name=name)
-    if rss_tmp is not None:
-        await add_group_or_user(rss_tmp, group_id, user_id, guild_channel_id)
+    if rss_tmp := rss.find_name(name=name):
+        await add_feed(rss_tmp, user_id, group_id, guild_channel_id)
     else:
         # 当前名称、url都不存在
         rss.name = name
-        try:
-            url = dy[1]
-            rss.url = url
-            await add_group_or_user(rss, group_id, user_id, guild_channel_id)
-        except IndexError:
-            await RSS_ADD.finish("❌ 输入的订阅地址为空！")
+        # TODO: 重构数据存储相关逻辑，放入 sqlite 中，不再需要输入订阅名
+        rss.url = url
+        await add_feed(rss, user_id, group_id, guild_channel_id)
+
+
+async def add_feed(
+    rss: Rss,
+    user_id: Optional[str],
+    group_id: Optional[int],
+    guild_channel_id: Optional[str],
+) -> None:
+    if guild_channel_id:
+        rss.add_user_or_group(guild_channel=guild_channel_id)
+        if await tr.add_job(rss):
+            await RSS_ADD.finish("👏 订阅到当前子频道成功！")
+        else:
+            await RSS_ADD.finish("❌️ 订阅到当前子频道失败！")
+    elif group_id:
+        rss.add_user_or_group(group=str(group_id))
+        if await tr.add_job(rss):
+            await RSS_ADD.finish("👏 订阅到当前群组成功！")
+        else:
+            await RSS_ADD.finish("❌️ 订阅到当前群组失败！")
+    else:
+        rss.add_user_or_group(user=user_id)
+        if await tr.add_job(rss):
+            await RSS_ADD.finish("👏 订阅到当前账号成功！")
+        else:
+            await RSS_ADD.finish("❌️ 订阅到当前账号失败！")
