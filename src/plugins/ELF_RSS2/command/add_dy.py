@@ -77,19 +77,13 @@ async def add_feed(
 ) -> None:
     if guild_channel_id:
         rss.add_user_or_group(guild_channel=guild_channel_id)
-        if await tr.add_job(rss):
-            await RSS_ADD.finish("👏 订阅到当前子频道成功！")
-        else:
-            await RSS_ADD.finish("❌️ 订阅到当前子频道失败！")
+        await tr.add_job(rss)
+        await RSS_ADD.finish("👏 订阅到当前子频道成功！")
     elif group_id:
         rss.add_user_or_group(group=str(group_id))
-        if await tr.add_job(rss):
-            await RSS_ADD.finish("👏 订阅到当前群组成功！")
-        else:
-            await RSS_ADD.finish("❌️ 订阅到当前群组失败！")
+        await tr.add_job(rss)
+        await RSS_ADD.finish("👏 订阅到当前群组成功！")
     else:
         rss.add_user_or_group(user=user_id)
-        if await tr.add_job(rss):
-            await RSS_ADD.finish("👏 订阅到当前账号成功！")
-        else:
-            await RSS_ADD.finish("❌️ 订阅到当前账号失败！")
+        await tr.add_job(rss)
+        await RSS_ADD.finish("👏 订阅到当前账号成功！")
