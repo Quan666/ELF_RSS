@@ -101,6 +101,7 @@ async def send_private_msg(
             except Exception as e:
                 logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
                 if item.get("to_send"):
+                    flag = True
                     try:
                         await bot.send_private_msg(
                             user_id=user_id, message=f"{error_msg}\nE: {repr(e)}"
@@ -127,6 +128,7 @@ async def send_group_msg(
             except Exception as e:
                 logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
                 if item.get("to_send"):
+                    flag = True
                     try:
                         await bot.send_group_msg(
                             group_id=group_id, message=f"E: {repr(e)}\n{error_msg}"
@@ -190,6 +192,7 @@ async def send_guild_channel_msg(
             except Exception as e:
                 logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
                 if item.get("to_send"):
+                    flag = True
                     try:
                         await bot.send_guild_channel_msg(
                             message=f"E: {repr(e)}\n{error_msg}",
