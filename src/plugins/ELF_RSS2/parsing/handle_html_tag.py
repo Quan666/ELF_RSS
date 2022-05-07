@@ -112,6 +112,7 @@ def handle_html_tag(html: Pq) -> str:
         "dl",
         "dt",
         "em",
+        "figure",
         "font",
         "i",
         "iframe",
