@@ -8,12 +8,13 @@ from tenacity import RetryError, retry, stop_after_attempt, stop_after_delay
 
 from ...config import DATA_PATH
 from ...rss_class import Rss
-from .. import ParsingBase, cache_db_manage, duplicate_exists, get_proxy, write_item
+from .. import ParsingBase, cache_db_manage, duplicate_exists, write_item
 from ..handle_images import (
     get_preview_gif_from_video,
     handle_img_combo,
     handle_img_combo_with_content,
 )
+from ..utils import get_proxy
 
 
 # 处理图片

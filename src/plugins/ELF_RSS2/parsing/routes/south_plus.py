@@ -5,8 +5,9 @@ from nonebot.log import logger
 from pyquery import PyQuery as Pq
 
 from ...rss_class import Rss
-from .. import ParsingBase, get_summary, handle_bbcode, handle_html_tag
+from .. import ParsingBase, handle_bbcode, handle_html_tag
 from ..handle_images import handle_bbcode_img
+from ..utils import get_summary
 
 
 # 处理正文 处理网页 tag

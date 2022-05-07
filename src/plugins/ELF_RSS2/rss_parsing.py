@@ -21,9 +21,10 @@ from yarl import URL
 
 from . import my_trigger as tr
 from .config import DATA_PATH, JSON_PATH, config
-from .parsing import ParsingRss, get_proxy, send_msg
+from .parsing import get_proxy, send_msg
 from .parsing.cache_manage import cache_filter
 from .parsing.check_update import dict_hash
+from .parsing.parsing_rss import ParsingRss
 from .rss_class import Rss
 
 HEADERS = {

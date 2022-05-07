@@ -10,13 +10,14 @@ from tinydb import Query, TinyDB
 
 from ...config import DATA_PATH
 from ...rss_class import Rss
-from .. import ParsingBase, cache_db_manage, duplicate_exists, get_summary, write_item
+from .. import ParsingBase, cache_db_manage, duplicate_exists, write_item
 from ..check_update import get_item_date
 from ..handle_images import (
     get_preview_gif_from_video,
     handle_img_combo,
     handle_img_combo_with_content,
 )
+from ..utils import get_summary
 
 
 # 如果启用了去重模式，对推送列表进行过滤

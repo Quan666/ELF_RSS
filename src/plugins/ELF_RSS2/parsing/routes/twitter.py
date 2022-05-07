@@ -5,12 +5,13 @@ from pyquery import PyQuery as Pq
 from tenacity import RetryError
 
 from ...rss_class import Rss
-from .. import ParsingBase, get_summary
+from .. import ParsingBase
 from ..handle_images import (
     get_preview_gif_from_video,
     handle_img_combo,
     handle_img_combo_with_content,
 )
+from ..utils import get_summary
 
 
 # 处理图片
