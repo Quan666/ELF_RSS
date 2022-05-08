@@ -1,4 +1,3 @@
-import copy
 from typing import List
 
 from nonebot import on_command
@@ -51,36 +50,23 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
 
     if rss_name:
         rss = Rss.find_name(rss_name)
-        if rss is None:
-            await RSS_SHOW.finish(f"❌ 订阅 {rss_name} 不存在！")
+        if (
+            rss is None
+            or (group_id and str(group_id) not in rss.group_id)
+            or (guild_channel_id and guild_channel_id not in rss.guild_channel_id)
+        ):
+            await RSS_SHOW.finish(f"❌ 订阅 {rss_name} 不存在或未订阅！")
         else:
-            rss_msg = str(rss)
-            if group_id:
-                # 隐私考虑，不展示除当前群组外的订阅
-                if str(group_id) not in rss.group_id:
-                    await RSS_SHOW.finish(f"❌ 当前群组未订阅 {rss_name} ")
-                rss_tmp = copy.deepcopy(rss)
-                rss_tmp.guild_channel_id = ["*"]
-                rss_tmp.group_id = [str(group_id), "*"]
-                rss_tmp.user_id = ["*"]
-                rss_msg = str(rss_tmp)
-            elif guild_channel_id:
-                # 隐私考虑，不展示除当前子频道外的订阅
-                if guild_channel_id not in rss.guild_channel_id:
-                    await RSS_SHOW.finish(f"❌ 当前群组未订阅 {rss_name} ")
-                rss_tmp = copy.deepcopy(rss)
-                rss_tmp.guild_channel_id = [guild_channel_id, "*"]
-                rss_tmp.group_id = ["*"]
-                rss_tmp.user_id = ["*"]
-                rss_msg = str(rss_tmp)
+            # 隐私考虑，不展示除当前群组或频道外的群组、频道和QQ
+            rss_msg = str(rss.hidden_some_infos(group_id, guild_channel_id))
             await RSS_SHOW.finish(rss_msg)
 
     if group_id:
-        rss_list = Rss.find_group(group=str(group_id))
+        rss_list = Rss.find_group(group_id=group_id)
         if not rss_list:
             await RSS_SHOW.finish("❌ 当前群组没有任何订阅！")
     elif guild_channel_id:
-        rss_list = Rss.find_guild_channel(guild_channel=guild_channel_id)
+        rss_list = Rss.find_guild_channel(guild_channel_id=guild_channel_id)
         if not rss_list:
             await RSS_SHOW.finish("❌ 当前子频道没有任何订阅！")
     else:

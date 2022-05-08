@@ -1,4 +1,3 @@
-import copy
 import re
 from typing import Any, List, Optional
 
@@ -182,7 +181,7 @@ async def handle_rss_change(
         rss_list = [rss for rss in rss_list if guild_channel_id in rss.guild_channel_id]
 
     if not rss_list:
-        await RSS_CHANGE.finish("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组无权操作")
+        await RSS_CHANGE.finish("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组或频道无权操作")
     elif len(rss_list) > 1 and " name=" in change_info:
         await RSS_CHANGE.finish("❌ 禁止将多个订阅批量改名！会因为名称相同起冲突！")
 
@@ -193,8 +192,8 @@ async def handle_rss_change(
     rss_msg_list = await batch_change_rss(
         change_list, group_id, guild_channel_id, rss_list
     )
-    result_msg = f"修改了 {len(rss_msg_list)} 条订阅：{separator}" + separator.join(
-        rss_msg_list
+    result_msg = (
+        f"修改了 {len(rss_msg_list)} 条订阅：{separator}{separator.join(rss_msg_list)}"
     )
     await RSS_CHANGE.finish(f"👏 修改成功\n{result_msg}")
 
@@ -233,23 +232,10 @@ async def batch_change_rss(
         else:
             tr.delete_job(rss)
             logger.info(f"{rss_name} 已停止更新")
-        rss_msg = str(rss)
 
-        # 隐私考虑，群组下不展示除当前群组外的群号和QQ
+        # 隐私考虑，不展示除当前群组或频道外的群组、频道和QQ
         # 奇怪的逻辑，群管理能修改订阅消息，这对其他订阅者不公平。
-        if group_id:
-            rss_tmp = copy.deepcopy(rss)
-            rss_tmp.guild_channel_id = ["*"]
-            rss_tmp.group_id = [str(group_id), "*"]
-            rss_tmp.user_id = ["*"]
-            rss_msg = str(rss_tmp)
-        elif guild_channel_id:
-            rss_tmp = copy.deepcopy(rss)
-            rss_tmp.guild_channel_id = [guild_channel_id, "*"]
-            rss_tmp.group_id = ["*"]
-            rss_tmp.user_id = ["*"]
-            rss_msg = str(rss_tmp)
-
+        rss_msg = str(rss.hidden_some_infos(group_id, guild_channel_id))
         rss_msg_list.append(rss_msg)
     return rss_msg_list
 

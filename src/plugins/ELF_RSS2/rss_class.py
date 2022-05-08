@@ -1,3 +1,4 @@
+import copy
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -149,31 +150,40 @@ class Rss:
         this_file_path = DATA_PATH / f"{self.name}.json"
         Path.unlink(this_file_path, missing_ok=True)
 
-    @staticmethod
-    def find_guild_channel(guild_channel: str) -> List["Rss"]:
-        rss_old = Rss.read_rss()
-        result = []
-        for rss_tmp in rss_old:
-            if rss_tmp.guild_channel_id and guild_channel in rss_tmp.guild_channel_id:
-                # 隐私考虑，子频道下不展示除当前子频道外的订阅
-                rss_tmp.guild_channel_id = [guild_channel, "*"]
-                rss_tmp.group_id = ["*"]
-                rss_tmp.user_id = ["*"]
-                result.append(rss_tmp)
-        return result
+    # 隐私考虑，不展示除当前群组或频道外的群组、频道和QQ
+    def hidden_some_infos(
+        self, group_id: Optional[int] = None, guild_channel_id: Optional[str] = None
+    ) -> "Rss":
+        if group_id:
+            rss_tmp = copy.deepcopy(self)
+            rss_tmp.guild_channel_id = ["*"]
+            rss_tmp.group_id = [str(group_id), "*"]
+            rss_tmp.user_id = ["*"]
+            return rss_tmp
+        elif guild_channel_id:
+            rss_tmp = copy.deepcopy(self)
+            rss_tmp.guild_channel_id = [guild_channel_id, "*"]
+            rss_tmp.group_id = ["*"]
+            rss_tmp.user_id = ["*"]
+            return rss_tmp
 
     @staticmethod
-    def find_group(group: str) -> List["Rss"]:
+    def find_guild_channel(guild_channel_id: str) -> List["Rss"]:
         rss_old = Rss.read_rss()
-        result = []
-        for rss_tmp in rss_old:
-            if rss_tmp.group_id and group in rss_tmp.group_id:
-                # 隐私考虑，群组下不展示除当前群组外的订阅
-                rss_tmp.guild_channel_id = ["*"]
-                rss_tmp.group_id = [group, "*"]
-                rss_tmp.user_id = ["*"]
-                result.append(rss_tmp)
-        return result
+        return [
+            rss.hidden_some_infos(guild_channel_id=guild_channel_id)
+            for rss in rss_old
+            if guild_channel_id in rss.guild_channel_id
+        ]
+
+    @staticmethod
+    def find_group(group_id: int) -> List["Rss"]:
+        rss_old = Rss.read_rss()
+        return [
+            rss.hidden_some_infos(group_id=group_id)
+            for rss in rss_old
+            if group_id in rss.group_id
+        ]
 
     @staticmethod
     def find_user(user: str) -> List["Rss"]:
