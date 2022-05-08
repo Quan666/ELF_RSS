@@ -14,13 +14,12 @@ wait_for = 5 * 60
 
 
 # 检测某个rss更新
-async def check_update(rss: Rss) -> bool:
+async def check_update(rss: Rss) -> None:
     logger.info(f"{rss.name} 检查更新")
     try:
-        return await asyncio.wait_for(rss_parsing.start(rss), timeout=wait_for)
+        await asyncio.wait_for(rss_parsing.start(rss), timeout=wait_for)
     except asyncio.TimeoutError:
         logger.error(f"{rss.name} 检查更新超时，结束此次任务!")
-        return False
 
 
 def delete_job(rss: Rss) -> None:

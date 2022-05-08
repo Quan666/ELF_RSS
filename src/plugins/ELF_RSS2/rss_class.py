@@ -31,6 +31,8 @@ class Rss:
         self.duplicate_filter_mode: List[str] = []  # 去重模式
         self.max_image_number: int = 0  # 图片数量限制，防止消息太长刷屏
         self.content_to_remove: Optional[str] = None  # 正文待移除内容，支持正则
+        self.etag: Optional[str] = None
+        self.last_modified: Optional[str] = None  # 上次更新时间
         self.error_count: int = 0  # 连续抓取失败的次数，超过 100 就停止更新
         self.stop: bool = False  # 停止更新
         if data:
@@ -90,14 +92,7 @@ class Rss:
             if guild_channel in self.guild_channel_id:
                 return
             self.guild_channel_id.append(guild_channel)
-        db = TinyDB(
-            JSON_PATH,
-            encoding="utf-8",
-            sort_keys=True,
-            indent=4,
-            ensure_ascii=False,
-        )
-        db.upsert(self.__dict__, Query().name == self.name)
+        self.upsert()
 
     # 删除订阅 群组
     def delete_group(self, group: str) -> bool:
@@ -205,6 +200,19 @@ class Rss:
         except Exception:
             logger.exception(f"{self.name} 的 Cookies 设置时出错！")
             return False
+
+    def upsert(self, old_name: Optional[str] = None) -> None:
+        db = TinyDB(
+            JSON_PATH,
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
+        if old_name:
+            db.update(self.__dict__, Query().name == old_name)
+        else:
+            db.upsert(self.__dict__, Query().name == str(self.name))
 
     def __str__(self) -> str:
         mode_name = {"link": "链接", "title": "标题", "image": "图片"}

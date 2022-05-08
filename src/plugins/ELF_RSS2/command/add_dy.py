@@ -64,7 +64,6 @@ async def handle_rss_add(
     else:
         # 当前名称、url都不存在
         rss.name = name
-        # TODO: 重构数据存储相关逻辑，放入 sqlite 中，不再需要输入订阅名
         rss.url = url
         await add_feed(rss, user_id, group_id, guild_channel_id)
 

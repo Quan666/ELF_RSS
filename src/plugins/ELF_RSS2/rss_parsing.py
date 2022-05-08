@@ -1,26 +1,18 @@
 # -*- coding: UTF-8 -*-
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 import aiohttp
 import feedparser
 from nonebot.log import logger
-from tenacity import (
-    RetryError,
-    TryAgain,
-    retry,
-    stop_after_attempt,
-    stop_after_delay,
-    wait_fixed,
-)
-from tinydb import Query, TinyDB
+from tinydb import TinyDB
 from tinydb.middlewares import CachingMiddleware
 from tinydb.storages import JSONStorage
 from yarl import URL
 
 from . import my_trigger as tr
-from .config import DATA_PATH, JSON_PATH, config
+from .config import DATA_PATH, config
 from .parsing import get_proxy, send_msg
 from .parsing.cache_manage import cache_filter
 from .parsing.check_update import dict_hash
@@ -38,20 +30,24 @@ HEADERS = {
 
 
 # 入口
-async def start(rss: Rss) -> bool:
+async def start(rss: Rss) -> None:
     # 网络加载 新RSS
     # 读取 旧RSS 记录
     # 检查更新
     # 对更新的 RSS 记录列表进行处理，当发送成功后才写入，成功一条写一条
 
-    try:
-        new_rss = await get_rss(rss)
-    except RetryError:
+    new_rss, cached = await get_rss(rss)
+    if cached:
+        logger.info(f"{rss.name} 没有新信息")
+        return
+    if not new_rss or not new_rss.get("feed"):
         rss.error_count += 1
-        logger.warning(f"{rss.name} 抓取失败！已经尝试最多 6 次！")
+        logger.warning(f"{rss.name} 抓取失败！")
         if rss.error_count >= 100:
             await auto_stop_and_notify_all(rss)
-        return False
+        return
+    if new_rss.get("feed") and rss.error_count > 0:
+        rss.error_count = 0
     # 检查是否存在rss记录
     _file = DATA_PATH / f"{rss.name}.json"
     if not Path.exists(_file):
@@ -71,23 +67,15 @@ async def start(rss: Rss) -> bool:
         db.insert_multiple(result)
         db.close()
         logger.info(f"{rss.name} 第一次抓取成功！")
-        return True
+        return
 
     pr = ParsingRss(rss=rss)
     await pr.start(rss_name=rss.name, new_rss=new_rss)
-    return True
 
 
 async def auto_stop_and_notify_all(rss: Rss) -> None:
     rss.stop = True
-    db = TinyDB(
-        JSON_PATH,
-        encoding="utf-8",
-        sort_keys=True,
-        indent=4,
-        ensure_ascii=False,
-    )
-    db.update(rss.__dict__, Query().name == str(rss.name))
+    rss.upsert()
     tr.delete_job(rss)
     cookies_str = "及 cookies " if rss.cookies else ""
     await send_msg(
@@ -97,9 +85,8 @@ async def auto_stop_and_notify_all(rss: Rss) -> None:
     )
 
 
-# 获取 RSS 并解析为 json ，失败重试
-@retry(wait=wait_fixed(1), stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
-async def get_rss(rss: Rss) -> Dict[str, Any]:
+# 获取 RSS 并解析为 json
+async def get_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
     rss_url = rss.get_url()
     # 对本机部署的 RSSHub 不使用代理
     local_host = [
@@ -113,6 +100,13 @@ async def get_rss(rss: Rss) -> Dict[str, Any]:
 
     # 获取 xml
     d: Dict[str, Any] = {}
+    cached = False
+    headers = HEADERS.copy()
+    if not config.rsshub_backup:
+        if rss.etag:
+            headers["If-None-Match"] = rss.etag
+        if rss.last_modified:
+            headers["If-Modified-Since"] = rss.last_modified
     async with aiohttp.ClientSession(
         cookies=cookies,
         headers=HEADERS,
@@ -120,6 +114,20 @@ async def get_rss(rss: Rss) -> Dict[str, Any]:
     ) as session:
         try:
             resp = await session.get(rss_url, proxy=proxy)
+            if not config.rsshub_backup:
+                rss.etag = resp.headers.get("ETag")
+                rss.last_modified = resp.headers.get(
+                    "Last-Modified"
+                ) or resp.headers.get("Date")
+                if (
+                    headers.get("If-None-Match") != rss.etag
+                    or headers.get("If-Modified-Since") != rss.last_modified
+                ):
+                    rss.upsert()
+            if (
+                resp.status == 200 and int(resp.headers.get("Content-Length", "1")) == 0
+            ) or resp.status == 304:
+                cached = True
             # 解析为 JSON
             d = feedparser.parse(await resp.text())
         except Exception:
@@ -136,11 +144,4 @@ async def get_rss(rss: Rss) -> Dict[str, Any]:
                     if d.get("feed"):
                         logger.info(f"[{rss_url}]抓取成功！")
                         break
-        finally:
-            if not d or not d.get("feed"):
-                logger.debug(f"{rss.name} 抓取失败！将重试最多 5 次！")
-                rss.error_count += 1
-                raise TryAgain
-            if d.get("feed") and rss.error_count > 0:
-                rss.error_count = 0
-    return d
+    return d, cached

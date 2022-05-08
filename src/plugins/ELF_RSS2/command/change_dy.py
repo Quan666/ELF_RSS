@@ -11,10 +11,9 @@ from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
 from nonebot_plugin_guild_patch import GuildMessageEvent
-from tinydb import Query, TinyDB
 
 from .. import my_trigger as tr
-from ..config import DATA_PATH, JSON_PATH
+from ..config import DATA_PATH
 from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
 
@@ -226,14 +225,7 @@ async def batch_change_rss(
                 await RSS_CHANGE.finish(f"❌ 参数错误！\n{change_dict}")
 
         # 参数解析完毕，写入
-        db = TinyDB(
-            JSON_PATH,
-            encoding="utf-8",
-            sort_keys=True,
-            indent=4,
-            ensure_ascii=False,
-        )
-        db.update(rss.__dict__, Query().name == str(rss_name))
+        rss.upsert(rss_name)
 
         # 加入定时任务
         if not rss.stop:

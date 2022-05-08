@@ -34,7 +34,6 @@ async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -
         matcher.set_arg("router", args)
 
 
-# TODO: 重构数据存储相关逻辑，放入 sqlite 中，不再需要输入订阅名
 @RSSHUB_ADD.got("name", prompt="请输入要订阅的订阅名")
 async def handle_feed_name(name: str = ArgPlainText("name")) -> None:
     rss = Rss()
