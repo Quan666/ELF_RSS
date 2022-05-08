@@ -166,6 +166,7 @@ class Rss:
             rss_tmp.group_id = ["*"]
             rss_tmp.user_id = ["*"]
             return rss_tmp
+        return self
 
     @staticmethod
     def find_guild_channel(guild_channel_id: str) -> List["Rss"]:
@@ -182,7 +183,7 @@ class Rss:
         return [
             rss.hidden_some_infos(group_id=group_id)
             for rss in rss_old
-            if group_id in rss.group_id
+            if str(group_id) in rss.group_id
         ]
 
     @staticmethod
