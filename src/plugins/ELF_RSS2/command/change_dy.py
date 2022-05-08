@@ -170,15 +170,28 @@ async def handle_rss_change(
         if rss_tmp := Rss.find_name(name=name):
             rss_list.append(rss_tmp)
 
+    # 出于公平考虑，限制订阅者只有当前群组或频道时才能修改订阅，否则只有超级管理员能修改
     if group_id:
         if re.search(" (qq|qun|channel)=", change_info):
             await RSS_CHANGE.finish("❌ 禁止在群组中修改订阅账号！如要取消订阅请使用 deldy 命令！")
-        rss_list = [rss for rss in rss_list if str(group_id) in rss.group_id]
+        rss_list = [
+            rss
+            for rss in rss_list
+            if rss.group_id == [str(group_id)]
+            and not rss.user_id
+            and not rss.guild_channel_id
+        ]
 
     if guild_channel_id:
         if re.search(" (qq|qun|channel)=", change_info):
             await RSS_CHANGE.finish("❌ 禁止在子频道中修改订阅账号！如要取消订阅请使用 deldy 命令！")
-        rss_list = [rss for rss in rss_list if guild_channel_id in rss.guild_channel_id]
+        rss_list = [
+            rss
+            for rss in rss_list
+            if rss.guild_channel_id == [str(guild_channel_id)]
+            and not rss.user_id
+            and not rss.guild_channel_id
+        ]
 
     if not rss_list:
         await RSS_CHANGE.finish("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组或频道无权操作")
@@ -234,7 +247,6 @@ async def batch_change_rss(
             logger.info(f"{rss_name} 已停止更新")
 
         # 隐私考虑，不展示除当前群组或频道外的群组、频道和QQ
-        # 奇怪的逻辑，群管理能修改订阅消息，这对其他订阅者不公平。
         rss_msg = str(rss.hidden_some_infos(group_id, guild_channel_id))
         rss_msg_list.append(rss_msg)
     return rss_msg_list
