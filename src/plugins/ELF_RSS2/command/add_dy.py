@@ -30,8 +30,8 @@ async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -
 
 prompt = """\
 请输入
-    名称 [订阅地址]
-空格分割、[]表示可选
+    名称 订阅地址
+空格分割
 私聊默认订阅到当前账号，群聊默认订阅到当前群组
 更多信息可通过 change 命令修改\
 """
@@ -58,14 +58,9 @@ async def handle_rss_add(
         guild_channel_id = f"{str(event.guild_id)}@{str(event.channel_id)}"
 
     rss = Rss()
-    # 判断是否有该名称订阅，有就将当前qq或群加入订阅
-    if rss_tmp := rss.find_name(name=name):
-        await add_feed(rss_tmp, user_id, group_id, guild_channel_id)
-    else:
-        # 当前名称、url都不存在
-        rss.name = name
-        rss.url = url
-        await add_feed(rss, user_id, group_id, guild_channel_id)
+    rss.name = name
+    rss.url = url
+    await add_feed(rss, user_id, group_id, guild_channel_id)
 
 
 async def add_feed(
