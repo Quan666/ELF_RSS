@@ -78,7 +78,7 @@ async def handle_rsshub_routes(
                 )
             )
         else:
-            state["route_index"] = 0
+            state["route_index"] = Message("0")
 
 
 @RSSHUB_ADD.got("route_index")
