@@ -174,7 +174,7 @@ class Rss:
         return self
 
     @staticmethod
-    def find_guild_channel(guild_channel_id: str) -> List["Rss"]:
+    def get_by_guild_channel(guild_channel_id: str) -> List["Rss"]:
         rss_old = Rss.read_rss()
         return [
             rss.hidden_some_infos(guild_channel_id=guild_channel_id)
@@ -183,7 +183,7 @@ class Rss:
         ]
 
     @staticmethod
-    def find_group(group_id: int) -> List["Rss"]:
+    def get_by_group(group_id: int) -> List["Rss"]:
         rss_old = Rss.read_rss()
         return [
             rss.hidden_some_infos(group_id=group_id)
@@ -192,7 +192,7 @@ class Rss:
         ]
 
     @staticmethod
-    def find_user(user: str) -> List["Rss"]:
+    def get_by_user(user: str) -> List["Rss"]:
         rss_old = Rss.read_rss()
         return [rss for rss in rss_old if user in rss.user_id]
 
