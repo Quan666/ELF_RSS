@@ -38,7 +38,7 @@ async def handle_rss_delete(
     elif isinstance(event, GuildMessageEvent):
         guild_channel_id = f"{event.guild_id}@{event.channel_id}"
 
-    rss = Rss.find_name(name=rss_name)
+    rss = Rss.get_one_by_name(name=rss_name)
 
     if rss is None:
         await RSS_DELETE.finish("❌ 删除失败！不存在该订阅！")

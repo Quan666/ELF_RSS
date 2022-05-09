@@ -64,13 +64,18 @@ class Rss:
         )
         return [Rss(rss) for rss in db.all()]
 
-    # 查找是否存在当前订阅名 rss 要转换为 rss_
+    # 过滤订阅名中的特殊字符
     @staticmethod
-    def find_name(name: str) -> Optional["Rss"]:
-        # 过滤特殊字符
+    def handle_name(name: str) -> str:
         name = re.sub(r'[?*:"<>\\/|]', "_", name)
         if name == "rss":
             name = "rss_"
+        return name
+
+    # 查找是否存在当前订阅名 rss 要转换为 rss_
+    @staticmethod
+    def get_one_by_name(name: str) -> Optional["Rss"]:
+        name = Rss.handle_name(name)
         feed_list = Rss.read_rss()
         return next((feed for feed in feed_list if feed.name == name), None)
 

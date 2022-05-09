@@ -36,8 +36,7 @@ async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -
 
 @RSSHUB_ADD.got("name", prompt="请输入要订阅的订阅名")
 async def handle_feed_name(name: str = ArgPlainText("name")) -> None:
-    rss = Rss()
-    if _ := rss.find_name(name=name):
+    if _ := Rss.get_one_by_name(name=name):
         await RSSHUB_ADD.reject(f"已存在名为 {name} 的订阅，请重新输入")
 
 

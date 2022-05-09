@@ -49,7 +49,7 @@ async def start(rss: Rss) -> None:
     if new_rss.get("feed") and rss.error_count > 0:
         rss.error_count = 0
     # 检查是否存在rss记录
-    _file = DATA_PATH / f"{rss.name}.json"
+    _file = DATA_PATH / f"{Rss.handle_name(rss.name)}.json"
     if not Path.exists(_file):
         db = TinyDB(
             _file,

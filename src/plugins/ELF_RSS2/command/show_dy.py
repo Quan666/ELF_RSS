@@ -49,7 +49,7 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
         guild_channel_id = f"{event.guild_id}@{event.channel_id}"
 
     if rss_name:
-        rss = Rss.find_name(rss_name)
+        rss = Rss.get_one_by_name(rss_name)
         if (
             rss is None
             or (group_id and str(group_id) not in rss.group_id)

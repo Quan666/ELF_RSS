@@ -167,7 +167,7 @@ async def handle_rss_change(
     name_list = change_info.split(" ")[0].split(",")
     rss_list: List[Rss] = []
     for name in name_list:
-        if rss_tmp := Rss.find_name(name=name):
+        if rss_tmp := Rss.get_one_by_name(name=name):
             rss_list.append(rss_tmp)
 
     # 出于公平考虑，限制订阅者只有当前群组或频道时才能修改订阅，否则只有超级管理员能修改
