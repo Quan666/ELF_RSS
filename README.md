@@ -69,3 +69,7 @@
 * [酷Q（R. I. P）](https://cqp.cc/)
 * [coolq-http-api](https://github.com/richardchien/coolq-http-api)
 * [go-cqhttp](https://github.com/Mrs4s/go-cqhttp)
+
+## Star History
+
+[![Star History](https://starchart.cc/Quan666/ELF_RSS.svg)](https://starchart.cc/Quan666/ELF_RSS)
