@@ -37,7 +37,7 @@ def handle_rss_list(rss_list: List[Rss]) -> str:
 # 不带订阅名称默认展示当前群组或账号的订阅，带订阅名称就显示该订阅的
 @RSS_SHOW.handle()
 async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
-    rss_name = args.extract_plain_text()
+    rss_name = args.extract_plain_text().strip()
 
     user_id = event.get_user_id()
     group_id = None

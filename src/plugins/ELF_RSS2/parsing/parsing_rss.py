@@ -141,7 +141,7 @@ class ParsingRss:
         # 前置处理
         rss_title = new_rss["feed"]["title"]
         new_data = new_rss["entries"]
-        _file = DATA_PATH / f"{rss_name}.json"
+        _file = DATA_PATH / f"{Rss.handle_name(rss_name)}.json"
         db = TinyDB(
             _file,
             storage=CachingMiddleware(JSONStorage),  # type: ignore

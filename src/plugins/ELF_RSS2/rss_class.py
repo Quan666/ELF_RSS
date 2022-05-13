@@ -75,7 +75,6 @@ class Rss:
     # 查找是否存在当前订阅名 rss 要转换为 rss_
     @staticmethod
     def get_one_by_name(name: str) -> Optional["Rss"]:
-        name = Rss.handle_name(name)
         feed_list = Rss.read_rss()
         return next((feed for feed in feed_list if feed.name == name), None)
 
@@ -146,13 +145,13 @@ class Rss:
 
     # 重命名订阅缓存 json 文件
     def rename_file(self, target: str) -> None:
-        this_file_path = DATA_PATH / f"{self.name}.json"
+        this_file_path = DATA_PATH / f"{Rss.handle_name(self.name)}.json"
         if Path.exists(this_file_path):
             this_file_path.rename(target)
 
     # 删除订阅缓存 json 文件
     def delete_file(self) -> None:
-        this_file_path = DATA_PATH / f"{self.name}.json"
+        this_file_path = DATA_PATH / f"{Rss.handle_name(self.name)}.json"
         Path.unlink(this_file_path, missing_ok=True)
 
     # 隐私考虑，不展示除当前群组或频道外的群组、频道和QQ

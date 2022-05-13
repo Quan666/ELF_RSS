@@ -1,5 +1,3 @@
-# -*- coding: UTF-8 -*-
-
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
@@ -29,6 +27,7 @@ HEADERS = {
 }
 
 
+# TODO: 改造
 # 入口
 async def start(rss: Rss) -> None:
     # 网络加载 新RSS
@@ -69,6 +68,7 @@ async def start(rss: Rss) -> None:
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
 
+    # TODO: 改造
     pr = ParsingRss(rss=rss)
     await pr.start(rss_name=rss.name, new_rss=new_rss)
 

@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from nonebot import on_command
@@ -24,7 +25,8 @@ RSS_ADD = on_command(
 
 @RSS_ADD.handle()
 async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
-    if args.extract_plain_text():
+    plain_text = args.extract_plain_text().strip()
+    if plain_text and re.match(r"^\S+\s\S+$", plain_text):
         matcher.set_arg("RSS_ADD", args)
 
 

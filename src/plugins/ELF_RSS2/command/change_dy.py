@@ -79,7 +79,7 @@ def handle_change_list(
 ) -> None:
     if key_to_change == "name":
         tr.delete_job(rss)
-        rss.rename_file(str(DATA_PATH / f"{value_to_change}.json"))
+        rss.rename_file(str(DATA_PATH / f"{Rss.handle_name(value_to_change)}.json"))
     elif (
         key_to_change in {"qq", "qun", "channel"}
         and not group_id
