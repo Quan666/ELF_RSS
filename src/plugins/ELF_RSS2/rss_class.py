@@ -75,7 +75,6 @@ class Rss:
     # 查找是否存在当前订阅名 rss 要转换为 rss_
     @staticmethod
     def get_one_by_name(name: str) -> Optional["Rss"]:
-        name = Rss.handle_name(name)
         feed_list = Rss.read_rss()
         return next((feed for feed in feed_list if feed.name == name), None)
 
@@ -146,38 +145,32 @@ class Rss:
 
     # 重命名订阅缓存 json 文件
     def rename_file(self, target: str) -> None:
-        this_file_path = DATA_PATH / f"{self.name}.json"
+        this_file_path = DATA_PATH / f"{Rss.handle_name(self.name)}.json"
         if Path.exists(this_file_path):
             this_file_path.rename(target)
 
     # 删除订阅缓存 json 文件
     def delete_file(self) -> None:
-        this_file_path = DATA_PATH / f"{self.name}.json"
+        this_file_path = DATA_PATH / f"{Rss.handle_name(self.name)}.json"
         Path.unlink(this_file_path, missing_ok=True)
 
     # 隐私考虑，不展示除当前群组或频道外的群组、频道和QQ
-    def hidden_some_infos(
+    def hide_some_infos(
         self, group_id: Optional[int] = None, guild_channel_id: Optional[str] = None
     ) -> "Rss":
-        if group_id:
-            rss_tmp = copy.deepcopy(self)
-            rss_tmp.guild_channel_id = ["*"]
-            rss_tmp.group_id = [str(group_id), "*"]
-            rss_tmp.user_id = ["*"]
-            return rss_tmp
-        elif guild_channel_id:
-            rss_tmp = copy.deepcopy(self)
-            rss_tmp.guild_channel_id = [guild_channel_id, "*"]
-            rss_tmp.group_id = ["*"]
-            rss_tmp.user_id = ["*"]
-            return rss_tmp
-        return self
+        if not group_id and not guild_channel_id:
+            return self
+        rss_tmp = copy.deepcopy(self)
+        rss_tmp.guild_channel_id = [guild_channel_id, "*"] if guild_channel_id else []
+        rss_tmp.group_id = [str(group_id), "*"] if group_id else []
+        rss_tmp.user_id = ["*"] if rss_tmp.user_id else []
+        return rss_tmp
 
     @staticmethod
     def get_by_guild_channel(guild_channel_id: str) -> List["Rss"]:
         rss_old = Rss.read_rss()
         return [
-            rss.hidden_some_infos(guild_channel_id=guild_channel_id)
+            rss.hide_some_infos(guild_channel_id=guild_channel_id)
             for rss in rss_old
             if guild_channel_id in rss.guild_channel_id
         ]
@@ -186,7 +179,7 @@ class Rss:
     def get_by_group(group_id: int) -> List["Rss"]:
         rss_old = Rss.read_rss()
         return [
-            rss.hidden_some_infos(group_id=group_id)
+            rss.hide_some_infos(group_id=group_id)
             for rss in rss_old
             if str(group_id) in rss.group_id
         ]

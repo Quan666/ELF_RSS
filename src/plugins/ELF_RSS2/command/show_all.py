@@ -23,7 +23,7 @@ RSS_SHOW_ALL = on_command(
 
 @RSS_SHOW_ALL.handle()
 async def handle_rss_show_all(event: Event, args: Message = CommandArg()) -> None:
-    search_keyword = args.extract_plain_text()
+    search_keyword = args.extract_plain_text().strip()
 
     group_id = None
     guild_channel_id = None

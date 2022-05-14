@@ -37,7 +37,7 @@ def handle_rss_list(rss_list: List[Rss]) -> str:
 # 不带订阅名称默认展示当前群组或账号的订阅，带订阅名称就显示该订阅的
 @RSS_SHOW.handle()
 async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
-    rss_name = args.extract_plain_text()
+    rss_name = args.extract_plain_text().strip()
 
     user_id = event.get_user_id()
     group_id = None
@@ -58,7 +58,7 @@ async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
             await RSS_SHOW.finish(f"❌ 订阅 {rss_name} 不存在或未订阅！")
         else:
             # 隐私考虑，不展示除当前群组或频道外的群组、频道和QQ
-            rss_msg = str(rss.hidden_some_infos(group_id, guild_channel_id))
+            rss_msg = str(rss.hide_some_infos(group_id, guild_channel_id))
             await RSS_SHOW.finish(rss_msg)
 
     if group_id:

@@ -79,7 +79,7 @@ def handle_change_list(
 ) -> None:
     if key_to_change == "name":
         tr.delete_job(rss)
-        rss.rename_file(str(DATA_PATH / f"{value_to_change}.json"))
+        rss.rename_file(str(DATA_PATH / f"{Rss.handle_name(value_to_change)}.json"))
     elif (
         key_to_change in {"qq", "qun", "channel"}
         and not group_id
@@ -247,7 +247,7 @@ async def batch_change_rss(
             logger.info(f"{rss_name} 已停止更新")
 
         # 隐私考虑，不展示除当前群组或频道外的群组、频道和QQ
-        rss_msg = str(rss.hidden_some_infos(group_id, guild_channel_id))
+        rss_msg = str(rss.hide_some_infos(group_id, guild_channel_id))
         rss_msg_list.append(rss_msg)
     return rss_msg_list
 
