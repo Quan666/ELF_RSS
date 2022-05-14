@@ -5,6 +5,7 @@ from email.utils import parsedate_to_datetime
 from typing import Any, Dict
 
 import arrow
+import emoji
 from nonebot.log import logger
 from pyquery import PyQuery as Pq
 
@@ -144,7 +145,7 @@ async def handle_title(
 
     # 如果开启了只推送标题，跳过下面判断标题与正文相似度的处理
     if rss.only_title:
-        return res
+        return emoji.emojize(res, use_aliases=True)
 
     # 判断标题与正文相似度，避免标题正文一样，或者是标题为正文前N字等情况
     try:
@@ -160,7 +161,7 @@ async def handle_title(
     except Exception as e:
         logger.warning(f"{rss.name} 没有正文内容！{e}")
 
-    return res
+    return emoji.emojize(res, use_aliases=True)
 
 
 # 处理正文 判断是否是仅推送标题 、是否仅推送图片
@@ -213,7 +214,7 @@ async def handle_summary(
         while "\n\n\n" in tmp:
             tmp = tmp.replace("\n\n\n", "\n\n")
         tmp = tmp.strip()
-    return tmp
+    return emoji.emojize(tmp, use_aliases=True)
 
 
 # 处理正文 翻译
