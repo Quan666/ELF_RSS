@@ -106,9 +106,7 @@ async def handle_route_args(
     route_args: str = ArgPlainText("route_args"),
 ) -> None:
     route = state["route_list"][int(route_index) - 1]
-    feed_url = config.rsshub + "/".join(
-        [i for i in route.split("/") if not i.startswith(":")]
-    )
+    feed_url = "/".join([i for i in route.split("/") if not i.startswith(":")])
     for i in route_args.split("/"):
         if len(i.strip("#")) > 0:
             feed_url += f"/{i}"
