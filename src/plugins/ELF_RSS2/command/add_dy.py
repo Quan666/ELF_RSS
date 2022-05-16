@@ -26,7 +26,7 @@ RSS_ADD = on_command(
 @RSS_ADD.handle()
 async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
     plain_text = args.extract_plain_text().strip()
-    if plain_text and re.match(r"^\S+\s\S+$", plain_text):
+    if plain_text and re.match(r"^\S+(\s?\S+$)?", plain_text):
         matcher.set_arg("RSS_ADD", args)
 
 
@@ -45,10 +45,18 @@ async def handle_rss_add(
 ) -> None:
 
     try:
-        name, url = name_and_url.split(" ")
+        name_and_url = name_and_url.split(" ")
+        if len(name_and_url) == 1:
+            rss = Rss.get_one_by_name(name=name_and_url[0])
+            if rss is None:
+                await RSS_ADD.finish("❌ 添加失败！不存在该订阅！")
+        else:
+            name, url = name_and_url
+            rss = Rss()
+            rss.name = name
+            rss.url = url
     except ValueError:
         await RSS_ADD.reject(prompt)
-        return
 
     user_id = event.get_user_id()
     group_id = None
@@ -59,9 +67,6 @@ async def handle_rss_add(
     elif isinstance(event, GuildMessageEvent):
         guild_channel_id = f"{str(event.guild_id)}@{str(event.channel_id)}"
 
-    rss = Rss()
-    rss.name = name
-    rss.url = url
     await add_feed(rss, user_id, group_id, guild_channel_id)
 
 
