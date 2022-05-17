@@ -50,6 +50,11 @@ async def handle_rss_add(
         await RSS_ADD.reject(prompt)
         return
 
+    if _ := Rss.get_one_by_name(name):
+        await RSS_ADD.send(f"已存在订阅名为 {name} 的订阅")
+        await RSS_ADD.reject(prompt)
+        return
+
     user_id = event.get_user_id()
     group_id = None
     guild_channel_id = None
