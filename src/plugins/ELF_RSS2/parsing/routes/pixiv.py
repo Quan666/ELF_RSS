@@ -21,7 +21,7 @@ from ..utils import get_summary
 
 
 # 如果启用了去重模式，对推送列表进行过滤
-@ParsingBase.append_before_handler(priority=12, rex="pixiv")
+@ParsingBase.append_before_handler(priority=12, rex="/pixiv/")
 async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     change_data = state["change_data"]
     conn = state["conn"]
