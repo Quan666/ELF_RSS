@@ -39,13 +39,16 @@ down_info: Dict[str, Dict[str, Any]] = {}
 
 
 # 发送通知
-async def send_msg(msg: str) -> List[Dict[str, Any]]:
+async def send_msg(msg: str, notice_group=[]) -> List[Dict[str, Any]]:
     logger.info(msg)
     bot = nonebot.get_bot()
     msg_id = []
     group_list = await get_bot_group_list(bot)
-    if config.down_status_msg_group:
-        for group_id in config.down_status_msg_group:
+    down_status_msg_group = config.down_status_msg_group
+    if notice_group:
+        down_status_msg_group = notice_group
+    if down_status_msg_group:
+        for group_id in down_status_msg_group:
             if int(group_id) not in group_list:
                 logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}]")
                 continue
@@ -105,7 +108,7 @@ async def get_torrent_info_from_hash(
     info = None
     if re.search(r"magnet:\?xt=urn:btih:", url):
         qb.download_from_link(link=url)
-        hash_str = re.search("[A-Fa-f0-9]{40}", url)[0]  # type: ignore
+        hash_str = re.search("[A-Fa-f0-9]{40}", url)[0].lower()  # type: ignore
     else:
         async with aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=100)
@@ -174,6 +177,8 @@ async def check_down_status(hash_str: str, group_ids: List[str], name: str) -> N
                 # 异常包起来防止超时报错导致后续不执行
                 try:
                     if config.qb_down_path and len(config.qb_down_path) > 0:
+                        if config.qb_down_path[:-1] != "/":
+                            config.qb_down_path += "/"
                         path = config.qb_down_path + tmp["name"]
                     else:
                         path = info["save_path"] + tmp["name"]
@@ -187,7 +192,7 @@ async def check_down_status(hash_str: str, group_ids: List[str], name: str) -> N
                         )
                     except ActionFailed:
                         msg = f"{name}\nHash：{hash_str}\n上传到群：{group_id}失败！请手动上传！"
-                        await send_msg(msg)
+                        await send_msg(msg, [group_id])
                         logger.exception(msg)
                 except TimeoutError as e:
                     logger.warning(e)
@@ -226,4 +231,4 @@ async def rss_trigger(hash_str: str, group_ids: List[str], name: str) -> None:
         misfire_grace_time=60,  # 允许的误差时间，建议不要省略
         job_defaults=job_defaults,
     )
-    await send_msg(f"👏 {name}\nHash：{hash_str}\n下载任务添加成功！")
+    await send_msg(f"👏 {name}\nHash：{hash_str}\n下载任务添加成功！", group_ids)
