@@ -14,7 +14,10 @@ from ..qbittorrent_download import start_down
 from ..parsing.utils import get_proxy
 
 upload_group_file = on_command(
-    "upload_file", aliases={"uploadfile"}, rule=to_me(), priority=5,
+    "upload_file",
+    aliases={"uploadfile"},
+    rule=to_me(),
+    priority=5,
 )
 
 
@@ -24,7 +27,8 @@ async def handle_first_receive(event: Event, message: Message = CommandArg()) ->
         await upload_group_file.finish("请在群聊中使用该命令")
     elif isinstance(event, GroupMessageEvent):
         target = re.search(
-            "(magnet:\?xt=urn:btih:[a-fA-F0-9]{40})|(http.*?\.torrent)", str(message),
+            "(magnet:\?xt=urn:btih:([a-fA-F0-9]{40}|[2-7A-Za-z]{32}))|(http.*?\.torrent)",
+            str(message),
         )
         if not target:
             await upload_group_file.finish("请输入种子链接")

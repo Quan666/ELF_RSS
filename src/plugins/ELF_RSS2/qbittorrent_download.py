@@ -108,7 +108,15 @@ async def get_torrent_info_from_hash(
     info = None
     if re.search(r"magnet:\?xt=urn:btih:", url):
         qb.download_from_link(link=url)
-        hash_str = re.search("[A-Fa-f0-9]{40}", url)[0].lower()  # type: ignore
+        hash_str = re.search("[A-Fa-f0-9]{40}", url)
+        if not hash_str:
+            hash_str = (
+                base64.b16encode(base64.b32decode(re.search("[2-7A-Za-z]{32}", url)[0]))
+                .decode("utf-8")
+                .lower()
+            )
+        else:
+            hash_str = hash_str[0].lower()
     else:
         async with aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=100)
