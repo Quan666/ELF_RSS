@@ -8,7 +8,7 @@ import arrow
 import nonebot
 from apscheduler.triggers.interval import IntervalTrigger
 from nonebot import require
-from nonebot.adapters.onebot.v11 import ActionFailed
+from nonebot.adapters.onebot.v11 import ActionFailed, NetworkError
 from nonebot.log import logger
 from qbittorrent import Client
 
@@ -169,8 +169,15 @@ async def check_down_status(hash_str: str, group_ids: List[str], name: str) -> N
     qb = await get_qb_client()
     if not qb:
         return
-    info = qb.get_torrent(hash_str)
-    files = qb.get_torrent_files(hash_str)
+    scheduler = require("nonebot_plugin_apscheduler").scheduler
+    # 防止中途删掉任务，无限执行
+    try:
+        info = qb.get_torrent(hash_str)
+        files = qb.get_torrent_files(hash_str)
+    except Exception as e:
+        logger.exception(e)
+        scheduler.remove_job(hash_str)
+        return
     bot = nonebot.get_bot()
     if info["total_downloaded"] - info["total_size"] >= 0.000000:
         all_time = arrow.now() - down_info[hash_str]["start_time"]
@@ -202,9 +209,10 @@ async def check_down_status(hash_str: str, group_ids: List[str], name: str) -> N
                         msg = f"{name}\nHash：{hash_str}\n上传到群：{group_id}失败！请手动上传！"
                         await send_msg(msg, [group_id])
                         logger.exception(msg)
+                    except NetworkError as e:
+                        logger.warning(e)
                 except TimeoutError as e:
                     logger.warning(e)
-        scheduler = require("nonebot_plugin_apscheduler").scheduler
         scheduler.remove_job(hash_str)
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOAD_OK
     else:
