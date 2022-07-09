@@ -10,8 +10,8 @@ from nonebot.adapters.onebot.v11 import (
 from nonebot.params import CommandArg
 from nonebot.rule import to_me
 
-from ..qbittorrent_download import start_down
 from ..parsing.utils import get_proxy
+from ..qbittorrent_download import start_down
 
 upload_group_file = on_command(
     "upload_file",
@@ -27,14 +27,16 @@ async def handle_first_receive(event: Event, message: Message = CommandArg()) ->
         await upload_group_file.finish("请在群聊中使用该命令")
     elif isinstance(event, GroupMessageEvent):
         target = re.search(
-            "(magnet:\?xt=urn:btih:([a-fA-F0-9]{40}|[2-7A-Za-z]{32}))|(http.*?\.torrent)",
+            r"(magnet:\?xt=urn:btih:([A-F\d]{40}|[2-7A-Z]{32}))|(http.*?\.torrent)",
             str(message),
+            flags=re.I,
         )
         if not target:
             await upload_group_file.finish("请输入种子链接")
+            return
         await start_down(
             url=target[0],
-            group_ids=[event.group_id],
+            group_ids=[str(event.group_id)],
             name="手动上传",
             proxy=get_proxy(True),
         )
