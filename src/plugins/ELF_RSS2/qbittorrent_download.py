@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import re
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import aiohttp
@@ -39,15 +40,14 @@ down_info: Dict[str, Dict[str, Any]] = {}
 
 
 # 发送通知
-async def send_msg(msg: str, notice_group=[]) -> List[Dict[str, Any]]:
+async def send_msg(
+    msg: str, notice_group: Optional[List[str]] = None
+) -> List[Dict[str, Any]]:
     logger.info(msg)
     bot = nonebot.get_bot()
     msg_id = []
     group_list = await get_bot_group_list(bot)
-    down_status_msg_group = config.down_status_msg_group
-    if notice_group:
-        down_status_msg_group = notice_group
-    if down_status_msg_group:
+    if down_status_msg_group := (notice_group or config.down_status_msg_group):
         for group_id in down_status_msg_group:
             if int(group_id) not in group_list:
                 logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}]")
@@ -108,15 +108,17 @@ async def get_torrent_info_from_hash(
     info = None
     if re.search(r"magnet:\?xt=urn:btih:", url):
         qb.download_from_link(link=url)
-        hash_str = re.search("[A-Fa-f0-9]{40}", url)
-        if not hash_str:
+        if _hash_str := re.search(r"[A-F\d]{40}", url, flags=re.I):
+            hash_str = _hash_str[0].lower()
+        else:
             hash_str = (
-                base64.b16encode(base64.b32decode(re.search("[2-7A-Za-z]{32}", url)[0]))
+                base64.b16encode(
+                    base64.b32decode(re.search(r"[2-7A-Z]{32}", url, flags=re.I)[0])  # type: ignore
+                )
                 .decode("utf-8")
                 .lower()
             )
-        else:
-            hash_str = hash_str[0].lower()
+
     else:
         async with aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=100)
@@ -191,18 +193,16 @@ async def check_down_status(hash_str: str, group_ids: List[str], name: str) -> N
             for tmp in files:
                 # 异常包起来防止超时报错导致后续不执行
                 try:
-                    if config.qb_down_path and len(config.qb_down_path) > 0:
-                        if config.qb_down_path[:-1] != "/":
-                            config.qb_down_path += "/"
-                        path = config.qb_down_path + tmp["name"]
-                    else:
-                        path = info["save_path"] + tmp["name"]
+                    path = Path(info.get("save_path", "")) / tmp["name"]
+                    if config.qb_down_path:
+                        if (_path := Path(config.qb_down_path)).is_dir():
+                            path = _path / tmp["name"]
                     await send_msg(f"{name}\nHash：{hash_str}\n开始上传到群：{group_id}")
                     try:
                         await bot.call_api(
                             "upload_group_file",
                             group_id=group_id,
-                            file=path,
+                            file=str(path),
                             name=tmp["name"],
                         )
                     except ActionFailed:
