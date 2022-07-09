@@ -2,6 +2,7 @@ import asyncio
 import base64
 import re
 from typing import Any, Dict, List, Optional
+from pathlib import Path
 
 import aiohttp
 import arrow
@@ -191,18 +192,17 @@ async def check_down_status(hash_str: str, group_ids: List[str], name: str) -> N
             for tmp in files:
                 # 异常包起来防止超时报错导致后续不执行
                 try:
-                    if config.qb_down_path and len(config.qb_down_path) > 0:
-                        if config.qb_down_path[:-1] != "/":
-                            config.qb_down_path += "/"
-                        path = config.qb_down_path + tmp["name"]
-                    else:
-                        path = info["save_path"] + tmp["name"]
+                    path = Path(info.get("save_path", "")) / tmp["name"]
+                    if config.qb_down_path:
+                        _path = Path(config.qb_down_path)
+                        if _path.is_dir():
+                            path = _path / tmp["name"]
                     await send_msg(f"{name}\nHash：{hash_str}\n开始上传到群：{group_id}")
                     try:
                         await bot.call_api(
                             "upload_group_file",
                             group_id=group_id,
-                            file=path,
+                            file=str(path),
                             name=tmp["name"],
                         )
                     except ActionFailed:
