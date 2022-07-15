@@ -1,15 +1,23 @@
 import asyncio
 
 import arrow
-import nonebot
 from nonebot import on_metaevent, require
-from nonebot.adapters.onebot.v11 import Event, LifecycleMetaEvent
+from nonebot.adapters.onebot.v11 import Bot, Event, LifecycleMetaEvent
 from nonebot.log import logger
+from nonebot.plugin import PluginMetadata
 
 from . import command
 from . import my_trigger as tr
 from .config import DATA_PATH, config
 from .rss_class import Rss
+
+VERSION = "2.6.4"
+__plugin_meta__ = PluginMetadata(
+    name="ELF_RSS",
+    description="QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub",
+    usage="https://github.com/Quan666/ELF_RSS",
+    extra={"author": "Quan666 <i@Rori.eMail>", "version": VERSION},
+)
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 START_TIME = arrow.now()
@@ -26,17 +34,14 @@ start_metaevent = on_metaevent(rule=check_first_connect, block=True)
 
 # 启动时发送启动成功信息
 @start_metaevent.handle()
-async def start() -> None:
-    bot = nonebot.get_bot()
+async def start(bot: Bot) -> None:
 
     # 启动后检查 data 目录，不存在就创建
     if not DATA_PATH.is_dir():
         DATA_PATH.mkdir()
 
     boot_message = (
-        f"Version: {config.version}\n"
-        "Author：Quan666\n"
-        "https://github.com/Quan666/ELF_RSS"
+        f"Version: v{VERSION}\nAuthor：Quan666\nhttps://github.com/Quan666/ELF_RSS"
     )
 
     rss_list = Rss.read_rss()  # 读取list

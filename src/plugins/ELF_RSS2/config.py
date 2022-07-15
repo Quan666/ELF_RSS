@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from nonebot import get_driver
 from nonebot.config import BaseConfig
 from nonebot.log import logger
-from pydantic import AnyHttpUrl, Extra
+from pydantic import AnyHttpUrl
 
 DATA_PATH = Path.cwd() / "data"
 JSON_PATH = DATA_PATH / "rss.json"
@@ -12,7 +12,7 @@ JSON_PATH = DATA_PATH / "rss.json"
 
 class ELFConfig(BaseConfig):
     class Config:
-        extra = Extra.allow
+        extra = "allow"
 
     rss_proxy: Optional[str] = None
     rsshub: AnyHttpUrl = "https://rsshub.app"  # type: ignore
@@ -36,14 +36,6 @@ class ELFConfig(BaseConfig):
     qb_down_path: Optional[str] = None  # qb的文件下载地址，这个地址必须是 go-cqhttp能访问到的
     down_status_msg_group: Optional[List[int]] = None
     down_status_msg_date: int = 10
-
-    version: str = ""
-
-    def __getattr__(self, name: str) -> Any:
-        data = self.dict()
-        return next(
-            (v for k, v in data.items() if k.casefold() == name.casefold()), None
-        )
 
 
 config = ELFConfig(**get_driver().config.dict())

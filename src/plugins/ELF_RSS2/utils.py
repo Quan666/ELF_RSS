@@ -1,7 +1,20 @@
 import math
-from typing import List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
-from nonebot.adapters import Bot
+from nonebot.adapters.onebot.v11.bot import Bot
+
+
+def get_http_caching_headers(
+    headers: Optional[Mapping[str, Any]],
+) -> Dict[str, Optional[str]]:
+    return (
+        {
+            "Last-Modified": headers.get("Last-Modified") or headers.get("Date"),
+            "ETag": headers.get("ETag"),
+        }
+        if headers
+        else {"Last-Modified": None, "ETag": None}
+    )
 
 
 def convert_size(size_bytes: int) -> str:

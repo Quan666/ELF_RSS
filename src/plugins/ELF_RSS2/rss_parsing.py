@@ -16,6 +16,7 @@ from .parsing.cache_manage import cache_filter
 from .parsing.check_update import dict_hash
 from .parsing.parsing_rss import ParsingRss
 from .rss_class import Rss
+from .utils import get_http_caching_headers
 
 HEADERS = {
     "Accept": "application/xhtml+xml,application/xml,*/*",
@@ -27,14 +28,8 @@ HEADERS = {
 }
 
 
-# TODO: 改造
-# 入口
+# 抓取 feed，读取缓存，检查更新，对更新进行处理
 async def start(rss: Rss) -> None:
-    # 网络加载 新RSS
-    # 读取 旧RSS 记录
-    # 检查更新
-    # 对更新的 RSS 记录列表进行处理，当发送成功后才写入，成功一条写一条
-
     new_rss, cached = await get_rss(rss)
     if cached:
         logger.info(f"{rss.name} 没有新信息")
@@ -68,7 +63,6 @@ async def start(rss: Rss) -> None:
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
 
-    # TODO: 改造
     pr = ParsingRss(rss=rss)
     await pr.start(rss_name=rss.name, new_rss=new_rss)
 
@@ -115,15 +109,10 @@ async def get_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
         try:
             resp = await session.get(rss_url, proxy=proxy)
             if not config.rsshub_backup:
-                rss.etag = resp.headers.get("ETag")
-                rss.last_modified = resp.headers.get(
-                    "Last-Modified"
-                ) or resp.headers.get("Date")
-                if (
-                    headers.get("If-None-Match") != rss.etag
-                    or headers.get("If-Modified-Since") != rss.last_modified
-                ):
-                    rss.upsert()
+                http_caching_headers = get_http_caching_headers(resp.headers)
+                rss.etag = http_caching_headers["ETag"]
+                rss.last_modified = http_caching_headers["Last-Modified"]
+                rss.upsert()
             if (
                 resp.status == 200 and int(resp.headers.get("Content-Length", "1")) == 0
             ) or resp.status == 304:

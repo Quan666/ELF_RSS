@@ -1,7 +1,7 @@
 from typing import List
 
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
@@ -36,7 +36,7 @@ def handle_rss_list(rss_list: List[Rss]) -> str:
 
 # 不带订阅名称默认展示当前群组或账号的订阅，带订阅名称就显示该订阅的
 @RSS_SHOW.handle()
-async def handle_rss_show(event: Event, args: Message = CommandArg()) -> None:
+async def handle_rss_show(event: MessageEvent, args: Message = CommandArg()) -> None:
     rss_name = args.extract_plain_text().strip()
 
     user_id = event.get_user_id()

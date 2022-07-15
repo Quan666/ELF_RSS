@@ -46,7 +46,7 @@ async def send_msg(
     logger.info(msg)
     bot = nonebot.get_bot()
     msg_id = []
-    group_list = await get_bot_group_list(bot)
+    group_list = await get_bot_group_list(bot)  # type: ignore
     if down_status_msg_group := (notice_group or config.down_status_msg_group):
         for group_id in down_status_msg_group:
             if int(group_id) not in group_list:

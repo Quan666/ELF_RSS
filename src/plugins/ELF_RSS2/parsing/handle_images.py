@@ -16,7 +16,7 @@ from .utils import get_proxy, get_summary
 
 
 # 通过 ezgif 压缩 GIF
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def resize_gif(url: str, resize_ratio: int = 2) -> Optional[bytes]:
     async with aiohttp.ClientSession() as session:
         resp = await session.post(
@@ -45,7 +45,7 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> Optional[bytes]:
 
 
 # 通过 ezgif 把视频中间 4 秒转 GIF 作为预览
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_preview_gif_from_video(url: str) -> str:
     async with aiohttp.ClientSession() as session:
         resp = await session.post(
@@ -170,7 +170,7 @@ async def fuck_pixiv_cat(url: str) -> str:
             return url
 
 
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def download_image_detail(url: str, proxy: bool) -> Optional[bytes]:
     async with aiohttp.ClientSession(raise_for_status=True) as session:
         referer = f"{URL(url).scheme}://{URL(url).host}/"
