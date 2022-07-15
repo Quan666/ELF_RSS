@@ -2,7 +2,7 @@ import re
 from typing import Any, List, Optional
 
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.log import logger
 from nonebot.matcher import Matcher
@@ -156,7 +156,7 @@ prompt = """\
 
 @RSS_CHANGE.got("RSS_CHANGE", prompt=prompt)
 async def handle_rss_change(
-    event: Event, change_info: str = ArgPlainText("RSS_CHANGE")
+    event: MessageEvent, change_info: str = ArgPlainText("RSS_CHANGE")
 ) -> None:
     group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
     guild_channel_id = (

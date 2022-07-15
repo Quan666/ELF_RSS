@@ -1,9 +1,9 @@
 import hashlib
+from contextlib import suppress
 from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List
 
 import arrow
-from arrow import Arrow
 from tinydb import Query, TinyDB
 
 
@@ -36,11 +36,9 @@ def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return to_send_list
 
 
-def get_item_date(item: Dict[str, Any]) -> Arrow:
+def get_item_date(item: Dict[str, Any]) -> arrow.Arrow:
     if date := item.get("published", item.get("updated")):
-        try:
+        with suppress(Exception):
             date = parsedate_to_datetime(date)
-        except TypeError:
-            pass
         return arrow.get(date)
     return arrow.now()

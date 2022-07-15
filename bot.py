@@ -5,8 +5,7 @@ nonebot.init()
 app = nonebot.get_asgi()
 driver = nonebot.get_driver()
 driver.register_adapter(OneBotV11Adapter)
-config = driver.config
 nonebot.load_plugins("src/plugins")
 
 if __name__ == "__main__":
-    nonebot.run(app="bot:app")
+    nonebot.run(app="__mp_main__:app")

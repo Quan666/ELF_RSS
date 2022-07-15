@@ -103,7 +103,7 @@ async def handle_picture(
 
 
 # 处理图片、视频
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str:
     if item.get("image_content"):
         return await handle_img_combo_with_content(
@@ -138,7 +138,7 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str
 
 
 # 获取动图为视频
-@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))  # type: ignore
+@retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
 async def get_ugoira_video(ugoira_id: str) -> Any:
     async with aiohttp.ClientSession() as session:
         data = {"id": ugoira_id, "type": "ugoira"}

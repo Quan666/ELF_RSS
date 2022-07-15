@@ -2,9 +2,9 @@ import re
 
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import (
-    Event,
     GroupMessageEvent,
     Message,
+    MessageEvent,
     PrivateMessageEvent,
 )
 from nonebot.params import CommandArg
@@ -22,7 +22,9 @@ upload_group_file = on_command(
 
 
 @upload_group_file.handle()
-async def handle_first_receive(event: Event, message: Message = CommandArg()) -> None:
+async def handle_first_receive(
+    event: MessageEvent, message: Message = CommandArg()
+) -> None:
     if isinstance(event, PrivateMessageEvent):
         await upload_group_file.finish("请在群聊中使用该命令")
     elif isinstance(event, GroupMessageEvent):

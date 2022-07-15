@@ -2,14 +2,13 @@ from typing import Any, Dict
 
 import aiohttp
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
+from nonebot.adapters.onebot.v11 import Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.matcher import Matcher
 from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
 from nonebot.typing import T_State
-from nonebot_plugin_guild_patch import GuildMessageEvent
 from yarl import URL
 
 from ..config import config
@@ -31,7 +30,7 @@ RSSHUB_ADD = on_command(
 @RSSHUB_ADD.handle()
 async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
     if args.extract_plain_text():
-        matcher.set_arg("router", args)
+        matcher.set_arg("route", args)
 
 
 @RSSHUB_ADD.got("name", prompt="请输入要订阅的订阅名")
@@ -40,9 +39,9 @@ async def handle_feed_name(name: str = ArgPlainText("name")) -> None:
         await RSSHUB_ADD.reject(f"已存在名为 {name} 的订阅，请重新输入")
 
 
-@RSSHUB_ADD.got("router", prompt="请输入要订阅的 RSSHub 路由名")
+@RSSHUB_ADD.got("route", prompt="请输入要订阅的 RSSHub 路由名")
 async def handle_rsshub_routes(
-    state: T_State, route: str = ArgPlainText("router")
+    state: T_State, route: str = ArgPlainText("route")
 ) -> None:
     rsshub_url = URL(config.rsshub)
     # 对本机部署的 RSSHub 不使用代理
@@ -66,14 +65,12 @@ async def handle_rsshub_routes(
     if route not in rsshub_routes["data"]:
         await RSSHUB_ADD.reject("没有这个路由，请重新输入")
     else:
-        route_list = rsshub_routes["data"][route]["routes"]
-        state["route_list"] = route_list
+        route_list = state["route_list"] = rsshub_routes["data"][route]["routes"]
         if len(route_list) > 1:
             await RSSHUB_ADD.send(
                 "请输入序号来选择要订阅的 RSSHub 路由：\n"
                 + "\n".join(
-                    f"{index + 1}. {__route}"
-                    for index, __route in enumerate(route_list)
+                    f"{index + 1}. {_route}" for index, _route in enumerate(route_list)
                 )
             )
         else:
@@ -99,7 +96,7 @@ async def handle_route_index(
 
 @RSSHUB_ADD.got("route_args")
 async def handle_route_args(
-    event: Event,
+    event: MessageEvent,
     state: T_State,
     name: str = ArgPlainText("name"),
     route_index: str = ArgPlainText("route_index"),
@@ -111,16 +108,4 @@ async def handle_route_args(
         if len(i.strip("#")) > 0:
             feed_url += f"/{i}"
 
-    user_id = event.get_user_id()
-    group_id = None
-    guild_channel_id = None
-
-    if isinstance(event, GroupMessageEvent):
-        group_id = event.group_id
-    elif isinstance(event, GuildMessageEvent):
-        guild_channel_id = f"{str(event.guild_id)}@{str(event.channel_id)}"
-
-    rss = Rss()
-    rss.name = name
-    rss.url = feed_url
-    await add_feed(rss, user_id, group_id, guild_channel_id)
+    await add_feed(name, feed_url, event)

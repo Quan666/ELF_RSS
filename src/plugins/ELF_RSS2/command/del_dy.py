@@ -1,5 +1,5 @@
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.matcher import Matcher
 from nonebot.params import ArgPlainText, CommandArg
@@ -28,7 +28,7 @@ async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -
 
 @RSS_DELETE.got("RSS_DELETE", prompt="输入要删除的订阅名")
 async def handle_rss_delete(
-    event: Event, rss_name: str = ArgPlainText("RSS_DELETE")
+    event: MessageEvent, rss_name: str = ArgPlainText("RSS_DELETE")
 ) -> None:
     group_id = None
     guild_channel_id = None

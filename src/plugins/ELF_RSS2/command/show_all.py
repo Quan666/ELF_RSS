@@ -1,7 +1,7 @@
 import re
 
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Event, GroupMessageEvent, Message
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
@@ -22,7 +22,9 @@ RSS_SHOW_ALL = on_command(
 
 
 @RSS_SHOW_ALL.handle()
-async def handle_rss_show_all(event: Event, args: Message = CommandArg()) -> None:
+async def handle_rss_show_all(
+    event: MessageEvent, args: Message = CommandArg()
+) -> None:
     search_keyword = args.extract_plain_text().strip()
 
     group_id = None
