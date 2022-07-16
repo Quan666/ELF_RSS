@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Any, Dict, Tuple
 
 import aiohttp
@@ -30,36 +29,36 @@ HEADERS = {
 
 # 抓取 feed，读取缓存，检查更新，对更新进行处理
 async def start(rss: Rss) -> None:
-    new_rss, cached = await get_rss(rss)
+    new_rss, cached = await fetch_rss(rss)
+    # 检查是否存在rss记录
+    _file = DATA_PATH / f"{Rss.handle_name(rss.name)}.json"
+    first_time_fetch = not _file.exists()
     if cached:
         logger.info(f"{rss.name} 没有新信息")
         return
     if not new_rss or not new_rss.get("feed"):
         rss.error_count += 1
         logger.warning(f"{rss.name} 抓取失败！")
-        if rss.error_count >= 100:
+        if first_time_fetch or rss.error_count >= 100:
             await auto_stop_and_notify_all(rss)
         return
     if new_rss.get("feed") and rss.error_count > 0:
         rss.error_count = 0
-    # 检查是否存在rss记录
-    _file = DATA_PATH / f"{Rss.handle_name(rss.name)}.json"
-    if not Path.exists(_file):
-        db = TinyDB(
+    if first_time_fetch:
+        with TinyDB(
             _file,
             storage=CachingMiddleware(JSONStorage),  # type: ignore
             encoding="utf-8",
             sort_keys=True,
             indent=4,
             ensure_ascii=False,
-        )
-        entries = new_rss["entries"]
-        result = []
-        for i in entries:
-            i["hash"] = dict_hash(i)
-            result.append(cache_filter(i))
-        db.insert_multiple(result)
-        db.close()
+        ) as db:
+            entries = new_rss["entries"]
+            result = []
+            for i in entries:
+                i["hash"] = dict_hash(i)
+                result.append(cache_filter(i))
+            db.insert_multiple(result)
         logger.info(f"{rss.name} 第一次抓取成功！")
         return
 
@@ -72,15 +71,20 @@ async def auto_stop_and_notify_all(rss: Rss) -> None:
     rss.upsert()
     tr.delete_job(rss)
     cookies_str = "及 cookies " if rss.cookies else ""
+    msg = (
+        f"{rss.name}[{rss.get_url()}]已经连续抓取失败超过 100 次！已自动停止更新！请检查订阅地址{cookies_str}！"
+        if rss.error_count >= 100
+        else f"{rss.name}[{rss.get_url()}]第一次抓取失败！已自动停止更新！请检查订阅地址或代理设置{cookies_str}！"
+    )
     await send_msg(
         rss=rss,
-        msg=f"{rss.name}[{rss.get_url()}]已经连续抓取失败超过 100 次！已自动停止更新！请检查订阅地址{cookies_str}！",
+        msg=msg,
         item={},
     )
 
 
 # 获取 RSS 并解析为 json
-async def get_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
+async def fetch_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
     rss_url = rss.get_url()
     # 对本机部署的 RSSHub 不使用代理
     local_host = [

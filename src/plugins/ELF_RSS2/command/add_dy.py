@@ -77,5 +77,5 @@ async def add_feed(
         else None
     )
     rss.add_user_or_group_or_channel(str(user), str(group), guild_channel)
-    await tr.add_job(rss)
     await RSS_ADD.send(f"👏 已成功添加订阅 {name} ！")
+    await tr.add_job(rss)
