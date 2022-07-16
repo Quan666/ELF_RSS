@@ -1,7 +1,12 @@
 import re
 
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
+from nonebot.adapters.onebot.v11 import (
+    GroupMessageEvent,
+    Message,
+    MessageEvent,
+    PrivateMessageEvent,
+)
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.matcher import Matcher
 from nonebot.params import ArgPlainText, CommandArg
@@ -50,8 +55,7 @@ async def handle_rss_add(
         return
 
     if _ := Rss.get_one_by_name(name):
-        await RSS_ADD.send(f"已存在订阅名为 {name} 的订阅")
-        await RSS_ADD.reject(prompt)
+        await RSS_ADD.finish(f"已存在订阅名为 {name} 的订阅")
         return
 
     await add_feed(name, url, event)
@@ -65,17 +69,13 @@ async def add_feed(
     rss = Rss()
     rss.name = name
     rss.url = url
-    if isinstance(event, GuildMessageEvent):
-        rss.add_user_or_group(
-            guild_channel=f"{str(event.guild_id)}@{str(event.channel_id)}"
-        )
-        await tr.add_job(rss)
-        await RSS_ADD.finish("👏 订阅到当前子频道成功！")
-    elif isinstance(event, GroupMessageEvent):
-        rss.add_user_or_group(group=str(event.group_id))
-        await tr.add_job(rss)
-        await RSS_ADD.finish("👏 订阅到当前群组成功！")
-    else:
-        rss.add_user_or_group(user=event.get_user_id())
-        await tr.add_job(rss)
-        await RSS_ADD.finish("👏 订阅到当前账号成功！")
+    user = event.user_id if isinstance(event, PrivateMessageEvent) else None
+    group = event.group_id if isinstance(event, GroupMessageEvent) else None
+    guild_channel = (
+        f"{str(event.guild_id)}@{str(event.channel_id)}"
+        if isinstance(event, GuildMessageEvent)
+        else None
+    )
+    rss.add_user_or_group_or_channel(str(user), str(group), guild_channel)
+    await tr.add_job(rss)
+    await RSS_ADD.send(f"👏 已成功添加订阅 {name} ！")
