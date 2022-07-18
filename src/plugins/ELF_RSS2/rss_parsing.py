@@ -39,7 +39,15 @@ async def start(rss: Rss) -> None:
     if not new_rss or not new_rss.get("feed"):
         rss.error_count += 1
         logger.warning(f"{rss.name} 抓取失败！")
-        if first_time_fetch or rss.error_count >= 100:
+        if first_time_fetch:
+            # 第一次抓取失败，如果配置了代理，则自动使用代理抓取
+            if config.rss_proxy and not rss.img_proxy:
+                rss.img_proxy = True
+                logger.info(f"{rss.name} 第一次抓取失败，自动使用代理抓取")
+                await start(rss)
+            else:
+                await auto_stop_and_notify_all(rss)
+        if rss.error_count >= 100:
             await auto_stop_and_notify_all(rss)
         return
     if new_rss.get("feed") and rss.error_count > 0:
