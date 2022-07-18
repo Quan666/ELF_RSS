@@ -1,7 +1,7 @@
 aiohttp[speedups]~=3.8.1
 arrow~=1.2.2
 bbcode~=1.1.0
-emoji~=1.7.0
+emoji~=2.0.0
 feedparser~=6.0.10
 deep-translator~=1.8.3
 ImageHash~=4.2.1
