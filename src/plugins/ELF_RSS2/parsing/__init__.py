@@ -145,7 +145,7 @@ async def handle_title(
 
     # 如果开启了只推送标题，跳过下面判断标题与正文相似度的处理
     if rss.only_title:
-        return emoji.emojize(res, use_aliases=True)
+        return emoji.emojize(res, language="alias")
 
     # 判断标题与正文相似度，避免标题正文一样，或者是标题为正文前N字等情况
     try:
@@ -161,7 +161,7 @@ async def handle_title(
     except Exception as e:
         logger.warning(f"{rss.name} 没有正文内容！{e}")
 
-    return emoji.emojize(res, use_aliases=True)
+    return emoji.emojize(res, language="alias")
 
 
 # 处理正文 判断是否是仅推送标题 、是否仅推送图片
@@ -214,7 +214,7 @@ async def handle_summary(
         while "\n\n\n" in tmp:
             tmp = tmp.replace("\n\n\n", "\n\n")
         tmp = tmp.strip()
-    return emoji.emojize(tmp, use_aliases=True)
+    return emoji.emojize(tmp, language="alias")
 
 
 # 处理正文 翻译

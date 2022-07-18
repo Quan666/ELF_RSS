@@ -56,7 +56,7 @@ async def handle_rsshub_routes(
 
     global rsshub_routes
     if not rsshub_routes:
-        async with aiohttp.ClientSession(raise_for_status=True) as session:
+        async with aiohttp.ClientSession() as session:
             resp = await session.get(rsshub_url.with_path("api/routes"), proxy=proxy)
             if resp.status != 200:
                 await RSSHUB_ADD.finish("获取路由数据失败，请检查 RSSHub 的地址配置及网络连接")

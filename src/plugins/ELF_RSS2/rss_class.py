@@ -1,6 +1,5 @@
 import copy
 import re
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from nonebot.log import logger
@@ -53,16 +52,17 @@ class Rss:
     @staticmethod
     def read_rss() -> List["Rss"]:
         # 如果文件不存在
-        if not Path.exists(JSON_PATH):
+        if not JSON_PATH.exists():
             return []
-        db = TinyDB(
+        with TinyDB(
             JSON_PATH,
             encoding="utf-8",
             sort_keys=True,
             indent=4,
             ensure_ascii=False,
-        )
-        return [Rss(rss) for rss in db.all()]
+        ) as db:
+            rss_list = [Rss(rss) for rss in db.all()]
+        return rss_list
 
     # 过滤订阅名中的特殊字符
     @staticmethod
@@ -79,7 +79,7 @@ class Rss:
         return next((feed for feed in feed_list if feed.name == name), None)
 
     # 添加订阅
-    def add_user_or_group(
+    def add_user_or_group_or_channel(
         self,
         user: Optional[str] = None,
         group: Optional[str] = None,
@@ -104,14 +104,14 @@ class Rss:
         if group not in self.group_id:
             return False
         self.group_id.remove(group)
-        db = TinyDB(
+        with TinyDB(
             JSON_PATH,
             encoding="utf-8",
             sort_keys=True,
             indent=4,
             ensure_ascii=False,
-        )
-        db.update(tinydb_set("group_id", self.group_id), Query().name == self.name)  # type: ignore
+        ) as db:
+            db.update(tinydb_set("group_id", self.group_id), Query().name == self.name)  # type: ignore
         return True
 
     # 删除订阅 子频道
@@ -119,40 +119,39 @@ class Rss:
         if guild_channel not in self.guild_channel_id:
             return False
         self.guild_channel_id.remove(guild_channel)
-        db = TinyDB(
+        with TinyDB(
             JSON_PATH,
             encoding="utf-8",
             sort_keys=True,
             indent=4,
             ensure_ascii=False,
-        )
-        db.update(
-            tinydb_set("guild_channel_id", self.guild_channel_id), Query().name == self.name  # type: ignore
-        )
+        ) as db:
+            db.update(
+                tinydb_set("guild_channel_id", self.guild_channel_id), Query().name == self.name  # type: ignore
+            )
         return True
 
     # 删除整个订阅
     def delete_rss(self) -> None:
-        db = TinyDB(
+        with TinyDB(
             JSON_PATH,
             encoding="utf-8",
             sort_keys=True,
             indent=4,
             ensure_ascii=False,
-        )
-        db.remove(Query().name == self.name)
+        ) as db:
+            db.remove(Query().name == self.name)
         self.delete_file()
 
     # 重命名订阅缓存 json 文件
     def rename_file(self, target: str) -> None:
-        this_file_path = DATA_PATH / f"{Rss.handle_name(self.name)}.json"
-        if Path.exists(this_file_path):
-            this_file_path.rename(target)
+        source = DATA_PATH / f"{Rss.handle_name(self.name)}.json"
+        if source.exists():
+            source.rename(target)
 
     # 删除订阅缓存 json 文件
     def delete_file(self) -> None:
-        this_file_path = DATA_PATH / f"{Rss.handle_name(self.name)}.json"
-        Path.unlink(this_file_path, missing_ok=True)
+        (DATA_PATH / f"{Rss.handle_name(self.name)}.json").unlink(missing_ok=True)
 
     # 隐私考虑，不展示除当前群组或频道外的群组、频道和QQ
     def hide_some_infos(
@@ -197,31 +196,31 @@ class Rss:
                     key, value = line.strip().split("=", 1)
                     cookies[key] = value
             self.cookies = cookies
-            db = TinyDB(
+            with TinyDB(
                 JSON_PATH,
                 encoding="utf-8",
                 sort_keys=True,
                 indent=4,
                 ensure_ascii=False,
-            )
-            db.update(tinydb_set("cookies", cookies), Query().name == self.name)  # type: ignore
+            ) as db:
+                db.update(tinydb_set("cookies", cookies), Query().name == self.name)  # type: ignore
             return True
         except Exception:
             logger.exception(f"{self.name} 的 Cookies 设置时出错！")
             return False
 
     def upsert(self, old_name: Optional[str] = None) -> None:
-        db = TinyDB(
+        with TinyDB(
             JSON_PATH,
             encoding="utf-8",
             sort_keys=True,
             indent=4,
             ensure_ascii=False,
-        )
-        if old_name:
-            db.update(self.__dict__, Query().name == old_name)
-        else:
-            db.upsert(self.__dict__, Query().name == str(self.name))
+        ) as db:
+            if old_name:
+                db.update(self.__dict__, Query().name == old_name)
+            else:
+                db.upsert(self.__dict__, Query().name == str(self.name))
 
     def __str__(self) -> str:
         mode_name = {"link": "链接", "title": "标题", "image": "图片"}
