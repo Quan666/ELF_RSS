@@ -21,17 +21,10 @@ RSS_SHOW = on_command(
 
 
 def handle_rss_list(rss_list: List[Rss]) -> str:
-    rss_info_list = [f"{i.name}：{i.url}" for i in rss_list]
-    rss_info_list.sort()
-    msg_str = f"当前共有 {len(rss_info_list)} 条订阅：\n\n" + "\n\n".join(rss_info_list)
-    if rss_stopped_info_list := [f"{i.name}：{i.url}" for i in rss_list if i.stop]:
-        rss_stopped_info_list.sort()
-        msg_str += (
-            "\n----------------------\n"
-            f"其中共有 {len(rss_stopped_info_list)} 条订阅已停止更新：\n\n"
-            + "\n\n".join(rss_stopped_info_list)
-        )
-    return msg_str
+    rss_info_list = [
+        f"（已停止）{i.name}：{i.url}" if i.stop else f"{i.name}：{i.url}" for i in rss_list
+    ]
+    return "\n\n".join(rss_info_list)
 
 
 # 不带订阅名称默认展示当前群组或账号的订阅，带订阅名称就显示该订阅的
