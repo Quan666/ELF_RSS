@@ -4,13 +4,12 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 from nonebot.log import logger
 
+from ..config import config
 from ..parsing.utils import get_summary
-
+from ..pikpak_offline import pikpak_offline_download
 from ..qbittorrent_download import start_down
 from ..rss_class import Rss
-from ..pikpak_offline import pikpak_offline_download
 from ..utils import convert_size, get_torrent_b16_hash, send_msg
-from ..config import config
 
 
 async def down_torrent(
@@ -38,7 +37,7 @@ async def down_torrent(
 
 async def pikpak_offline(
     rss: Rss, item: Dict[str, Any], proxy: Optional[str]
-) -> List[str]:
+) -> List[Dict[str, Any]]:
     """
     创建pikpak 离线下载任务
     下载到 config.pikpak_download_path/rss.name or find rss.pikpak_path_rex
@@ -68,14 +67,14 @@ async def pikpak_offline(
             try:
                 path = f"{config.pikpak_download_path}/{rss.name}"
                 summary = get_summary(item)
-                if rss.pikpak_path_key:
-                    result = re.findall(rss.pikpak_path_key, summary)
-                    if result:
-                        path = (
-                            config.pikpak_download_path
-                            + "/"
-                            + re.sub(r'[?*:"<>\\/|]', "", result[0])
-                        )
+                if rss.pikpak_path_key and (
+                    result := re.findall(rss.pikpak_path_key, summary)
+                ):
+                    path = (
+                        config.pikpak_download_path
+                        + "/"
+                        + re.sub(r'[?*:"<>\\/|]', "_", result[0])
+                    )
                 logger.info(f"Offline download {url} to {path}")
                 info = await pikpak_offline_download(url=url, path=path)
                 download_infos.append(
@@ -86,7 +85,7 @@ async def pikpak_offline(
                     }
                 )
             except Exception as e:
-                msg = f"{rss.name} PikPak离线下载失败: {e}"
+                msg = f"{rss.name} PikPak 离线下载失败: {e}"
                 logger.error(msg)
                 await send_msg(msg=msg, user_ids=rss.user_id, group_ids=rss.group_id)
     return download_infos

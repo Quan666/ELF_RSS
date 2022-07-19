@@ -1,11 +1,12 @@
-import math
 import base64
-import nonebot
+import math
 from typing import Any, Dict, List, Mapping, Optional
 
+import nonebot
 from nonebot.adapters.onebot.v11.bot import Bot
-from .config import config
 from nonebot.log import logger
+
+from .config import config
 
 
 def get_http_caching_headers(
@@ -70,7 +71,7 @@ def get_torrent_b16_hash(content: bytes) -> str:
     return str(b16_hash, "utf-8")
 
 
-async def send_message_to_admin(message: str):
+async def send_message_to_admin(message: str) -> None:
     bot = nonebot.get_bot()
     await bot.send_private_msg(user_id=str(list(config.superusers)[0]), message=message)
 
@@ -89,15 +90,15 @@ async def send_msg(
     """
     bot = nonebot.get_bot()
     msg_id = []
-    group_list = await get_bot_group_list(bot)  # type: ignore
     if group_ids:
+        group_list = await get_bot_group_list(bot)  # type: ignore
         for group_id in group_ids:
             if int(group_id) not in group_list:
                 logger.error(f"Bot[{bot.self_id}]未加入群组[{group_id}]")
                 continue
             msg_id.append(await bot.send_group_msg(group_id=group_id, message=msg))
-    user_list = await get_bot_friend_list(bot)  # type: ignore
     if user_ids:
+        user_list = await get_bot_friend_list(bot)  # type: ignore
         for user_id in user_ids:
             if int(user_id) not in user_list:
                 logger.error(f"Bot[{bot.self_id}]未加入好友[{user_id}]")

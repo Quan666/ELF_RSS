@@ -39,9 +39,9 @@ class ELFConfig(BaseConfig):
 
     pikpak_username: Optional[str] = None  # pikpak 用户名
     pikpak_password: Optional[str] = None  # pikpak 密码
-    pikpak_download_path: Optional[
-        str
-    ] = ""  # pikpak 离线保存的目录, 默认是根目录，示例: ELF_RSS/Downloads ,目录不存在会自动创建, 不能/结尾
+    pikpak_download_path: str = (
+        ""  # pikpak 离线保存的目录, 默认是根目录，示例: ELF_RSS/Downloads ,目录不存在会自动创建, 不能/结尾
+    )
 
 
 config = ELFConfig(**get_driver().config.dict())
