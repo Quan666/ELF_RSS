@@ -309,7 +309,7 @@ async def handle_torrent(
             )
             if result:
                 for r in result:
-                    res += f"\n\n{r.name}\n{r.file_size}"
+                    res += f"\n\n{r.get('name')}\n{r.get('file_size')}"
         except Exception:
             logger.exception("pikpak_offline 时出错")
     return res

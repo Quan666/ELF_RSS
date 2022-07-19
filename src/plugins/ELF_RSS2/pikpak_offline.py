@@ -19,13 +19,14 @@ async def refresh_access_token():
 
     """
     try:
-        if not pikpak_client.access_token:
-            await pikpak_client.login()
-        else:
-            await pikpak_client.refresh_access_token()
+        await pikpak_client.refresh_access_token()
     except (PikpakException, PikpakAccessTokenExpireException) as e:
+        logger.warning(f"refresh_access_token {e}")
         await pikpak_client.login()
 
+async def login():
+    if not pikpak_client.access_token:
+        await pikpak_client.login()
 
 async def path_to_id(path: str, create: bool = False) -> List[Dict[str, Any]]:
     """
@@ -87,17 +88,19 @@ async def offline_download(
     当有path时, 表示下载到指定的文件夹, 否则下载到根目录
     如果存在 parent_id, 以 parent_id 为准
     """
-
-    if not parent_id:
-        path_ids = await path_to_id(path, create=True)
-        if path_ids and len(path_ids) > 0:
-            parent_id = path_ids[-1].get("id")
+    await login()
     try:
+        if not parent_id:
+            path_ids = await path_to_id(path, create=True)
+            if path_ids and len(path_ids) > 0:
+                parent_id = path_ids[-1].get("id")
         return await pikpak_client.offline_download(url, parent_id=parent_id, name=name)
     except (PikpakAccessTokenExpireException, PikpakException) as e:
         logger.warning(e)
         await refresh_access_token()
-        return await offline_download(url)
+        return await offline_download(
+            url=url, path=path, parent_id=parent_id, name=name
+        )
     except Exception as e:
         msg = f"PikPak Offline Download Error: {e}"
         logger.error(msg)
