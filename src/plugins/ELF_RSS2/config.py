@@ -37,6 +37,12 @@ class ELFConfig(BaseConfig):
     down_status_msg_group: Optional[List[int]] = None
     down_status_msg_date: int = 10
 
+    pikpak_username: Optional[str] = None  # pikpak 用户名
+    pikpak_password: Optional[str] = None  # pikpak 密码
+    pikpak_download_path: Optional[
+        str
+    ] = ""  # pikpak 离线保存的目录, 默认是根目录，示例: ELF_RSS/Downloads ,目录不存在会自动创建, 不能/结尾
+
 
 config = ELFConfig(**get_driver().config.dict())
 logger.debug(f"RSS Config loaded: {config!r}")

@@ -66,6 +66,8 @@ attribute_dict = {
     "mode": "duplicate_filter_mode",
     "img_num": "max_image_number",
     "stop": "stop",
+    "pikpak": "pikpak_offline",
+    "ppk": "pikpak_path_key",
 }
 
 
@@ -103,12 +105,13 @@ def handle_change_list(
         "upgroup",
         "downopen",
         "stop",
+        "pikpak",
     }:
         value_to_change = bool(int(value_to_change))  # type:ignore
         if key_to_change == "stop" and not value_to_change and rss.error_count > 0:
             rss.error_count = 0
     elif (
-        key_to_change in {"downkey", "wkey", "blackkey", "bkey"}
+        key_to_change in {"downkey", "wkey", "blackkey", "bkey", "ppk"}
         and len(value_to_change.strip()) == 0
     ):
         value_to_change = None  # type:ignore
@@ -140,10 +143,12 @@ prompt = """\
     去重模式(-mode)
     图片数量限制(-img_num): 只发送限定数量的图片，防止刷屏
     正文移除内容(-rm_list): 从正文中移除指定内容，支持正则
-    停止更新-stop"
+    停止更新(-stop): 停止更新订阅
+    PikPak离线(-pikpak): 开启PikPak离线下载
+    PikPak离线路径匹配(-ppk): 匹配离线下载的文件夹,设置该值后生效
 注：
     1. 仅含有图片不同于仅图片，除了图片还会发送正文中的其他文本信息
-    2. proxy/tl/ot/op/ohp/downopen/upgroup/stop 值为 1/0
+    2. proxy/tl/ot/op/ohp/downopen/upgroup/stop/pikpak 值为 1/0
     3. 去重模式分为按链接(link)、标题(title)、图片(image)判断，其中 image 模式生效对象限定为只带 1 张图片的消息。如果属性中带有 or 说明判断逻辑是任一匹配即去重，默认为全匹配
     4. 白名单关键词支持正则表达式，匹配时推送消息及下载，设为空(wkey=)时不生效
     5. 黑名单关键词同白名单相似，匹配时不推送，两者可以一起用
