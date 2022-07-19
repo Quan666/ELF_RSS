@@ -2,7 +2,7 @@ import difflib
 import re
 import sqlite3
 from email.utils import parsedate_to_datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import arrow
 import emoji
@@ -19,7 +19,7 @@ from .cache_manage import (
     write_item,
 )
 from .check_update import check_update
-from .download_torrent import down_torrent
+from .download_torrent import down_torrent, pikpak_offline
 from .handle_html_tag import handle_bbcode, handle_html_tag
 from .handle_images import handle_img
 from .handle_translation import handle_translation
@@ -287,7 +287,7 @@ async def handle_torrent(
     tmp: str,
     tmp_state: Dict[str, Any],
 ) -> str:
-    res = ""
+    res: List[str] = []
     if not rss.is_open_upload_group:
         rss.group_id = []
     if rss.down_torrent:
@@ -297,12 +297,26 @@ async def handle_torrent(
                 rss=rss, item=item, proxy=get_proxy(rss.img_proxy)
             )
             if hash_list and hash_list[0] is not None:
-                res = "\n磁力：\n" + "\n".join(
-                    [f"magnet:?xt=urn:btih:{h}" for h in hash_list]
-                )
+                res.append("\n磁力：")
+                res.extend([f"magnet:?xt=urn:btih:{h}" for h in hash_list])
         except Exception:
             logger.exception("下载种子时出错")
-    return res
+    if rss.pikpak_offline:
+        try:
+            result = await pikpak_offline(
+                rss=rss, item=item, proxy=get_proxy(rss.img_proxy)
+            )
+            if result:
+                res.append("\nPikPak 离线成功")
+                res.extend(
+                    [
+                        f"{r.get('name')}\n{r.get('file_size')} - {r.get('path')}"
+                        for r in result
+                    ]
+                )
+        except Exception:
+            logger.exception("PikPak 离线时出错")
+    return "\n".join(res)
 
 
 # 处理日期

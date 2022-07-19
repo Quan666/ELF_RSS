@@ -35,6 +35,10 @@ class Rss:
         self.last_modified: Optional[str] = None  # 上次更新时间
         self.error_count: int = 0  # 连续抓取失败的次数，超过 100 就停止更新
         self.stop: bool = False  # 停止更新
+        self.pikpak_offline: bool = False  # 是否PikPak离线
+        self.pikpak_path_key: str = (
+            ""  # PikPak 离线下载路径匹配正则表达式，用于自动归档文件 例如 r"(?:\[.*?\][\s\S])([\s\S]*)[\s\S]-"
+        )
         if data:
             self.__dict__.update(data)
 
@@ -253,5 +257,7 @@ class Rss:
             f"正文待移除内容：{self.content_to_remove}" if self.content_to_remove else "",
             f"连续抓取失败的次数：{self.error_count}" if self.error_count else "",
             f"停止更新：{self.stop}" if self.stop else "",
+            f"PikPak离线: {self.pikpak_offline}" if self.pikpak_offline else "",
+            f"PikPak离线路径匹配: {self.pikpak_path_key}" if self.pikpak_path_key else "",
         ]
         return "\n".join([i for i in ret_list if i != ""])
