@@ -69,13 +69,13 @@ async def add_feed(
     rss = Rss()
     rss.name = name
     rss.url = url
-    user = event.user_id if isinstance(event, PrivateMessageEvent) else None
-    group = event.group_id if isinstance(event, GroupMessageEvent) else None
+    user = str(event.user_id) if isinstance(event, PrivateMessageEvent) else None
+    group = str(event.group_id) if isinstance(event, GroupMessageEvent) else None
     guild_channel = (
         f"{str(event.guild_id)}@{str(event.channel_id)}"
         if isinstance(event, GuildMessageEvent)
         else None
     )
-    rss.add_user_or_group_or_channel(str(user), str(group), guild_channel)
+    rss.add_user_or_group_or_channel(user, group, guild_channel)
     await RSS_ADD.send(f"👏 已成功添加订阅 {name} ！")
     await tr.add_job(rss)
