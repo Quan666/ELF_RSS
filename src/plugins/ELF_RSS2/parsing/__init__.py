@@ -19,7 +19,7 @@ from .cache_manage import (
     write_item,
 )
 from .check_update import check_update
-from .download_torrent import down_torrent
+from .download_torrent import down_torrent, pikpak_offline
 from .handle_html_tag import handle_bbcode, handle_html_tag
 from .handle_images import handle_img
 from .handle_translation import handle_translation
@@ -302,6 +302,17 @@ async def handle_torrent(
                 )
         except Exception:
             logger.exception("下载种子时出错")
+    if rss.pikpak_offline:
+        try:
+            result = await pikpak_offline(
+                rss=rss, item=item, proxy=get_proxy(rss.img_proxy)
+            )
+            if result:
+                res += "\n\nPikPak 离线成功"
+                for r in result:
+                    res += f"\n{r.get('name')}\n{r.get('file_size')} - {r.get('path')}"
+        except Exception:
+            logger.exception("pikpak_offline 时出错")
     return res
 
 
