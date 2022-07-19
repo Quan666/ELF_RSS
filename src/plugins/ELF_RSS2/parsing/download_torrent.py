@@ -66,6 +66,7 @@ async def pikpak_offline(
                         )
                         continue
             try:
+                path = f"{config.pikpak_download_path}/{rss.name}"
                 summary = get_summary(item)
                 if rss.pikpak_path_key:
                     result = re.findall(rss.pikpak_path_key, summary)
@@ -73,8 +74,6 @@ async def pikpak_offline(
                         path = config.pikpak_download_path + re.sub(
                             r'[?*:"<>\\/|]', "", result[0]
                         )
-                else:
-                    path = f"{config.pikpak_download_path}/{rss.name}"
                 logger.info(f"Offline download {url} to {path}")
                 info = await pikpak_offline_download(url=url, path=path)
                 download_infos.append(

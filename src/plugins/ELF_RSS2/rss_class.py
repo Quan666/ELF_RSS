@@ -36,7 +36,9 @@ class Rss:
         self.error_count: int = 0  # 连续抓取失败的次数，超过 100 就停止更新
         self.stop: bool = False  # 停止更新
         self.pikpak_offline: bool = False  # 是否PikPak离线
-        self.pikpak_path_key: str = ""  # PikPak 离线下载路径匹配正则表达式，用于自动归档文件 例如 r"(?:\[NC-Raws\][\s\S])([\s\S]*)[\s\S]-"
+        self.pikpak_path_key: str = (
+            ""  # PikPak 离线下载路径匹配正则表达式，用于自动归档文件 例如 r"(?:\[.*?\][\s\S])([\s\S]*)[\s\S]-"
+        )
         if data:
             self.__dict__.update(data)
 

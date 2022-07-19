@@ -308,7 +308,7 @@ async def handle_torrent(
                 rss=rss, item=item, proxy=get_proxy(rss.img_proxy)
             )
             if result:
-                res += "\n\nPikPak 离线成功\n"
+                res += "\n\nPikPak 离线成功"
                 for r in result:
                     res += f"\n{r.get('name')}\n{r.get('file_size')} - {r.get('path')}"
         except Exception:
