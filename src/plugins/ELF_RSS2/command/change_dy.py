@@ -67,6 +67,7 @@ attribute_dict = {
     "img_num": "max_image_number",
     "stop": "stop",
     "pikpak": "pikpak_offline",
+    "ppk": "pikpak_path_key",
 }
 
 
@@ -110,7 +111,7 @@ def handle_change_list(
         if key_to_change == "stop" and not value_to_change and rss.error_count > 0:
             rss.error_count = 0
     elif (
-        key_to_change in {"downkey", "wkey", "blackkey", "bkey"}
+        key_to_change in {"downkey", "wkey", "blackkey", "bkey", "ppk"}
         and len(value_to_change.strip()) == 0
     ):
         value_to_change = None  # type:ignore
@@ -144,6 +145,7 @@ prompt = """\
     正文移除内容(-rm_list): 从正文中移除指定内容，支持正则
     停止更新(-stop): 停止更新订阅
     PikPak离线(-pikpak): 开启PikPak离线下载
+    PikPak离线路径匹配(-ppk): 匹配离线下载的文件夹,设置该值后生效
 注：
     1. 仅含有图片不同于仅图片，除了图片还会发送正文中的其他文本信息
     2. proxy/tl/ot/op/ohp/downopen/upgroup/stop/pikpak 值为 1/0

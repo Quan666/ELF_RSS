@@ -1,9 +1,8 @@
+import re
 from typing import Any, Dict, List
 from pikpakapi.async_api import PikPakApiAsync
 from pikpakapi.PikpakException import PikpakException, PikpakAccessTokenExpireException
 from nonebot.log import logger
-
-from .rss_class import Rss
 
 from .config import config
 
@@ -82,7 +81,7 @@ async def path_to_id(path: str, create: bool = False) -> List[Dict[str, Any]]:
     return path_ids
 
 
-async def offline_download(
+async def pikpak_offline_download(
     url: str, path: str = None, parent_id: str = None, name: str = None
 ) -> dict:
     """
@@ -100,19 +99,10 @@ async def offline_download(
     except (PikpakAccessTokenExpireException, PikpakException) as e:
         logger.warning(e)
         await refresh_access_token()
-        return await offline_download(
+        return await pikpak_offline_download(
             url=url, path=path, parent_id=parent_id, name=name
         )
     except Exception as e:
         msg = f"PikPak Offline Download Error: {e}"
         logger.error(msg)
         raise Exception(msg)
-
-
-async def pikpak_offline_download(rss: Rss, url: str) -> dict:
-    """
-    Offline download
-    下载到 config.pikpak_download_path/rss.name
-    """
-    logger.info(f"Offline download {url} to {config.pikpak_download_path}/{rss.name}")
-    return await offline_download(url, path=f"{config.pikpak_download_path}/{rss.name}")
