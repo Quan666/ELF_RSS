@@ -256,5 +256,6 @@ class Rss:
             f"连续抓取失败的次数：{self.error_count}" if self.error_count else "",
             f"停止更新：{self.stop}" if self.stop else "",
             f"PikPak离线: {self.pikpak_offline}" if self.pikpak_offline else "",
+            f"PikPak离线路径匹配: {self.pikpak_path_key}" if self.pikpak_path_key else "",
         ]
         return "\n".join([i for i in ret_list if i != ""])
