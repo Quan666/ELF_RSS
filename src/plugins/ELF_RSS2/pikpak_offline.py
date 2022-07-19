@@ -19,7 +19,10 @@ async def refresh_access_token():
 
     """
     try:
-        await pikpak_client.refresh_access_token()
+        if not pikpak_client.access_token:
+            await pikpak_client.login()
+        else:
+            await pikpak_client.refresh_access_token()
     except (PikpakException, PikpakAccessTokenExpireException) as e:
         await pikpak_client.login()
 
