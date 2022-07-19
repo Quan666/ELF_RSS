@@ -34,6 +34,7 @@ tenacity = "^8.0.1"
 tinydb = "^4.7.0"
 typing-extensions = "^4.3.0"
 yarl = "^1.7.2"
+pikpakapi = "^0.0.5"
 
 [tool.poetry.dev-dependencies]
 nb-cli = "^0.6.7"

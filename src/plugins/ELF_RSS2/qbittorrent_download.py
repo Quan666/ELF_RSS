@@ -14,7 +14,7 @@ from nonebot.log import logger
 from qbittorrent import Client
 
 from .config import config
-from .utils import convert_size, get_bot_group_list
+from .utils import convert_size, get_bot_group_list, get_torrent_b16_hash
 
 # 计划
 # 创建一个全局定时器用来检测种子下载情况
@@ -83,23 +83,6 @@ async def get_qb_client() -> Optional[Client]:
         await bot.send_private_msg(user_id=str(list(config.superusers)[0]), message=msg)
         return None
     return qb
-
-
-def get_torrent_b16_hash(content: bytes) -> str:
-    import magneturi
-
-    # mangetlink = magneturi.from_torrent_file(torrentname)
-    manget_link = magneturi.from_torrent_data(content)
-    # print(mangetlink)
-    ch = ""
-    n = 20
-    b32_hash = n * ch + manget_link[20:52]
-    # print(b32Hash)
-    b16_hash = base64.b16encode(base64.b32decode(b32_hash))
-    b16_hash = b16_hash.lower()
-    # print("40位info hash值：" + '\n' + b16Hash)
-    # print("磁力链：" + '\n' + "magnet:?xt=urn:btih:" + b16Hash)
-    return str(b16_hash, "utf-8")
 
 
 async def get_torrent_info_from_hash(

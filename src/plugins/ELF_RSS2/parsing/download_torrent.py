@@ -1,13 +1,21 @@
+import re
 from typing import Any, Dict, List, Optional
+
+import aiohttp
+from nonebot.log import logger
 
 from ..qbittorrent_download import start_down
 from ..rss_class import Rss
+from ..pikpak_offline import pikpak_offline_download
+from ..utils import convert_size, get_torrent_b16_hash, send_msg
 
 
-# 创建下载种子任务
 async def down_torrent(
     rss: Rss, item: Dict[str, Any], proxy: Optional[str]
 ) -> List[str]:
+    """
+    创建下载种子任务
+    """
     hash_list = []
     for tmp in item["links"]:
         if (
@@ -23,3 +31,44 @@ async def down_torrent(
                 )
             )
     return hash_list
+
+
+async def pikpak_offline(
+    rss: Rss, item: Dict[str, Any], proxy: Optional[str]
+) -> List[str]:
+    """
+    创建pikpak 离线下载任务
+    """
+    download_infos = []
+    for tmp in item["links"]:
+        if (
+            tmp["type"] == "application/x-bittorrent"
+            or tmp["href"].find(".torrent") > 0
+        ):
+            url = tmp["href"]
+            if not re.search(r"magnet:\?xt=urn:btih:", tmp["href"]):
+                async with aiohttp.ClientSession(
+                    timeout=aiohttp.ClientTimeout(total=100)
+                ) as session:
+                    try:
+                        resp = await session.get(tmp["href"], proxy=proxy)
+                        content = await resp.read()
+                        url = f"magnet:?xt=urn:btih:{get_torrent_b16_hash(content)}"
+                    except Exception as e:
+                        msg = f"{rss.name} 下载种子失败: {e}"
+                        logger.error(msg)
+                        send_msg(msg=msg, user_ids=rss.user_id, group_ids=rss.group_id)
+                        continue
+            try:
+                info = await pikpak_offline_download(rss=rss, url=url)
+                download_infos.append(
+                    {
+                        "name": info["task"]["name"],
+                        "file_size": convert_size(int(info["task"]["file_size"]))
+                    }
+                )
+            except Exception as e:
+                msg = f"{rss.name} PikPak离线下载失败: {e}"
+                logger.error(msg)
+                send_msg(msg=msg, user_ids=rss.user_id, group_ids=rss.group_id)
+    return download_infos

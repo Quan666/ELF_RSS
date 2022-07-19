@@ -35,6 +35,7 @@ class Rss:
         self.last_modified: Optional[str] = None  # 上次更新时间
         self.error_count: int = 0  # 连续抓取失败的次数，超过 100 就停止更新
         self.stop: bool = False  # 停止更新
+        self.pikpak_offline: bool = False  # 是否PikPak离线
         if data:
             self.__dict__.update(data)
 
@@ -253,5 +254,6 @@ class Rss:
             f"正文待移除内容：{self.content_to_remove}" if self.content_to_remove else "",
             f"连续抓取失败的次数：{self.error_count}" if self.error_count else "",
             f"停止更新：{self.stop}" if self.stop else "",
+            f"PikPak离线: {self.pikpak_offline}" if self.pikpak_offline else "",
         ]
         return "\n".join([i for i in ret_list if i != ""])
