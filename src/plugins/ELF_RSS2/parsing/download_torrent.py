@@ -57,14 +57,16 @@ async def pikpak_offline(
                     except Exception as e:
                         msg = f"{rss.name} 下载种子失败: {e}"
                         logger.error(msg)
-                        await send_msg(msg=msg, user_ids=rss.user_id, group_ids=rss.group_id)
+                        await send_msg(
+                            msg=msg, user_ids=rss.user_id, group_ids=rss.group_id
+                        )
                         continue
             try:
                 info = await pikpak_offline_download(rss=rss, url=url)
                 download_infos.append(
                     {
                         "name": info["task"]["name"],
-                        "file_size": convert_size(int(info["task"]["file_size"]))
+                        "file_size": convert_size(int(info["task"]["file_size"])),
                     }
                 )
             except Exception as e:

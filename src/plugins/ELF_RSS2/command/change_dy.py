@@ -104,7 +104,7 @@ def handle_change_list(
         "upgroup",
         "downopen",
         "stop",
-        "pikpak"
+        "pikpak",
     }:
         value_to_change = bool(int(value_to_change))  # type:ignore
         if key_to_change == "stop" and not value_to_change and rss.error_count > 0:

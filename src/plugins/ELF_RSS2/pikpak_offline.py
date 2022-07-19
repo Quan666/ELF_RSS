@@ -24,9 +24,11 @@ async def refresh_access_token():
         logger.warning(f"refresh_access_token {e}")
         await pikpak_client.login()
 
+
 async def login():
     if not pikpak_client.access_token:
         await pikpak_client.login()
+
 
 async def path_to_id(path: str, create: bool = False) -> List[Dict[str, Any]]:
     """
