@@ -1,3 +1,5 @@
+import asyncio
+from random import randint
 from typing import Any, Dict, Tuple
 
 import aiohttp
@@ -116,7 +118,6 @@ async def fetch_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
     async with aiohttp.ClientSession(
         cookies=cookies,
         headers=HEADERS,
-        raise_for_status=True,
     ) as session:
         try:
             resp = await session.get(rss_url, proxy=proxy)
@@ -125,6 +126,9 @@ async def fetch_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
                 rss.etag = http_caching_headers["ETag"]
                 rss.last_modified = http_caching_headers["Last-Modified"]
                 rss.upsert()
+            if resp.status == 429:
+                await asyncio.sleep(randint(1, 5))
+                return await fetch_rss(rss)
             if (
                 resp.status == 200 and int(resp.headers.get("Content-Length", "1")) == 0
             ) or resp.status == 304:
