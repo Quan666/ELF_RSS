@@ -2,7 +2,12 @@ import asyncio
 import re
 
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
+from nonebot.adapters.onebot.v11 import (
+    ActionFailed,
+    GroupMessageEvent,
+    Message,
+    MessageEvent,
+)
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
@@ -70,8 +75,15 @@ async def handle_rss_show_all(
         await RSS_SHOW_ALL.send(f"当前共有 {len(result)} 条订阅")
         result.sort(key=lambda x: x.get_url())
         await asyncio.sleep(0.5)
-        for parted_result in [result[i : i + 30] for i in range(0, len(result), 30)]:
-            msg_str = handle_rss_list(parted_result)
-            await RSS_SHOW_ALL.send(msg_str)
+        page_size = 30
+        while result:
+            current_page = result[:page_size]
+            msg_str = handle_rss_list(current_page)
+            try:
+                await RSS_SHOW_ALL.send(msg_str)
+            except ActionFailed:
+                page_size -= 5
+                continue
+            result = result[page_size:]
     else:
         await RSS_SHOW_ALL.finish("❌ 当前没有任何订阅！")
