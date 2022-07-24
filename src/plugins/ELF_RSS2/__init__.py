@@ -11,7 +11,7 @@ from . import my_trigger as tr
 from .config import DATA_PATH, config
 from .rss_class import Rss
 
-VERSION = "2.6.6"
+VERSION = "2.6.7"
 __plugin_meta__ = PluginMetadata(
     name="ELF_RSS",
     description="QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub",
