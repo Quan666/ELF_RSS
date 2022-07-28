@@ -108,4 +108,4 @@ async def handle_route_args(
         if len(i.strip("#")) > 0:
             feed_url += f"/{i}"
 
-    await add_feed(name, feed_url, event)
+    await add_feed(name, feed_url.lstrip("/"), event)

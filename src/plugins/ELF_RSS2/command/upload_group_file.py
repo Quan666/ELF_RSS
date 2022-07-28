@@ -2,6 +2,7 @@ import re
 
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import (
+    Bot,
     GroupMessageEvent,
     Message,
     MessageEvent,
@@ -23,7 +24,7 @@ upload_group_file = on_command(
 
 @upload_group_file.handle()
 async def handle_first_receive(
-    event: MessageEvent, message: Message = CommandArg()
+    bot: Bot, event: MessageEvent, message: Message = CommandArg()
 ) -> None:
     if isinstance(event, PrivateMessageEvent):
         await upload_group_file.finish("请在群聊中使用该命令")
@@ -37,6 +38,7 @@ async def handle_first_receive(
             await upload_group_file.finish("请输入种子链接")
             return
         await start_down(
+            bot=bot,
             url=target[0],
             group_ids=[str(event.group_id)],
             name="手动上传",

@@ -1,6 +1,6 @@
-import difflib
 import re
 import sqlite3
+from difflib import SequenceMatcher
 from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List
 
@@ -152,9 +152,7 @@ async def handle_title(
         summary_html = Pq(get_summary(item))
         if not config.blockquote:
             summary_html.remove("blockquote")
-        similarity = difflib.SequenceMatcher(
-            None, summary_html.text()[: len(title)], title
-        )
+        similarity = SequenceMatcher(None, summary_html.text()[: len(title)], title)
         # 标题正文相似度
         if similarity.ratio() > 0.6:
             res = ""

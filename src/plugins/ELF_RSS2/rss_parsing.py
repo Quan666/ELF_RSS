@@ -2,6 +2,8 @@ from typing import Any, Dict, Tuple
 
 import aiohttp
 import feedparser
+from nonebot import get_bot
+from nonebot.adapters.onebot.v11 import Bot
 from nonebot.log import logger
 from tinydb import TinyDB
 from tinydb.middlewares import CachingMiddleware
@@ -10,12 +12,18 @@ from yarl import URL
 
 from . import my_trigger as tr
 from .config import DATA_PATH, config
-from .parsing import get_proxy, send_msg
+from .parsing import get_proxy
 from .parsing.cache_manage import cache_filter
 from .parsing.check_update import dict_hash
 from .parsing.parsing_rss import ParsingRss
 from .rss_class import Rss
-from .utils import get_http_caching_headers
+from .utils import (
+    filter_valid_group_id_list,
+    filter_valid_guild_channel_id_list,
+    filter_valid_user_id_list,
+    get_http_caching_headers,
+    send_message_to_admin,
+)
 
 HEADERS = {
     "Accept": "application/xhtml+xml,application/xml,*/*",
@@ -29,6 +37,19 @@ HEADERS = {
 
 # 抓取 feed，读取缓存，检查更新，对更新进行处理
 async def start(rss: Rss) -> None:
+    bot: Bot = get_bot()  # type: ignore
+    # 先检查订阅者是否合法
+    if rss.user_id:
+        rss.user_id = await filter_valid_user_id_list(bot, rss.user_id)
+    if rss.group_id:
+        rss.group_id = await filter_valid_group_id_list(bot, rss.group_id)
+    if rss.guild_channel_id:
+        rss.guild_channel_id = await filter_valid_guild_channel_id_list(
+            bot, rss.guild_channel_id
+        )
+    if not any([rss.user_id, rss.group_id, rss.guild_channel_id]):
+        await auto_stop_and_notify_admin(rss, bot)
+        return
     new_rss, cached = await fetch_rss(rss)
     # 检查是否存在rss记录
     _file = DATA_PATH / f"{Rss.handle_name(rss.name)}.json"
@@ -46,9 +67,9 @@ async def start(rss: Rss) -> None:
                 logger.info(f"{rss.name} 第一次抓取失败，自动使用代理抓取")
                 await start(rss)
             else:
-                await auto_stop_and_notify_all(rss)
+                await auto_stop_and_notify_admin(rss, bot)
         if rss.error_count >= 100:
-            await auto_stop_and_notify_all(rss)
+            await auto_stop_and_notify_admin(rss, bot)
         return
     if new_rss.get("feed") and rss.error_count > 0:
         rss.error_count = 0
@@ -74,21 +95,20 @@ async def start(rss: Rss) -> None:
     await pr.start(rss_name=rss.name, new_rss=new_rss)
 
 
-async def auto_stop_and_notify_all(rss: Rss) -> None:
+async def auto_stop_and_notify_admin(rss: Rss, bot: Bot) -> None:
     rss.stop = True
     rss.upsert()
     tr.delete_job(rss)
     cookies_str = "及 cookies " if rss.cookies else ""
-    msg = (
-        f"{rss.name}[{rss.get_url()}]已经连续抓取失败超过 100 次！已自动停止更新！请检查订阅地址{cookies_str}！"
-        if rss.error_count >= 100
-        else f"{rss.name}[{rss.get_url()}]第一次抓取失败！已自动停止更新！请检查订阅地址或代理设置{cookies_str}！"
-    )
-    await send_msg(
-        rss=rss,
-        msg=msg,
-        item={},
-    )
+    if not any([rss.user_id, rss.group_id, rss.guild_channel_id]):
+        msg = f"{rss.name}[{rss.get_url()}]无人订阅！已自动停止更新！"
+    elif rss.error_count >= 100:
+        msg = (
+            f"{rss.name}[{rss.get_url()}]已经连续抓取失败超过 100 次！已自动停止更新！请检查订阅地址{cookies_str}！"
+        )
+    else:
+        msg = f"{rss.name}[{rss.get_url()}]第一次抓取失败！已自动停止更新！请检查订阅地址{cookies_str}！"
+    await send_message_to_admin(msg, bot)
 
 
 # 获取 RSS 并解析为 json
