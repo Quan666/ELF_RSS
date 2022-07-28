@@ -2,8 +2,8 @@ import base64
 import math
 from typing import Any, Dict, List, Mapping, Optional
 
-import nonebot
-from nonebot.adapters.onebot.v11.bot import Bot
+from nonebot import get_bot
+from nonebot.adapters.onebot.v11 import Bot
 from nonebot.log import logger
 
 from .config import config
@@ -48,7 +48,7 @@ async def get_bot_guild_channel_list(
     guild_list = await bot.get_guild_list()
     if guild_id is None:
         return [i["guild_id"] for i in guild_list]
-    if guild_id in [i["guild_id"] for i in guild_list]:
+    elif guild_id in [i["guild_id"] for i in guild_list]:
         channel_list = await bot.get_guild_channel_list(guild_id=guild_id)
         return [i["channel_id"] for i in channel_list]
     return []
@@ -71,9 +71,8 @@ def get_torrent_b16_hash(content: bytes) -> str:
     return str(b16_hash, "utf-8")
 
 
-async def send_message_to_admin(message: str) -> None:
-    bot = nonebot.get_bot()
-    await bot.send_private_msg(user_id=str(list(config.superusers)[0]), message=message)
+async def send_message_to_admin(message: str, bot: Bot) -> None:
+    await bot.send_private_msg(user_id=int(list(config.superusers)[0]), message=message)
 
 
 async def send_msg(
@@ -88,7 +87,7 @@ async def send_msg(
 
     发送消息到私聊或群聊
     """
-    bot = nonebot.get_bot()
+    bot: Bot = get_bot()  # type: ignore
     msg_id = []
     if group_ids:
         group_list = await get_bot_group_list(bot)  # type: ignore

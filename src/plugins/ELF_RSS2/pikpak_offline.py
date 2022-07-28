@@ -101,7 +101,7 @@ async def pikpak_offline_download(
             path_ids = await path_to_id(path, create=True)
             if path_ids and len(path_ids) > 0:
                 parent_id = path_ids[-1].get("id")
-        return await pikpak_client.offline_download(url, parent_id=parent_id, name=name)
+        return await pikpak_client.offline_download(url, parent_id=parent_id, name=name)  # type: ignore
     except (PikpakAccessTokenExpireException, PikpakException) as e:
         logger.warning(e)
         await refresh_access_token()

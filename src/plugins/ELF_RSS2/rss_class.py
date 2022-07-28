@@ -1,5 +1,5 @@
-import copy
 import re
+from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
 from nonebot.log import logger
@@ -163,7 +163,7 @@ class Rss:
     ) -> "Rss":
         if not group_id and not guild_channel_id:
             return self
-        rss_tmp = copy.deepcopy(self)
+        rss_tmp = deepcopy(self)
         rss_tmp.guild_channel_id = [guild_channel_id, "*"] if guild_channel_id else []
         rss_tmp.group_id = [str(group_id), "*"] if group_id else []
         rss_tmp.user_id = ["*"] if rss_tmp.user_id else []

@@ -2,6 +2,8 @@ import re
 from typing import Any, Dict, List, Optional
 
 import aiohttp
+from nonebot import get_bot
+from nonebot.adapters.onebot.v11 import Bot
 from nonebot.log import logger
 
 from ..config import config
@@ -18,6 +20,7 @@ async def down_torrent(
     """
     创建下载种子任务
     """
+    bot: Bot = get_bot()  # type: ignore
     hash_list = []
     for tmp in item["links"]:
         if (
@@ -26,6 +29,7 @@ async def down_torrent(
         ):
             hash_list.append(
                 await start_down(
+                    bot=bot,
                     url=tmp["href"],
                     group_ids=rss.group_id,
                     name=rss.name,

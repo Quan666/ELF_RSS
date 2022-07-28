@@ -4,8 +4,8 @@ from contextlib import suppress
 from typing import Any, DefaultDict, Dict, List, Tuple, Union
 
 import arrow
-import nonebot
-from nonebot.adapters.onebot.v11.bot import Bot
+from nonebot import get_bot
+from nonebot.adapters.onebot.v11 import Bot
 from nonebot.log import logger
 
 from ..rss_class import Rss
@@ -19,7 +19,7 @@ sending_lock: DefaultDict[Tuple[Union[int, str], str], asyncio.Lock] = defaultdi
 # 发送消息
 async def send_msg(rss: Rss, msg: str, item: Dict[str, Any]) -> bool:
     try:
-        bot = nonebot.get_bot()
+        bot: Bot = get_bot()  # type: ignore
     except ValueError:
         return False
     if not msg:
@@ -97,7 +97,7 @@ async def send_private_msg(
             await asyncio.sleep(max(1 - (arrow.now() - start_time).total_seconds(), 0))
             flag = True
         except Exception as e:
-            logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
+            logger.error(f"E: {repr(e)}\n链接：[{item.get('link')}]")
             if item.get("to_send"):
                 flag = True
                 with suppress(Exception):
@@ -119,7 +119,7 @@ async def send_group_msg(
             await asyncio.sleep(max(1 - (arrow.now() - start_time).total_seconds(), 0))
             flag = True
         except Exception as e:
-            logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
+            logger.error(f"E: {repr(e)}\n链接：[{item.get('link')}]")
             if item.get("to_send"):
                 flag = True
                 with suppress(Exception):
@@ -178,7 +178,7 @@ async def send_guild_channel_msg(
             await asyncio.sleep(max(1 - (arrow.now() - start_time).total_seconds(), 0))
             flag = True
         except Exception as e:
-            logger.error(f"E: {repr(e)} 链接：[{item.get('link')}]")
+            logger.error(f"E: {repr(e)}\n链接：[{item.get('link')}]")
             if item.get("to_send"):
                 flag = True
                 with suppress(Exception):
