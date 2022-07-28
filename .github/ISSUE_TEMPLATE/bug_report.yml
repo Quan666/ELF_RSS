@@ -1,0 +1,55 @@
+name: 问题汇报
+description: 汇报错误或意外行为
+labels: [ Issue-Bug ]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        在提 issue 前请确保你仔细阅读过文档，尤其是“常见问题”部分，搜索过现有的 issue ，并确保你使用的是最新版的 ELF_RSS 。
+        
+        在启动本项目出现错误时，你可以无视堆栈 (stack) 相关的信息，但错误信息 (Error: xxxxx) 请认真看看，自己稍微翻译翻译就知道大体意思，大部分问题你都可以在本项目文档或搜索引擎中找到解答。
+        
+        **这些 issue 不会被受理：**
+        
+        1. 文档中，特别是“常见问题”中有提到的
+        2. 使用的 ELF_RSS 或 go-cqhttp 不是最新版的
+        3. 大部分“连接失败”问题，请自己排查配置等原因
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: ELF_RSS 、 go-cqhttp 、 nonebot 、 Python 版本及操作系统
+      placeholder: 如果 ELF_RSS 或 go-cqhttp 不是最新版本还发 issue ，会被直接关闭。
+      description: 其中 ELF_RSS 的版本，可查看机器人启动后发送的消息，或查看启动后的日志信息。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 如何复现
+      placeholder: 是否稳定复现，是的话说明步骤。
+    validations:
+      required: true
+
+  - type: textarea
+    id: expectation
+    attributes:
+      label: 期望行为
+      placeholder: 期望的正常行为是怎么样的？
+    validations:
+      required: false
+
+  - type: textarea
+    id: actuality
+    attributes:
+      label: 实际行为
+      placeholder: 实际的行为是怎么样的？
+      description: |
+        请提供相关的截图、日志、配置、地址（issue 内上传图片或文件可直接粘贴）等信息：
+        - 问题相关截图，例如机器人回复异常时的聊天截图
+        - 问题日志，可截图，可粘贴文本，可上传日志文件，如粘贴文本请务必用 markdown 代码块包裹，**记得脱敏处理，删除 QQ 号等敏感信息**
+        - 可能与 bug 有关的配置内容，如果不确定则不必提供
+        - 出问题的订阅地址
+    validations:
+      required: true

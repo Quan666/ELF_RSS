@@ -1,0 +1,19 @@
+name: 功能需求
+description: 希望添加一个功能
+labels: [ Feature-Request ]
+body:
+  - type: textarea
+    id: feature
+    attributes:
+      label: 功能需求
+      placeholder: 希望添加的功能是什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: 理由
+      placeholder: 为什么要添加这个功能？
+    validations:
+      required: true
