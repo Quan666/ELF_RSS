@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ELF_RSS"
-version = "2.6.7"
+version = "2.6.8"
 description = "QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub"
 authors = ["Quan666 <i@Rori.eMail>"]
 license = "GPL-3.0-only"

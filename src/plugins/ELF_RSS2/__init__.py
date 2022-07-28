@@ -12,7 +12,7 @@ from .config import DATA_PATH, config
 from .rss_class import Rss
 from .utils import send_message_to_admin
 
-VERSION = "2.6.7"
+VERSION = "2.6.8"
 __plugin_meta__ = PluginMetadata(
     name="ELF_RSS",
     description="QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub",
