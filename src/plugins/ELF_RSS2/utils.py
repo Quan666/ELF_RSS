@@ -1,5 +1,6 @@
 import base64
 import math
+import re
 from typing import Any, Dict, List, Mapping, Optional
 
 from nonebot import get_bot
@@ -96,6 +97,15 @@ async def send_msg(
         for user_id in user_ids:
             msg_id.append(await bot.send_private_msg(user_id=int(user_id), message=msg))
     return msg_id
+
+
+# 校验正则表达式合法性
+def regex_validate(regex: str) -> bool:
+    try:
+        re.compile(regex)
+        return True
+    except re.error:
+        return False
 
 
 # 过滤合法好友
