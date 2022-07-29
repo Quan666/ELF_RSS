@@ -20,8 +20,7 @@ __plugin_meta__ = PluginMetadata(
 )
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
-
-start_metaevent = on_metaevent(rule=lambda _: True, temp=True)
+start_metaevent = on_metaevent(rule=lambda: True, temp=True)
 
 
 # 启动时发送启动成功信息
