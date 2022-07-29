@@ -22,11 +22,11 @@ __plugin_meta__ = PluginMetadata(
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 
 
-def check(_: LifecycleMetaEvent):
+async def check_first_connect(_: LifecycleMetaEvent) -> bool:
     return True
 
 
-start_metaevent = on_metaevent(rule=check, temp=True)
+start_metaevent = on_metaevent(rule=check_first_connect, temp=True)
 
 
 # 启动时发送启动成功信息
