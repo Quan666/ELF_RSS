@@ -218,7 +218,7 @@ async def handle_rss_change(
             for rss in rss_list
             if rss.guild_channel_id == [str(guild_channel_id)]
             and not rss.user_id
-            and not rss.guild_channel_id
+            and not rss.group_id
         ]
 
     if not rss_list:
