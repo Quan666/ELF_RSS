@@ -1,7 +1,7 @@
 import asyncio
 
 from nonebot import on_metaevent, require
-from nonebot.adapters.onebot.v11 import Bot
+from nonebot.adapters.onebot.v11 import Bot, LifecycleMetaEvent
 from nonebot.log import logger
 from nonebot.plugin import PluginMetadata
 
@@ -20,7 +20,13 @@ __plugin_meta__ = PluginMetadata(
 )
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
-start_metaevent = on_metaevent(rule=lambda: True, temp=True)
+
+
+async def check_first_connect(_: LifecycleMetaEvent) -> bool:
+    return True
+
+
+start_metaevent = on_metaevent(rule=check_first_connect, temp=True)
 
 
 # 启动时发送启动成功信息
