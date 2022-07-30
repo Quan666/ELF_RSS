@@ -140,6 +140,7 @@ async def start_down(
     # 获取种子 hash
     info = await get_torrent_info_from_hash(bot=bot, qb=qb, url=url, proxy=proxy)
     await rss_trigger(
+        bot,
         hash_str=info["hash"],
         group_ids=group_ids,
         name=f"订阅：{name}\n{info['filename']}\n文件大小：{info['size']}",
@@ -221,7 +222,7 @@ async def delete_msg(bot: Bot, msg_ids: List[Dict[str, Any]]) -> None:
         await bot.delete_msg(message_id=msg_id["message_id"])
 
 
-async def rss_trigger(hash_str: str, group_ids: List[str], name: str) -> None:
+async def rss_trigger(bot: Bot, hash_str: str, group_ids: List[str], name: str) -> None:
     scheduler = require("nonebot_plugin_apscheduler").scheduler
     # 制作一个频率为“ n 秒 / 次”的触发器
     trigger = IntervalTrigger(seconds=int(config.down_status_msg_date), jitter=10)
@@ -230,7 +231,7 @@ async def rss_trigger(hash_str: str, group_ids: List[str], name: str) -> None:
     scheduler.add_job(
         func=check_down_status,  # 要添加任务的函数，不要带参数
         trigger=trigger,  # 触发器
-        args=(hash_str, group_ids, name),  # 函数的参数列表，注意：只有一个值时，不能省略末尾的逗号
+        args=(bot, hash_str, group_ids, name),  # 函数的参数列表，注意：只有一个值时，不能省略末尾的逗号
         id=hash_str,
         misfire_grace_time=60,  # 允许的误差时间，建议不要省略
         job_defaults=job_defaults,
