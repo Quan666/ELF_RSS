@@ -6,6 +6,7 @@
   "dependencyDashboard": false,
   "rangeStrategy": "bump",
   "enabledManagers": [
+    "pip_requirements",
     "poetry",
     "github-actions"
   ],
