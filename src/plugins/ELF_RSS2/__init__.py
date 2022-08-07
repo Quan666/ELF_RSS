@@ -7,7 +7,7 @@ from nonebot.plugin import PluginMetadata
 
 from . import command
 from . import my_trigger as tr
-from .config import DATA_PATH, config
+from .config import DATA_PATH
 from .rss_class import Rss
 from .utils import send_message_to_admin
 

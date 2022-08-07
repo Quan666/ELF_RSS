@@ -27,7 +27,4 @@ async def handle_picture(
     res = await handle_img_combo(img_url, rss.img_proxy)
 
     # 判断是否开启了只推送图片
-    if rss.only_pic:
-        return f"{res}\n"
-
-    return f"{tmp + res}\n"
+    return f"{res}\n" if rss.only_pic else f"{tmp + res}\n"
