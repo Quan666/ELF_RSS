@@ -96,10 +96,7 @@ async def handle_picture(
         logger.warning(f"{rss.name} 没有正文内容！{e}")
 
     # 判断是否开启了只推送图片
-    if rss.only_pic:
-        return f"{res}\n"
-
-    return f"{tmp + res}\n"
+    return f"{res}\n" if rss.only_pic else f"{tmp + res}\n"
 
 
 # 处理图片、视频

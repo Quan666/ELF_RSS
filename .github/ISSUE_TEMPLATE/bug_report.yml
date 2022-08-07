@@ -1,25 +1,25 @@
 name: 问题汇报
 description: 汇报错误或意外行为
-labels: [ Issue-Bug ]
+labels: [ bug ]
 body:
   - type: markdown
     attributes:
       value: |
-        在提 issue 前请确保你仔细阅读过文档，尤其是“常见问题”部分，搜索过现有的 issue ，并确保你使用的是最新版的 ELF_RSS 。
+        在提 issue 前请确保你仔细阅读过文档，尤其是“常见问题”部分，搜索过现有的 issue ，并确保你使用的是最新的 ELF_RSS 。
         
         在启动本项目出现错误时，你可以无视堆栈 (stack) 相关的信息，但错误信息 (Error: xxxxx) 请认真看看，自己稍微翻译翻译就知道大体意思，大部分问题你都可以在本项目文档或搜索引擎中找到解答。
         
         **这些 issue 不会被受理：**
         
         1. 文档中，特别是“常见问题”中有提到的
-        2. 使用的 ELF_RSS 或 go-cqhttp 不是最新版的
+        2. 使用的 ELF_RSS 不是最新的
         3. 大部分“连接失败”问题，请自己排查配置等原因
 
   - type: textarea
     id: environment
     attributes:
       label: ELF_RSS 、 go-cqhttp 、 nonebot 、 Python 版本及操作系统
-      placeholder: 如果 ELF_RSS 或 go-cqhttp 不是最新版本还发 issue ，会被直接关闭。
+      placeholder: 如果 ELF_RSS 不是最新版本还发 issue ，会被直接关闭。
       description: 其中 ELF_RSS 的版本，可查看机器人启动后发送的消息，或查看启动后的日志信息。
     validations:
       required: true

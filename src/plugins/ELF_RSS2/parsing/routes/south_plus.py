@@ -5,7 +5,8 @@ from nonebot.log import logger
 from pyquery import PyQuery as Pq
 
 from ...rss_class import Rss
-from .. import ParsingBase, handle_bbcode, handle_html_tag
+from .. import ParsingBase, handle_html_tag
+from ..handle_html_tag import handle_bbcode
 from ..handle_images import handle_bbcode_img
 from ..utils import get_summary
 
@@ -53,10 +54,7 @@ async def handle_picture(
         logger.warning(f"{rss.name} 没有正文内容！{e}")
 
     # 判断是否开启了只推送图片
-    if rss.only_pic:
-        return f"{res}\n"
-
-    return f"{tmp + res}\n"
+    return f"{res}\n" if rss.only_pic else f"{tmp + res}\n"
 
 
 # 处理来源

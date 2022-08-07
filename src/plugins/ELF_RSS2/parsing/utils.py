@@ -16,6 +16,4 @@ def get_summary(item: Dict[str, Any]) -> str:
     summary: str = (
         item["content"][0]["value"] if item.get("content") else item["summary"]
     )
-    if re.search("^https?://", summary):
-        return f"<div>{summary}</div>"
-    return summary
+    return f"<div>{summary}</div>" if re.search("^https?://", summary) else summary

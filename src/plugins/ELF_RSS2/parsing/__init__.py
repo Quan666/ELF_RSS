@@ -20,7 +20,7 @@ from .cache_manage import (
 )
 from .check_update import check_update
 from .download_torrent import down_torrent, pikpak_offline
-from .handle_html_tag import handle_bbcode, handle_html_tag
+from .handle_html_tag import handle_html_tag
 from .handle_images import handle_img
 from .handle_translation import handle_translation
 from .parsing_rss import ParsingBase
@@ -256,10 +256,7 @@ async def handle_picture(
         logger.warning(f"{rss.name} 没有正文内容！{e}")
 
     # 判断是否开启了只推送图片
-    if rss.only_pic:
-        return f"{res}\n"
-
-    return f"{tmp + res}\n"
+    return f"{res}\n" if rss.only_pic else f"{tmp + res}\n"
 
 
 # 处理来源

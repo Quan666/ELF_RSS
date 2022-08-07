@@ -1,11 +1,11 @@
 name: 功能需求
 description: 希望添加一个功能
-labels: [ Feature-Request ]
+labels: [ enhancement ]
 body:
   - type: markdown
     attributes:
       value: |
-        提新功能需求之前，请确保你使用的是最新版的 ELF_RSS ，并仔细阅读文档，避免发生“提出的需求是已经实现了的”这种令人哭笑不得的情况。
+        提新功能需求之前，请确保你使用的是最新的 ELF_RSS ，并仔细阅读文档，避免发生“提出的需求是已经实现了的”这种令人哭笑不得的情况。
 
   - type: textarea
     id: feature
