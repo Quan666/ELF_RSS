@@ -92,35 +92,20 @@ async def zip_pic(url: str, content: bytes) -> Union[Image.Image, bytes, None]:
     except UnidentifiedImageError:
         logger.error(f"无法识别图像文件 链接：[{url}]")
         return None
-    # 获得图像文件类型：
-    file_type = im.format
-    if file_type != "GIF":
+    if im.format != "GIF":
         # 先把 WEBP 图像转为 PNG
-        if file_type == "WEBP":
+        if im.format == "WEBP":
             with BytesIO() as output:
                 im.save(output, "PNG")
                 im = Image.open(output)
-                file_type = "PNG"
         # 对图像文件进行缩小处理
         im.thumbnail((config.zip_size, config.zip_size))
         width, height = im.size
         logger.debug(f"Resize image to: {width} x {height}")
         # 和谐
-        pim = im.load()
-        points = [[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]]
-        for point in points:
-            if file_type == "PNG":
-                im.putpixel(point, random.randint(0, 255))
-            elif file_type == "JPEG":
-                # 如果 Image.getcolors() 返回有值,说明不是 RGB 三通道图,而是单通道图
-                if im.getcolors():
-                    pim[point[0], point[1]] = random.randint(0, 255)
-                else:
-                    pim[point[0], point[1]] = (
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                    )
+        points = [(0, 0), (0, height - 1), (width - 1, 0), (width - 1, height - 1)]
+        for x, y in points:
+            im.putpixel((x, y), random.randint(0, 255))
         return im
     else:
         if len(content) > config.gif_zip_size * 1024:
