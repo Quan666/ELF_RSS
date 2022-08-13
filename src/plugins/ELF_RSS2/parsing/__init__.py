@@ -1,5 +1,6 @@
 import re
 import sqlite3
+from contextlib import suppress
 from difflib import SequenceMatcher
 from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List
@@ -324,14 +325,10 @@ async def handle_date(
     tmp: str,
     tmp_state: Dict[str, Any],
 ) -> str:
-    date = item.get("published", item.get("updated"))
-    if date:
-        try:
-            date = parsedate_to_datetime(date)
-        except TypeError:
-            pass
-        finally:
-            date = arrow.get(date).to("Asia/Shanghai")
+    if date := item.get("published", item.get("updated")):
+        with suppress(Exception):
+            data = parsedate_to_datetime(date)
+        date = arrow.get(data).to("Asia/Shanghai")
     else:
         date = arrow.now()
     return f"日期：{date.format('YYYY年MM月DD日 HH:mm:ss')}"
