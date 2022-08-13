@@ -29,7 +29,7 @@ body:
     attributes:
       label: 列出安装的 Python 包
       placeholder: 把 pip freeze -l 执行的结果贴上来。
-      description: 如果你不是通过 pip 或 nb-cli 下载的 ELF_RSS，请把你安装的 Python 包列出来。
+      description: 如果你不是通过 pip 或 nb-cli 下载的 ELF_RSS ，请把你安装的 Python 包列出来。
     validations:
       required: false
 
