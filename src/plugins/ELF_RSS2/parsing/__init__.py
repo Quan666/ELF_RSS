@@ -327,8 +327,8 @@ async def handle_date(
 ) -> str:
     if date := item.get("published", item.get("updated")):
         with suppress(Exception):
-            data = parsedate_to_datetime(date)
-        date = arrow.get(data).to("Asia/Shanghai")
+            date = parsedate_to_datetime(date)
+        date = arrow.get(date).to("Asia/Shanghai")
     else:
         date = arrow.now()
     return f"日期：{date.format('YYYY年MM月DD日 HH:mm:ss')}"
