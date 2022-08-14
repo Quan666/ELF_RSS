@@ -39,6 +39,14 @@ yarl = "^1.8.1"
 [tool.poetry.dev-dependencies]
 nb-cli = "^0.6.7"
 
+[tool.mypy]
+python_version = "3.8"
+ignore_missing_imports = true
+implicit_reexport = true
+pretty = true
+show_error_codes = true
+strict = true
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
