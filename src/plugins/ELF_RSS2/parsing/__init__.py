@@ -39,7 +39,7 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]):
 
 
 # 判断是否满足推送条件
-@ParsingBase.append_before_handler(priority=11)
+@ParsingBase.append_before_handler(priority=11)  # type: ignore
 async def handle_check_update(rss: Rss, state: Dict[str, Any]):
     change_data = state.get("change_data")
     db = state.get("tinydb")
@@ -78,7 +78,7 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]):
 
 
 # 如果启用了去重模式，对推送列表进行过滤
-@ParsingBase.append_before_handler(priority=12)
+@ParsingBase.append_before_handler(priority=12)  # type: ignore
 async def handle_check_update(rss: Rss, state: Dict[str, Any]):
     change_data = state.get("change_data")
     conn = state.get("conn")
@@ -179,7 +179,7 @@ async def handle_summary(
 
 
 # 处理正文 处理网页 tag
-@ParsingBase.append_handler(parsing_type="summary", priority=10)
+@ParsingBase.append_handler(parsing_type="summary", priority=10)  # type: ignore
 async def handle_summary(
     rss: Rss,
     state: Dict[str, Any],
@@ -196,7 +196,7 @@ async def handle_summary(
 
 
 # 处理正文 移除指定内容
-@ParsingBase.append_handler(parsing_type="summary", priority=11)
+@ParsingBase.append_handler(parsing_type="summary", priority=11)  # type: ignore
 async def handle_summary(
     rss: Rss,
     state: Dict[str, Any],
@@ -217,7 +217,7 @@ async def handle_summary(
 
 
 # 处理正文 翻译
-@ParsingBase.append_handler(parsing_type="summary", priority=12)
+@ParsingBase.append_handler(parsing_type="summary", priority=12)  # type: ignore
 async def handle_summary(
     rss: Rss,
     state: Dict[str, Any],

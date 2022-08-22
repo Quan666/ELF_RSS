@@ -17,6 +17,7 @@ python = "^3.8.3"
 aiohttp = { extras = ["speedups"], version = "^3.8.1" }
 arrow = "^1.2.2"
 bbcode = "^1.1.0"
+cachetools = "^5.2.0"
 emoji = "^2.0.0"
 feedparser = "^6.0.10"
 deep-translator = "^1.8.3"
@@ -38,6 +39,14 @@ yarl = "^1.8.1"
 
 [tool.poetry.dev-dependencies]
 nb-cli = "^0.6.7"
+
+[tool.mypy]
+python_version = "3.8"
+ignore_missing_imports = true
+implicit_reexport = true
+pretty = true
+show_error_codes = true
+strict = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

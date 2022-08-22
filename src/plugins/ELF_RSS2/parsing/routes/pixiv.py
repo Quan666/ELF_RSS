@@ -163,7 +163,7 @@ async def handle_source(
 
 
 # 检查更新
-@ParsingBase.append_before_handler(rex="pixiv/ranking", priority=10)
+@ParsingBase.append_before_handler(rex="pixiv/ranking", priority=10)  # type: ignore
 async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     db = state["tinydb"]
     change_data = check_update(db, state["new_data"])
