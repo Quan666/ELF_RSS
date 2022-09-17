@@ -1,9 +1,10 @@
 import asyncio
 
-from nonebot import on_metaevent, require
+from nonebot import require
 from nonebot.adapters.onebot.v11 import Bot, LifecycleMetaEvent
 from nonebot.log import logger
 from nonebot.plugin import PluginMetadata
+from nonebot import get_driver
 
 from . import command
 from . import my_trigger as tr
@@ -21,16 +22,9 @@ __plugin_meta__ = PluginMetadata(
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 
-
-async def check_first_connect(_: LifecycleMetaEvent) -> bool:
-    return True
-
-
-start_metaevent = on_metaevent(rule=check_first_connect, temp=True)
-
-
+driver = get_driver()
 # 启动时发送启动成功信息
-@start_metaevent.handle()
+@driver.on_bot_connect
 async def start(bot: Bot) -> None:
 
     # 启动后检查 data 目录，不存在就创建

@@ -1,6 +1,7 @@
 import base64
 import random
 import re
+import os
 from io import BytesIO
 from typing import Any, Dict, Optional, Union
 
@@ -11,8 +12,10 @@ from pyquery import PyQuery as Pq
 from tenacity import RetryError, retry, stop_after_attempt, stop_after_delay
 from yarl import URL
 
-from ..config import config
+from ..config import config, DATA_PATH, Path
 from .utils import get_proxy, get_summary
+from ..rss_class import Rss
+
 
 
 # 通过 ezgif 压缩 GIF
@@ -193,9 +196,29 @@ async def download_image(url: str, proxy: bool = False) -> Optional[bytes]:
         return None
 
 
-async def handle_img_combo(url: str, img_proxy: bool) -> str:
+async def handle_img_combo(url: str, img_proxy: bool, rss: Rss) -> str:
+    ''''
+    下载图片并返回可用的CQ码  
+    
+    参数:
+        url: 需要下载的图片地址
+        img_proxy: 是否使用代理下载图片
+        rss: Rss对象
+    返回值: 
+        返回当前图片的CQ码,以base64格式编码发送
+        如获取图片失败将会提示图片走丢了
+    '''
     content = await download_image(url, img_proxy)
     if content:
+        if rss.download_pic:
+            _url = URL(url)
+            logger.debug(f'正在保存图片: {url}')
+            try:
+                save_image(content=content, file_name=_url.name,
+                           folder_name=rss.name)
+            except Exception as e:
+                logger.warning(e)
+                logger.warning('在保存图片到本地时出现错误')
         resize_content = await zip_pic(url, content)
         if img_base64 := get_pic_base64(resize_content):
             return f"[CQ:image,file=base64://{img_base64}]"
@@ -250,3 +273,27 @@ async def handle_bbcode_img(html: Pq, img_proxy: bool, img_num: int) -> str:
         img_str += await handle_img_combo(img_tmp, img_proxy)
 
     return img_str
+
+def file_name_format(file_name: str) -> str:
+    '''
+    可以根据用户设置的规则来格式化文件名
+    '''
+    return file_name
+
+
+def save_image(content: bytes, file_name: str, folder_name: str):
+    '''
+    将压缩之前的原图保存到本地的电脑上
+    '''
+    
+    full_save_path = DATA_PATH / 'image' / \
+        folder_name / file_name_format(file_name)
+    try:
+        with open(full_save_path, 'wb') as f:
+            f.write(content)
+    except FileNotFoundError:
+        # 初次写入时文件夹不存在,需要创建一下
+        # 
+
+        os.makedirs((DATA_PATH / 'image' / folder_name))
+        save_image(content, file_name, folder_name)
