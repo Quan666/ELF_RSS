@@ -161,7 +161,7 @@ prompt = """\
     仅Title(ot)
     仅图片(-op)
     仅含图片(-ohp)
-    下载图片(-downpic): 自动下载图片到本地硬盘
+    下载图片(-downpic): 下载图片到本地硬盘,仅pixiv有效
     下载种子(-downopen)
     白名单关键词(-wkey)
     黑名单关键词(-bkey)
