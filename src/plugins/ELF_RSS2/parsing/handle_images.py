@@ -196,7 +196,7 @@ async def download_image(url: str, proxy: bool = False) -> Optional[bytes]:
         return None
 
 
-async def handle_img_combo(url: str, img_proxy: bool, rss: Rss) -> str:
+async def handle_img_combo(url: str, img_proxy: bool, rss: Rss = None) -> str:
     ''''
     下载图片并返回可用的CQ码  
     
@@ -210,7 +210,9 @@ async def handle_img_combo(url: str, img_proxy: bool, rss: Rss) -> str:
     '''
     content = await download_image(url, img_proxy)
     if content:
-        if rss.download_pic:
+        if rss is None:
+            pass
+        elif rss.download_pic:
             _url = URL(url)
             logger.debug(f'正在保存图片: {url}')
             try:
