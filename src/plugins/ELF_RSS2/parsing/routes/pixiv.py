@@ -159,14 +159,12 @@ async def handle_source(
 ) -> str:
     source = item["link"]
     # 缩短 pixiv 链接
-    str_link = re.sub("https://www.pixiv.net/artworks/",
-                      "https://pixiv.net/i/", source)
+    str_link = re.sub("https://www.pixiv.net/artworks/", "https://pixiv.net/i/", source)
     return f"链接：{str_link}\n"
 
 
 # 检查更新
-# type: ignore
-@ParsingBase.append_before_handler(rex="pixiv/ranking", priority=10)
+@ParsingBase.append_before_handler(rex="pixiv/ranking", priority=10) # type: ignore
 async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     db = state["tinydb"]
     change_data = check_update(db, state["new_data"])
