@@ -84,13 +84,14 @@ class ParsingBase:
     def append_before_handler(
         cls, rex: str = "(.*)", priority: int = 10, block: bool = False
     ) -> Callable[..., Any]:
-        '''
+        """
         装饰一个方法,作为将其一个前置处理器
         参数:
             rex: 用于正则匹配目标订阅地址,匹配成功后执行器将适用
             proirity: 执行器优先级,自定义执行器会覆盖掉相同优先级的默认执行器
             block: 是否要阻断后续执行器进行
-        '''
+        """
+
         def _decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             cls.before_handler.append(ParsingItem(func, rex, priority, block))
             cls.before_handler = _sort(cls.before_handler)
@@ -102,13 +103,14 @@ class ParsingBase:
     def append_after_handler(
         cls, rex: str = "(.*)", priority: int = 10, block: bool = False
     ) -> Callable[..., Any]:
-        '''
+        """
         装饰一个方法,作为将其一个后置处理器
         参数:
             rex: 用于正则匹配目标订阅地址,匹配成功后执行器将适用
             proirity: 执行器优先级,自定义执行器会覆盖掉相同优先级的默认执行器
             block: 是否要阻断后续执行器进行
-        '''
+        """
+
         def _decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             cls.after_handler.append(ParsingItem(func, rex, priority, block))
             cls.after_handler = _sort(cls.after_handler)
