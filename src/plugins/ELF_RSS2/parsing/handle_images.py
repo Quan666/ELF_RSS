@@ -1,9 +1,8 @@
 import base64
 import random
 import re
-import os
 from io import BytesIO
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, Tuple
 
 import aiohttp
 from nonebot.log import logger
@@ -215,7 +214,7 @@ async def handle_img_combo(url: str, img_proxy: bool, rss: Rss = None) -> str:
             _url = URL(url)
             logger.debug(f"正在保存图片: {url}")
             try:
-                save_image(content=content, file_name=_url.name, folder_name=rss.name)
+                save_image(content=content, file_url=_url, rss=rss)
             except Exception as e:
                 logger.warning(e)
                 logger.warning("在保存图片到本地时出现错误")
@@ -275,24 +274,43 @@ async def handle_bbcode_img(html: Pq, img_proxy: bool, img_num: int) -> str:
     return img_str
 
 
-def file_name_format(file_name: str) -> str:
+def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
     """
     可以根据用户设置的规则来格式化文件名
     """
-    return file_name
+    format_rule = config.img_format
+    down_path = config.img_down_path
+    rules = {  # 替换格式化字符串
+        "{subs}": rss.name,
+        "{name}": file_url.name
+        if "{ext}" not in format_rule
+        else Path(file_url.name).stem,
+        "{ext}": file_url.suffix if "{ext}" in format_rule else "",
+    }
+    for k, v in rules.items():
+        format_rule = format_rule.replace(k, v)
+    if down_path == "":  # 如果没设置保存路径的话,就保存到默认目录下
+        save_path = Path().cwd() / "data" / "image"
+    elif down_path[0] == ".":
+        save_path = Path().cwd() / Path(down_path)
+    else:
+        save_path = Path(down_path)
+    full_path = save_path / format_rule
+    save_path = full_path.parents[0]
+    save_name = full_path.name
+    return (save_path, save_name)
 
 
-def save_image(content: bytes, file_name: str, folder_name: str):
+def save_image(content: bytes, file_url: URL, rss: Rss):
     """
     将压缩之前的原图保存到本地的电脑上
     """
+    save_path, save_name = file_name_format(file_url=file_url, rss=rss)
 
-    full_save_path = DATA_PATH / "image" / folder_name / file_name_format(file_name)
+    full_save_path = save_path / save_name
     try:
-        with open(full_save_path, "wb") as f:
-            f.write(content)
+        full_save_path.write_bytes(content)
     except FileNotFoundError:
         # 初次写入时文件夹不存在,需要创建一下
-
-        os.makedirs((DATA_PATH / "image" / folder_name))
-        save_image(content, file_name, folder_name)
+        save_path.mkdir(parents=True)
+        full_save_path.write_bytes(content)
