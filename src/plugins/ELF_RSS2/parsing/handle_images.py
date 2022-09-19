@@ -2,7 +2,7 @@ import base64
 import random
 import re
 from io import BytesIO
-from typing import Any, Dict, Optional, Union, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import aiohttp
 from nonebot.log import logger
@@ -11,9 +11,9 @@ from pyquery import PyQuery as Pq
 from tenacity import RetryError, retry, stop_after_attempt, stop_after_delay
 from yarl import URL
 
-from ..config import config, DATA_PATH, Path
-from .utils import get_proxy, get_summary
+from ..config import Path, config
 from ..rss_class import Rss
+from .utils import get_proxy, get_summary
 
 
 # 通过 ezgif 压缩 GIF
@@ -194,7 +194,7 @@ async def download_image(url: str, proxy: bool = False) -> Optional[bytes]:
         return None
 
 
-async def handle_img_combo(url: str, img_proxy: bool, rss: Rss = None) -> str:
+async def handle_img_combo(url: str, img_proxy: bool, rss: Optional[Rss] = None) -> str:
     """'
     下载图片并返回可用的CQ码
 
@@ -208,9 +208,7 @@ async def handle_img_combo(url: str, img_proxy: bool, rss: Rss = None) -> str:
     """
     content = await download_image(url, img_proxy)
     if content:
-        if rss is None:
-            pass
-        elif rss.download_pic:
+        if rss is not None and rss.download_pic:
             _url = URL(url)
             logger.debug(f"正在保存图片: {url}")
             try:
@@ -298,10 +296,10 @@ def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
     full_path = save_path / format_rule
     save_path = full_path.parents[0]
     save_name = full_path.name
-    return (save_path, save_name)
+    return save_path, save_name
 
 
-def save_image(content: bytes, file_url: URL, rss: Rss):
+def save_image(content: bytes, file_url: URL, rss: Rss) -> None:
     """
     将压缩之前的原图保存到本地的电脑上
     """
