@@ -88,9 +88,7 @@ async def handle_picture(
     res = ""
     try:
         res += await handle_img(
-            item=item,
-            img_proxy=rss.img_proxy,
-            img_num=rss.max_image_number,
+            item=item, img_proxy=rss.img_proxy, img_num=rss.max_image_number, rss=rss
         )
     except Exception as e:
         logger.warning(f"{rss.name} 没有正文内容！{e}")
@@ -101,7 +99,9 @@ async def handle_picture(
 
 # 处理图片、视频
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str:
+async def handle_img(
+    item: Dict[str, Any], img_proxy: bool, img_num: int, rss: Rss
+) -> str:
     if item.get("image_content"):
         return await handle_img_combo_with_content(
             item.get("gif_url", ""), item["image_content"]
@@ -129,7 +129,7 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str
             doc_img = doc_img[:img_num]
         for img in doc_img:
             url = img.attr("src")
-            img_str += await handle_img_combo(url, img_proxy)
+            img_str += await handle_img_combo(url, img_proxy, rss)
 
     return img_str
 

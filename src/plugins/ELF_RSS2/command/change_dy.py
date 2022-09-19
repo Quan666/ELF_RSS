@@ -79,6 +79,7 @@ attribute_dict = {
     "ot": "only_title",
     "op": "only_pic",
     "ohp": "only_has_pic",
+    "downpic": "download_pic",
     "upgroup": "is_open_upload_group",
     "downopen": "down_torrent",
     "downkey": "down_torrent_keyword",
@@ -124,6 +125,7 @@ def handle_change_list(
         "ot",
         "op",
         "ohp",
+        "downpic",
         "upgroup",
         "downopen",
         "stop",
@@ -159,6 +161,7 @@ prompt = """\
     仅Title(ot)
     仅图片(-op)
     仅含图片(-ohp)
+    下载图片(-downpic): 下载图片到本地硬盘,仅pixiv有效
     下载种子(-downopen)
     白名单关键词(-wkey)
     黑名单关键词(-bkey)
@@ -178,6 +181,7 @@ prompt = """\
     6. 正文待移除内容格式必须如：rm_list='a' 或 rm_list='a','b'。该处理过程在解析 html 标签后进行，设为空使用 rm_list='-1'"
     7. QQ、群号、去重模式前加英文逗号表示追加，-1设为空
     8. 各个属性使用空格分割
+    9. downpic保存的文件位于程序根目录下 "data/image/订阅名/图片名"
 详细用法请查阅文档。\
 """
 

@@ -23,6 +23,7 @@ class Rss:
         self.only_title: bool = False  # 仅标题
         self.only_pic: bool = False  # 仅图片
         self.only_has_pic: bool = False  # 仅含有图片
+        self.download_pic: bool = False  # 是否要下载图片
         self.cookies: Dict[str, str] = {}
         self.down_torrent: bool = False  # 是否下载种子
         self.down_torrent_keyword: str = ""  # 过滤关键字，支持正则
@@ -246,6 +247,7 @@ class Rss:
             f"翻译：{self.translation}" if self.translation else "",
             f"仅标题：{self.only_title}" if self.only_title else "",
             f"仅图片：{self.only_pic}" if self.only_pic else "",
+            f"下载图片：{self.download_pic}" if self.download_pic else "",
             f"仅含有图片：{self.only_has_pic}" if self.only_has_pic else "",
             f"白名单关键词：{self.down_torrent_keyword}" if self.down_torrent_keyword else "",
             f"黑名单关键词：{self.black_keyword}" if self.black_keyword else "",
