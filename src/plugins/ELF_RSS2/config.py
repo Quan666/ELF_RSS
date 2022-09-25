@@ -31,6 +31,7 @@ class ELFConfig(BaseConfig):
 
     baidu_id: Optional[str] = None
     baidu_key: Optional[str] = None
+    deepl_translator_api_key: Optional[str] = None
 
     qb_username: Optional[str] = None  # qbittorrent 用户名
     qb_password: Optional[str] = None  # qbittorrent 密码
