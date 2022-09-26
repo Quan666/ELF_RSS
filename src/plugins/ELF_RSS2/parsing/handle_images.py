@@ -209,11 +209,11 @@ async def handle_img_combo(url: str, img_proxy: bool, rss: Optional[Rss] = None)
     """
     content = await download_image(url, img_proxy)
     if content:
-        if rss is not None and rss.download_pic:
+        if current_rss.download_pic:
             _url = URL(url)
             logger.debug(f"正在保存图片: {url}")
             try:
-                save_image(content=content, file_url=_url, rss=rss)
+                save_image(content=content, file_url=_url)
             except Exception as e:
                 logger.warning(e)
                 logger.warning("在保存图片到本地时出现错误")
@@ -273,17 +273,16 @@ async def handle_bbcode_img(html: Pq, img_proxy: bool, img_num: int) -> str:
     return img_str
 
 
-def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
+def file_name_format(file_url: URL) -> Tuple[Path, str]:
     """
     可以根据用户设置的规则来格式化文件名
     参数:
         file_url: 保存文件的URL对象
-        rss: 当前RSS对象
     返回值:
         (Path,str)
         Path: 最终保存的文件夹的Path对象
         str: 保存的文件名
-        
+
     示例:
         假设传入参数file_url的值为: https://google.com/187ASIas.jpg
         且该更新包含多张图片
@@ -298,7 +297,7 @@ def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
     down_path = config.img_down_path
     create_folder = config.create_folder
     rules = {  # 替换格式化字符串规则
-        "{subs}": rss.name,
+        "{subs}": current_rss.name,
         "{title}": state.item.title,
         "{id}": state.id,
         "{sn}": str(state.sn),
@@ -331,11 +330,11 @@ def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
     return save_path, save_name
 
 
-def save_image(content: bytes, file_url: URL, rss: Rss) -> None:
+def save_image(content: bytes, file_url: URL) -> None:
     """
     将压缩之前的原图保存到本地的电脑上
     """
-    save_path, save_name = file_name_format(file_url=file_url, rss=rss)
+    save_path, save_name = file_name_format(file_url=file_url)
 
     full_save_path = save_path / save_name
     try:
