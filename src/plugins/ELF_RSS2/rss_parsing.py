@@ -24,6 +24,7 @@ from .utils import (
     get_http_caching_headers,
     send_message_to_admin,
 )
+from .globals import current_rss, state
 
 HEADERS = {
     "Accept": "application/xhtml+xml,application/xml,*/*",
@@ -51,6 +52,7 @@ async def start(rss: Rss) -> None:
         await auto_stop_and_notify_admin(rss, bot)
         return
     new_rss, cached = await fetch_rss(rss)
+    state.new_rss = new_rss
     # 检查是否存在rss记录
     _file = DATA_PATH / f"{Rss.handle_name(rss.name)}.json"
     first_time_fetch = not _file.exists()

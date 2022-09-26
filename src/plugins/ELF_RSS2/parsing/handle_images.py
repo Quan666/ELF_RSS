@@ -14,6 +14,7 @@ from yarl import URL
 from ..config import Path, config
 from ..rss_class import Rss
 from .utils import get_proxy, get_summary
+from ..globals import state, current_rss
 
 
 # 通过 ezgif 压缩 GIF
@@ -275,26 +276,57 @@ async def handle_bbcode_img(html: Pq, img_proxy: bool, img_num: int) -> str:
 def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
     """
     可以根据用户设置的规则来格式化文件名
+    参数:
+        file_url: 保存文件的URL对象
+        rss: 当前RSS对象
+    返回值:
+        (Path,str)
+        Path: 最终保存的文件夹的Path对象
+        str: 保存的文件名
+        
+    示例:
+        假设传入参数file_url的值为: https://google.com/187ASIas.jpg
+        且该更新包含多张图片
+        img_format: {subs}/{name}{ext}
+        folder_format: {id}
+        create_folder: True
+        img_format将被替换为 订阅/187ASIas.jpg 因包含了文件夹则会被拆分成文件夹`订阅`和文件`187ASIas.jpg`之后
+        再与folder_format拼接,成为 `订阅/{id}/187ASIas.jpg` 接着再与`down_path`拼接成为最终保存路径
     """
-    format_rule = config.img_format
+    img_format = config.img_format
+    folder_format = config.folder_format
     down_path = config.img_down_path
-    rules = {  # 替换格式化字符串
+    create_folder = config.create_folder
+    rules = {  # 替换格式化字符串规则
         "{subs}": rss.name,
+        "{title}": state.item.title,
+        "{id}": state.id,
+        "{sn}": str(state.sn),
         "{name}": file_url.name
-        if "{ext}" not in format_rule
+        if "{ext}" not in img_format
         else Path(file_url.name).stem,
-        "{ext}": file_url.suffix if "{ext}" in format_rule else "",
+        "{ext}": file_url.suffix if "{ext}" in img_format else "",
     }
+
     for k, v in rules.items():
-        format_rule = format_rule.replace(k, v)
+        # 对文件夹名和图片名进行替换
+        img_format = img_format.replace(k, v)
+        folder_format = folder_format.replace(k, v)
+
+    if create_folder and state.img_num > 1:
+        # 如果本次新内容需保存的图片数量多于一张,且开启了创建新文件夹就会新增一个文件夹放到里面去
+        img_format = Path(img_format)
+        file_name = img_format.name  # 保存的图片文件名
+        folder_path = img_format.parent  # 文件夹名(如果用户设置了的话)
+        img_format = folder_path / folder_format / file_name
     if down_path == "":  # 如果没设置保存路径的话,就保存到默认目录下
-        save_path = Path().cwd() / "data" / "image"
-    elif down_path[0] == ".":
-        save_path = Path().cwd() / Path(down_path)
+        save_path = Path().cwd() / "data/image"
+    elif down_path[0] == ".":  # 设置了相对路径
+        save_path = Path().cwd() / down_path
     else:
         save_path = Path(down_path)
-    full_path = save_path / format_rule
-    save_path = full_path.parents[0]
+    full_path = save_path / img_format
+    save_path = full_path.parent
     save_name = full_path.name
     return save_path, save_name
 

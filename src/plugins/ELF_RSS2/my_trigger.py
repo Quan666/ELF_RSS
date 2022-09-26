@@ -9,6 +9,7 @@ from nonebot.log import logger
 
 from . import rss_parsing
 from .rss_class import Rss
+from .globals import RequestContext
 
 wait_for = 5 * 60
 
@@ -17,9 +18,15 @@ wait_for = 5 * 60
 async def check_update(rss: Rss) -> None:
     logger.info(f"{rss.name} 检查更新")
     try:
-        await asyncio.wait_for(rss_parsing.start(rss), timeout=wait_for)
-    except asyncio.TimeoutError:
-        logger.error(f"{rss.name} 检查更新超时，结束此次任务!")
+        ctx = RequestContext(rss=rss)
+        ctx.push()
+        try:
+            await asyncio.wait_for(rss_parsing.start(rss), timeout=wait_for)
+        except asyncio.TimeoutError:
+            logger.error(f"{rss.name} 检查更新超时，结束此次任务!")
+    finally:
+        # 虽然应该会被垃圾回收器回收,但还是防止可能的内存泄漏
+        ctx.pop()
 
 
 def delete_job(rss: Rss) -> None:

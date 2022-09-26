@@ -7,7 +7,9 @@ from tinydb.storages import JSONStorage
 
 from ..config import DATA_PATH
 from ..rss_class import Rss
-
+from nonebot.log import logger
+from ..globals import current_rss, state as ctx_state
+from ..typings.t_globals import Item
 
 # 订阅器启动的时候将解析器注册到rss实例类？，避免每次推送时再匹配
 class ParsingItem:
@@ -166,6 +168,7 @@ class ParsingRss:
             indent=4,
             ensure_ascii=False,
         )
+
         self.state.update(
             {
                 "rss_title": rss_title,
@@ -187,14 +190,17 @@ class ParsingRss:
                 "item_count": 0,
             }
         )
+        ctx_state.item_num = len(self.state["change_data"])
+
         for item in self.state["change_data"]:
+            item: Item
             item_msg = f"【{self.state.get('rss_title')}】更新了!\n----------------------\n"
+            ctx_state.item = item
 
             for handler_list in self.handler.values():
                 # 用于保存上一次处理结果
                 tmp = ""
                 tmp_state = {"continue": True}  # 是否继续执行后续处理
-
                 # 某一个内容的处理如正文，传入原文与上一次处理结果，此次处理完后覆盖
                 for handler in handler_list:
                     tmp = await handler.func(

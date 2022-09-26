@@ -18,7 +18,7 @@ from ..handle_images import (
     handle_img_combo_with_content,
 )
 from ..utils import get_summary
-
+from ...globals import state as ctx_state
 
 # 如果启用了去重模式，对推送列表进行过滤
 @ParsingBase.append_before_handler(priority=12, rex="/pixiv/")
@@ -88,7 +88,9 @@ async def handle_picture(
     res = ""
     try:
         res += await handle_img(
-            item=item, img_proxy=rss.img_proxy, img_num=rss.max_image_number, rss=rss
+            item=item,
+            img_proxy=rss.img_proxy,
+            img_num=rss.max_image_number,
         )
     except Exception as e:
         logger.warning(f"{rss.name} 没有正文内容！{e}")
@@ -99,9 +101,7 @@ async def handle_picture(
 
 # 处理图片、视频
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def handle_img(
-    item: Dict[str, Any], img_proxy: bool, img_num: int, rss: Rss
-) -> str:
+async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str:
     if item.get("image_content"):
         return await handle_img_combo_with_content(
             item.get("gif_url", ""), item["image_content"]
@@ -127,9 +127,12 @@ async def handle_img(
         if 0 < img_num < len(doc_img):
             img_str += f"\n因启用图片数量限制，目前只有 {img_num} 张图片："
             doc_img = doc_img[:img_num]
+
+        ctx_state.img_num = len(doc_img)
         for img in doc_img:
+            ctx_state.sn += 1
             url = img.attr("src")
-            img_str += await handle_img_combo(url, img_proxy, rss)
+            img_str += await handle_img_combo(url, img_proxy)
 
     return img_str
 
@@ -144,6 +147,22 @@ async def get_ugoira_video(ugoira_id: str) -> Any:
         if not url:
             raise TryAgain
         return url
+
+
+# 预处理
+@ParsingBase.append_handler(parsing_type="before", rex="pixiv")
+async def handle_before(
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+    tmp: str,
+    tmp_state: Dict[str, Any],
+) -> str:
+    source = item["link"]
+    ctx_state.id = re.search(r"(?<=artworks/)(\d*)", source).group(1)
+
+    return ""
 
 
 # 处理来源

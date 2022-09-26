@@ -24,7 +24,9 @@ class ELFConfig(BaseConfig):
     zip_size: int = 2 * 1024
     gif_zip_size: int = 6 * 1024
     img_format: Optional[str] = None
+    folder_format: Optional[str] = None
     img_down_path: Optional[str] = None
+    create_folder: bool = False
 
     blockquote: bool = True
     black_word: Optional[List[str]] = None
