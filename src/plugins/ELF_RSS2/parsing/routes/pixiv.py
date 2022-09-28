@@ -9,6 +9,7 @@ from tenacity import RetryError, TryAgain, retry, stop_after_attempt, stop_after
 from tinydb import Query, TinyDB
 
 from ...config import DATA_PATH
+from ...globals import state as ctx_state
 from ...rss_class import Rss
 from .. import ParsingBase, cache_db_manage, duplicate_exists, write_item
 from ..check_update import get_item_date
@@ -18,7 +19,7 @@ from ..handle_images import (
     handle_img_combo_with_content,
 )
 from ..utils import get_summary
-from ...globals import state as ctx_state
+
 
 # 如果启用了去重模式，对推送列表进行过滤
 @ParsingBase.append_before_handler(priority=12, rex="/pixiv/")
@@ -160,7 +161,7 @@ async def handle_before(
     tmp_state: Dict[str, Any],
 ) -> str:
     source = item["link"]
-    ctx_state.id = re.search(r"(?<=artworks/)(\d*)", source).group(1)
+    ctx_state.id = re.search(r"(?<=artworks/)(\d*)", source)[1]  # type: ignore
 
     return ""
 

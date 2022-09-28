@@ -6,10 +6,10 @@ from tinydb.middlewares import CachingMiddleware
 from tinydb.storages import JSONStorage
 
 from ..config import DATA_PATH
+from ..globals import state as ctx_state
 from ..rss_class import Rss
-from nonebot.log import logger
-from ..globals import current_rss, state as ctx_state
 from ..typings.t_globals import Item
+
 
 # 订阅器启动的时候将解析器注册到rss实例类？，避免每次推送时再匹配
 class ParsingItem:
@@ -90,7 +90,7 @@ class ParsingBase:
         装饰一个方法,作为将其一个前置处理器
         参数:
             rex: 用于正则匹配目标订阅地址,匹配成功后执行器将适用
-            proirity: 执行器优先级,自定义执行器会覆盖掉相同优先级的默认执行器
+            priority: 执行器优先级,自定义执行器会覆盖掉相同优先级的默认执行器
             block: 是否要阻断后续执行器进行
         """
 
@@ -109,7 +109,7 @@ class ParsingBase:
         装饰一个方法,作为将其一个后置处理器
         参数:
             rex: 用于正则匹配目标订阅地址,匹配成功后执行器将适用
-            proirity: 执行器优先级,自定义执行器会覆盖掉相同优先级的默认执行器
+            priority: 执行器优先级,自定义执行器会覆盖掉相同优先级的默认执行器
             block: 是否要阻断后续执行器进行
         """
 
@@ -192,8 +192,7 @@ class ParsingRss:
         )
         ctx_state.item_num = len(self.state["change_data"])
 
-        for item in self.state["change_data"]:
-            item: Item
+        for item in self.state["change_data"]:  # type: Item
             item_msg = f"【{self.state.get('rss_title')}】更新了!\n----------------------\n"
             ctx_state.item = item
 

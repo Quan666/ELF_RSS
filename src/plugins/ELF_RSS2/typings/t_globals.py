@@ -1,4 +1,5 @@
-import typing as t 
+import typing as t
+
 
 class Feed(t.TypedDict):
     title: str
@@ -7,25 +8,25 @@ class Feed(t.TypedDict):
     updated: str
 
 
-class Entrie(t.TypedDict):
+class Entry(t.TypedDict):
     title: str
     summary: str
     published: str
     id: str
     link: str
     author: str
-    guidislink: bool
+    guid_is_link: bool
 
 
 class NewRss(t.TypedDict):
     bozo: bool
     encoding: str
     version: str
-    headers: dict
-    namespaces: dict
+    headers: t.Dict[t.Any, t.Any]
+    namespaces: t.Dict[t.Any, t.Any]
     feed: Feed
-    entries: t.List[Entrie]
+    entries: t.List[Entry]
 
 
-class Item(Entrie):
+class Item(Entry):
     hash: str

@@ -12,9 +12,9 @@ from tenacity import RetryError, retry, stop_after_attempt, stop_after_delay
 from yarl import URL
 
 from ..config import Path, config
+from ..globals import state
 from ..rss_class import Rss
 from .utils import get_proxy, get_summary
-from ..globals import state, current_rss
 
 
 # 通过 ezgif 压缩 GIF
@@ -27,12 +27,12 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> Optional[bytes]:
         )
         d = Pq(await resp.text())
         next_url = d("form").attr("action")
-        file = d("form > input[type=hidden]:nth-child(1)").attr("value")
+        _file = d("form > input[type=hidden]:nth-child(1)").attr("value")
         token = d("form > input[type=hidden]:nth-child(2)").attr("value")
         old_width = d("form > input[type=hidden]:nth-child(3)").attr("value")
         old_height = d("form > input[type=hidden]:nth-child(4)").attr("value")
         data = {
-            "file": file,
+            "file": _file,
             "token": token,
             "old_width": old_width,
             "old_height": old_height,
@@ -63,7 +63,7 @@ async def get_preview_gif_from_video(url: str) -> str:
         seconds = int(video_length.split(":")[2])
         video_length_median = (hours * 60 * 60 + minutes * 60 + seconds) // 2
         next_url = d("form").attr("action")
-        file = d("form > input[type=hidden]:nth-child(1)").attr("value")
+        _file = d("form > input[type=hidden]:nth-child(1)").attr("value")
         token = d("form > input[type=hidden]:nth-child(2)").attr("value")
         default_end = d("#end").attr("value")
         if float(default_end) >= 4:
@@ -73,7 +73,7 @@ async def get_preview_gif_from_video(url: str) -> str:
             start = 0
             end = default_end
         data = {
-            "file": file,
+            "file": _file,
             "token": token,
             "start": start,
             "end": end,
@@ -283,7 +283,7 @@ def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
         (Path,str)
         Path: 最终保存的文件夹的Path对象
         str: 保存的文件名
-        
+
     示例:
         假设传入参数file_url的值为: https://google.com/187ASIas.jpg
         且该更新包含多张图片

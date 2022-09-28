@@ -4,7 +4,7 @@ from nonebot_plugin_guild_patch import GuildMessageEvent
 
 
 class GuildSuperUser:
-    async def __call__(self, bot: Bot, event: GuildMessageEvent) -> bool:
+    def __call__(self, bot: Bot, event: GuildMessageEvent) -> bool:
         return (
             bot.config.guild_superusers is not None
             and event.get_type() == "message"

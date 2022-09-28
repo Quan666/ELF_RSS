@@ -1,8 +1,9 @@
+import copy
+import typing as t
 from contextvars import ContextVar
 from functools import partial
-import copy
-from operator import delitem, setitem, getitem
-import typing as t
+from operator import delitem, getitem, setitem
+
 from .rss_class import Rss
 from .typings.t_globals import Item, NewRss
 
@@ -25,14 +26,14 @@ class RequestContext:
         self.state = State()
         self.rss = rss
 
-    def push(self):
+    def push(self) -> None:
         """将自身入栈"""
-        top = _app_context.top  
+        top = _app_context.top
         if top is not None:
             top.pop()
         _app_context.push(self)
 
-    def pop(self):
+    def pop(self) -> None:
         """
         从请求上下文中弹出,防止可能的内存泄露
         """
@@ -53,8 +54,8 @@ class Local(object):
         values = self._store.get({})
         try:
             return values[name]
-        except KeyError:
-            raise AttributeError(name)
+        except KeyError as e:
+            raise AttributeError(name) from e
 
     def __setattr__(self, name: str, value: t.Any) -> None:
         values = self._store.get({}).copy()
@@ -66,8 +67,8 @@ class Local(object):
         try:
             del values[name]
             self._store.set(values)
-        except KeyError:
-            raise AttributeError(name)
+        except KeyError as e:
+            raise AttributeError(name) from e
 
     def release_local(self) -> None:
         """主动的释放上下文空间"""
@@ -122,7 +123,9 @@ class ProxyLookup:
     """
 
     def __init__(
-        self, f: t.Optional[t.Callable] = None, fallback: t.Optional[t.Callable] = None
+        self,
+        f: t.Optional[t.Callable[..., t.Any]] = None,
+        fallback: t.Optional[t.Callable[..., t.Any]] = None,
     ) -> None:
         """
         参数:
@@ -148,10 +151,10 @@ class ProxyLookup:
 
         else:
             bind = None
-        self.bind = bind
+        self.bind: t.Optional[t.Callable[..., t.Any]] = bind
         self.fallback = fallback
 
-    def __set_name__(self, owner: "LocalProxy", name: str):
+    def __set_name__(self, owner: "LocalProxy", name: str) -> None:
         """类被初始化的时候会被自动回调
 
         参数:
@@ -187,7 +190,7 @@ class LocalProxy(object):
         name: 代理名称
     """
 
-    def __init__(self, local: Local, name: str = t.Optional[str]) -> None:
+    def __init__(self, local: Local, name: t.Optional[str]) -> None:
         super().__setattr__("_local", local)  # 被代理的对象
         super().__setattr__("_name", name)  # 代理的属性值
 
@@ -201,8 +204,8 @@ class LocalProxy(object):
             return self._local()
         try:
             return getattr(self._local, self._name)
-        except AttributeError:
-            raise RuntimeError(f"代理对象不存在{self._name}属性")
+        except AttributeError as e:
+            raise RuntimeError(f"代理对象不存在{self._name}属性") from e
 
     # 对这些常用的魔术方法都进行代理操作
     __getattr__ = ProxyLookup(getattr)
@@ -230,7 +233,7 @@ class LocalProxy(object):
 _app_context = LocalStack()  # 全局的请求上下文
 
 
-def app_ctx(name):
+def app_ctx(name) -> t.Any:
     data = _app_context.top
     if data is None:
         raise RuntimeError("没有应用上下文,可能是未执行入栈操作")

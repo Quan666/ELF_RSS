@@ -22,7 +22,7 @@ __plugin_meta__ = PluginMetadata(
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 
 
-async def check_first_connect(_: LifecycleMetaEvent) -> bool:
+def check_first_connect(_: LifecycleMetaEvent) -> bool:
     return True
 
 

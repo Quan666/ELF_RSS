@@ -12,6 +12,7 @@ from yarl import URL
 
 from . import my_trigger as tr
 from .config import DATA_PATH, config
+from .globals import state
 from .parsing import get_proxy
 from .parsing.cache_manage import cache_filter
 from .parsing.check_update import dict_hash
@@ -24,7 +25,6 @@ from .utils import (
     get_http_caching_headers,
     send_message_to_admin,
 )
-from .globals import current_rss, state
 
 HEADERS = {
     "Accept": "application/xhtml+xml,application/xml,*/*",

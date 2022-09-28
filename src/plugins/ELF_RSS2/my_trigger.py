@@ -8,8 +8,8 @@ from nonebot import require
 from nonebot.log import logger
 
 from . import rss_parsing
-from .rss_class import Rss
 from .globals import RequestContext
+from .rss_class import Rss
 
 wait_for = 5 * 60
 
