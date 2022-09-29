@@ -7,4 +7,5 @@ from . import (
     show_all,
     show_dy,
     upload_group_file,
+    telegram_command,
 )

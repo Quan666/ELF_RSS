@@ -147,4 +147,10 @@ dmypy.json
 .idea/
 .env.prod
 data/
+
+# vscode
+.vscode
+
+bot.session
+bot.session-journal
 # End of https://www.toptal.com/developers/gitignore/api/python

@@ -5,9 +5,11 @@ from nonebot.adapters.onebot.v11 import Bot, LifecycleMetaEvent
 from nonebot.log import logger
 from nonebot.plugin import PluginMetadata
 
+
 from . import command
+from .telegram import start
 from . import my_trigger as tr
-from .config import DATA_PATH
+from .config import DATA_PATH, config
 from .rss_class import Rss
 from .utils import send_message_to_admin
 
