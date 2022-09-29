@@ -4,7 +4,7 @@ import re
 
 import aiohttp
 import emoji
-from deep_translator import GoogleTranslator, DeeplTranslator
+from deep_translator import GoogleTranslator, DeeplTranslator, single_detection
 from nonebot.log import logger
 
 from ..config import config
@@ -51,8 +51,12 @@ async def google_translation(text: str, proxies: dict) -> str:
 
 async def deepl_translator(text: str, proxies: dict) -> str:
     try:
+        lang = None
+        if config.single_detection_api_key:
+            lang = single_detection(text, api_key=config.single_detection_api_key)
         return "\nDeepl翻译：\n" + DeeplTranslator(
             api_key=config.deepl_translator_api_key,
+            source=None,
             target="zh",
             use_free_api=True,
             proxies=proxies,
