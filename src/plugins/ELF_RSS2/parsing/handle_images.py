@@ -227,13 +227,6 @@ async def handle_img_combo_with_content(gif_url: str, content: bytes) -> str:
     return "\n图片走丢啦\n"
 
 
-async def handle_img_combo_with_content(gif_url: str, content: bytes) -> str:
-    resize_content = await zip_pic(gif_url, content)
-    if img_base64 := get_pic_base64(resize_content):
-        return f"[CQ:image,file=base64://{img_base64}]"
-    return "\n图片走丢啦\n"
-
-
 # 处理图片、视频
 async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str:
     if item.get("image_content"):
