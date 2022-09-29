@@ -13,7 +13,6 @@ from yarl import URL
 
 from ..config import Path, config
 from ..globals import state, current_rss
-from ..rss_class import Rss
 from .utils import get_proxy, get_summary
 
 
@@ -195,32 +194,37 @@ async def download_image(url: str, proxy: bool = False) -> Optional[bytes]:
         return None
 
 
-async def handle_img_combo(url: str, img_proxy: bool, rss: Optional[Rss] = None) -> str:
+async def handle_img_combo(url: str, img_proxy: bool) -> str:
     """'
     下载图片并返回可用的CQ码
-
     参数:
         url: 需要下载的图片地址
         img_proxy: 是否使用代理下载图片
-        rss: Rss对象
     返回值:
         返回当前图片的CQ码,以base64格式编码发送
         如获取图片失败将会提示图片走丢了
     """
     content = await download_image(url, img_proxy)
     if content:
-        if rss is not None and rss.download_pic:
+        if current_rss.download_pic:
             _url = URL(url)
             logger.debug(f"正在保存图片: {url}")
             try:
-                save_image(content=content, file_url=_url, rss=rss)
+                save_image(content=content, file_url=_url)
             except Exception as e:
-                logger.warning(e)
+                logger.warning(e.__traceback__)
                 logger.warning("在保存图片到本地时出现错误")
         resize_content = await zip_pic(url, content)
         if img_base64 := get_pic_base64(resize_content):
             return f"[CQ:image,file=base64://{img_base64}]"
     return f"\n图片走丢啦: {url}\n"
+
+
+async def handle_img_combo_with_content(gif_url: str, content: bytes) -> str:
+    resize_content = await zip_pic(gif_url, content)
+    if img_base64 := get_pic_base64(resize_content):
+        return f"[CQ:image,file=base64://{img_base64}]"
+    return "\n图片走丢啦\n"
 
 
 async def handle_img_combo_with_content(gif_url: str, content: bytes) -> str:
