@@ -1,19 +1,8 @@
-import asyncio
-from typing import List
-from telethon import TelegramClient, events, Button
+from telethon import Button, events
+
 from ...config import config
-from ...rss_class import Rss
 from ...telegram import bot
-from .telegram_command import (
-    CommandInputBtnsCancel,
-    CommandInputText,
-    InputButton,
-    wait_msg_callback,
-    wait_btn_callback,
-    CommandInfo,
-    CommandField,
-    CommandInputBtnsBool,
-)
+from .telegram_command import CommandInfo
 
 
 class RssCommands:
@@ -24,8 +13,8 @@ class RssCommands:
     help = CommandInfo(name="帮助", command="help", description="帮助")
 
 
-@bot.on(events.NewMessage(pattern=config.telegram_bot_command))
-async def start(event: events.newmessage.NewMessage.Event):
+@bot.on(events.NewMessage(pattern=config.telegram_bot_command))  # type: ignore
+async def start(event: events.NewMessage.Event) -> None:
     btns = []
     for command in RssCommands.__dict__.values():
         if isinstance(command, CommandInfo):

@@ -1,20 +1,14 @@
 import asyncio
 
 from telethon import events
-from ...config import config
-from ...rss_class import Rss
-from .start import RssCommands
-from ...telegram import bot
 
+from ...telegram import bot
+from .start import RssCommands
 from .telegram_command import (
-    CommandInputBtnsCancel,
+    CommandField,
     CommandInputText,
     InputButton,
-    wait_msg_callback,
     wait_btn_callback,
-    CommandInfo,
-    CommandField,
-    CommandInputBtnsBool,
 )
 
 QueryCommandFields = [
@@ -31,8 +25,8 @@ QueryCommandFields = [
 ]
 
 
-@bot.on(events.CallbackQuery(data=RssCommands.query.command))
-async def change(event: events.callbackquery.CallbackQuery.Event):
+@bot.on(events.CallbackQuery(data=RssCommands.query.command))  # type: ignore
+async def change(event: events.CallbackQuery.Event) -> None:
     await event.delete()
 
     btns = [
@@ -47,8 +41,10 @@ async def change(event: events.callbackquery.CallbackQuery.Event):
             btns=btns,
         )
         if field_key == "query_all":
+            # TODO
             pass
         elif field_key == "query_this":
+            # TODO
             pass
 
     except asyncio.TimeoutError:

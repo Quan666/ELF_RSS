@@ -1,5 +1,5 @@
-from .. import command
 from . import bot
-import threading
+from ..config import config
 
-threading.Thread(target=bot.loop.run_forever).start()
+bot.start(bot_token=config.telegram_bot_token)
+bot.run_until_disconnected()

@@ -1,19 +1,16 @@
 import asyncio
 
 from telethon import events
-from ...config import config
-from ...rss_class import Rss
-from .start import RssCommands
+
 from ...telegram import bot
+from .start import RssCommands
 from .telegram_command import (
+    CommandField,
+    CommandInputBtnsBool,
     CommandInputBtnsCancel,
     CommandInputText,
     InputButton,
-    wait_msg_callback,
     wait_btn_callback,
-    CommandInfo,
-    CommandField,
-    CommandInputBtnsBool,
 )
 
 ChangeCommandFields = [
@@ -40,8 +37,8 @@ ChangeCommandFields = [
 ]
 
 
-@bot.on(events.CallbackQuery(data=RssCommands.change.command))
-async def change(event: events.callbackquery.CallbackQuery.Event):
+@bot.on(events.CallbackQuery(data=RssCommands.change.command))  # type: ignore
+async def change(event: events.CallbackQuery.Event) -> None:
     await event.delete()
 
     # 发送需要修改的订阅字段

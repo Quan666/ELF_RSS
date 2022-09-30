@@ -5,12 +5,11 @@ from nonebot.adapters.onebot.v11 import Bot, LifecycleMetaEvent
 from nonebot.log import logger
 from nonebot.plugin import PluginMetadata
 
-
 from . import command
-from .telegram import start
 from . import my_trigger as tr
 from .config import DATA_PATH, config
 from .rss_class import Rss
+from .telegram import start
 from .utils import send_message_to_admin
 
 VERSION = "2.6.12"
@@ -33,7 +32,7 @@ start_metaevent = on_metaevent(rule=check_first_connect, temp=True)
 
 # 启动时发送启动成功信息
 @start_metaevent.handle()
-async def start(bot: Bot) -> None:
+async def _(bot: Bot) -> None:
 
     # 启动后检查 data 目录，不存在就创建
     if not DATA_PATH.is_dir():
