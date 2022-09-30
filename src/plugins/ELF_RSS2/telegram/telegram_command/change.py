@@ -41,9 +41,6 @@ ChangeCommandFields = [
 @bot.on(events.CallbackQuery(data=RssCommands.change.command))  # type: ignore
 async def change(event: events.CallbackQuery.Event) -> None:
     await event.delete()
-    # 获取message
-    # message = await event.get_message
-    print(event)
 
     # 发送需要修改的订阅字段
     btns = [
