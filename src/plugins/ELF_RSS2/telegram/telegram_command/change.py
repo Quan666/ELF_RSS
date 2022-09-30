@@ -229,7 +229,7 @@ async def change(event: events.CallbackQuery.Event) -> None:
                     rss.upsert(rss_name)
                 else:
                     rss.upsert()
-                await event.answer("修改成功")
+
     except asyncio.TimeoutError:
         logger.warning("超时，已取消")
     except Exception as e:

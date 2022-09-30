@@ -27,10 +27,11 @@ async def wait_msg_callback(
     ) as conv:
         # @用户
         if event.sender.username:
-            msg += f" @{event.sender.username}"
+            msg += f" \n@{event.sender.username}"
         else:
             # 文字提及用户
             msg += f" [@{event.sender.first_name}](tg://user?id={event.sender_id})"
+
         ans = await conv.send_message(
             msg,
             buttons=Button.force_reply(
@@ -39,9 +40,33 @@ async def wait_msg_callback(
                 placeholder=placeholder,
             ),
         )
+        cancel_btn = await conv.send_message(
+            "取消输入", buttons=[Button.inline("取消", "cancel")]
+        )
         try:
             while True:
-                e = await conv.get_response()
+                # e = await conv.get_response()
+                wait_event = [
+                    conv.get_response(),
+                    conv.wait_event(
+                        events.CallbackQuery(
+                            func=lambda e: e.sender_id == event.sender_id
+                        ),
+                        timeout=timeout,
+                    ),
+                ]
+                done, pending = await asyncio.wait(
+                    wait_event, return_when=asyncio.FIRST_COMPLETED
+                )
+                for task in pending:
+                    task.cancel()
+                e = done.pop().result()
+                if isinstance(e, events.CallbackQuery.Event):
+                    if e.data.decode() == "cancel":
+                        await e.delete()
+                        await cancel_btn.delete()
+                        await ans.delete()
+                        raise asyncio.TimeoutError
                 if e.sender_id == event.sender_id:
                     return str(e.message)
         finally:
