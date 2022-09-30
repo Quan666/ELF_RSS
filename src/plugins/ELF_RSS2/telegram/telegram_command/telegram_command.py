@@ -1,8 +1,7 @@
 import asyncio
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from telethon import Button, TelegramClient, events
-from telethon.tl.patched import Message
 
 
 class InputButton:
@@ -17,7 +16,7 @@ async def wait_msg_callback(
     msg: str,
     timeout: float = 60,
     placeholder: Optional[str] = None,
-) -> Message:
+) -> str:
     # 等待用户发送消息
     # 需要用户输入的信息
     async with bot.conversation(
@@ -26,6 +25,9 @@ async def wait_msg_callback(
         # @用户
         if event.sender.username:
             msg += f" @{event.sender.username}"
+        else:
+            # 文字提及用户
+            msg += f" [@{event.sender.first_name}](tg://user?id={event.sender_id})"
         await conv.send_message(
             msg,
             buttons=Button.force_reply(
@@ -33,13 +35,12 @@ async def wait_msg_callback(
                 selective=True,
                 placeholder=placeholder,
             ),
-            # 这里之所以要 -1 是因为 需要用户发送命令那条消息的id
-            reply_to=event.message_id - 1,  # FIXME: 遇到多人同时聊天可能不符合预期
+            parse_mode="markdown",
         )
         while True:
             e = await conv.get_response()
             if e.sender_id == event.sender_id:
-                return e.message
+                return str(e.message)
 
 
 async def wait_btn_callback(
@@ -48,13 +49,14 @@ async def wait_btn_callback(
     tips_text: str,
     btns: List[InputButton],
     remove_btn: bool = True,
-    timeout: float = 10,
-):
+    timeout: float = 60,
+    size: int = 3,
+) -> str:
     datas = [btn.data for btn in btns]
-    # 一行三个按钮，从 self.btns 里取
+    # 一行size个按钮，从 self.btns 里取
     buttons = [
-        map(lambda b: Button.inline(b.text, b.data), btns[i : i + 3])
-        for i in range(0, len(btns), 3)
+        list(map(lambda b: Button.inline(b.text, b.data), btns[i : i + size]))
+        for i in range(0, len(btns), size)
     ]
     # 等待用户点击按钮
     async with bot.conversation(
@@ -78,7 +80,10 @@ async def wait_btn_callback(
                 await ans.delete()
 
 
-class CommandInputBase:
+from abc import ABCMeta, abstractmethod
+
+
+class CommandInputBase(metaclass=ABCMeta):
     def __init__(
         self,
         bot: TelegramClient,
@@ -89,8 +94,9 @@ class CommandInputBase:
         self.event = event
         self.tips_text = tips_text
 
-    async def input(self) -> None:
-        pass
+    @abstractmethod
+    async def input(self, *args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError
 
 
 class CommandInfo:
@@ -105,7 +111,7 @@ class CommandField:
         self,
         description: str,
         key: str,
-        field_type: CommandInputBase,
+        field_type: Any,
         value: Any = None,
     ):
         self.description = description
@@ -124,8 +130,10 @@ class CommandInputText(CommandInputBase):
         super().__init__(bot, event, tips_text)
 
     async def input(
-        self, placeholder: Optional[str] = None, timeout: float = 60
-    ) -> Optional[Message]:
+        self,
+        placeholder: Optional[str] = None,
+        timeout: float = 60,
+    ) -> Optional[str]:
         try:
             return await wait_msg_callback(
                 self.bot,
@@ -151,7 +159,9 @@ class CommandInputBtns(CommandInputBase):
         super().__init__(bot, event, tips_text)
         self.btns = btns
 
-    async def input(self, timeout: float = 60, remove_btn: bool = True):
+    async def input(
+        self, timeout: float = 60, remove_btn: bool = True
+    ) -> Union[Optional[str], Any]:
 
         try:
             return await wait_btn_callback(
@@ -181,8 +191,8 @@ class CommandInputBtnsBool(CommandInputBtns):
             [InputButton("True", "True"), InputButton("False", "False")],
         )
 
-    async def input(self, timeout: float = 60, remove_btn: bool = True):
-        return await super().input(timeout=timeout, remove_btn=remove_btn) == "True"
+    async def input(self, timeout: float = 60, remove_btn: bool = True) -> bool:
+        return (await super().input(timeout=timeout, remove_btn=remove_btn)) == "True"
 
 
 class CommandInputBtnsCancel(CommandInputBtns):
@@ -199,5 +209,5 @@ class CommandInputBtnsCancel(CommandInputBtns):
             [InputButton("取消", "cancel")],
         )
 
-    async def input(self, timeout: float = 60, remove_btn: bool = True):
-        return await super().input(timeout=timeout, remove_btn=remove_btn) == "cancel"
+    async def input(self, timeout: float = 60, remove_btn: bool = True) -> bool:
+        return (await super().input(timeout=timeout, remove_btn=remove_btn)) == "cancel"

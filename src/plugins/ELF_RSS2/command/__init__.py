@@ -6,6 +6,5 @@ from . import (
     rsshub_add,
     show_all,
     show_dy,
-    telegram_command,
     upload_group_file,
 )
