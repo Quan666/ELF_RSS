@@ -16,6 +16,12 @@ bot = None
 
 
 async def start_telegram_bot(loop: Any, boot_message: str) -> None:
+    if not (
+        config.telegram_api_id
+        and config.telegram_api_hash
+        and config.telegram_bot_token
+    ):
+        return
     global bot
     bot = TelegramClient(
         "bot",

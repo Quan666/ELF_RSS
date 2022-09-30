@@ -12,16 +12,7 @@ from .telegram_command import (
 )
 
 QueryCommandFields = [
-    CommandField(
-        description="所有订阅",
-        key="query_all",
-        field_type=CommandInputText,
-    ),
-    CommandField(
-        description="当前会话",
-        key="query_this",
-        field_type=CommandInputText,
-    ),
+    #
 ]
 
 
