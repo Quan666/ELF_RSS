@@ -45,9 +45,8 @@ async def wait_msg_callback(
         )
         try:
             while True:
-                # e = await conv.get_response()
                 wait_event = [
-                    conv.get_response(),
+                    conv.get_response(timeout=timeout),
                     conv.wait_event(
                         events.CallbackQuery(
                             func=lambda e: e.sender_id == event.sender_id
