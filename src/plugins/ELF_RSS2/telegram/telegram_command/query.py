@@ -4,15 +4,10 @@ from telethon import events
 
 from ...telegram import bot
 from .start import RssCommands
-from .telegram_command import (
-    CommandField,
-    CommandInputText,
-    InputButton,
-    wait_btn_callback,
-)
+from .telegram_command import InputButton, wait_btn_callback
 
 QueryCommandFields = [
-    #
+    # TODO
 ]
 
 

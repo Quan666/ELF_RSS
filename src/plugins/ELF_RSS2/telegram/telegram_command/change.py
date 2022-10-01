@@ -1,9 +1,10 @@
 import asyncio
-from typing import Any, Dict, List, Optional, Union
-from nonebot.log import logger
+from typing import Any, Dict, List, Union
 
+from nonebot.log import logger
 from telethon import events
 
+from ...rss_class import Rss
 from ...telegram import bot
 from .start import RssCommands
 from .telegram_command import (
@@ -15,7 +16,6 @@ from .telegram_command import (
     InputButton,
     wait_btn_callback,
 )
-from ...rss_class import Rss
 
 attribute_dict = {
     "name": {

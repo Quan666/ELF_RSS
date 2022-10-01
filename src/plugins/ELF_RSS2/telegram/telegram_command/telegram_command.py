@@ -3,8 +3,6 @@ from typing import Any, List, Optional, Union
 
 from telethon import Button, TelegramClient, events
 
-from ...rss_class import Rss
-
 
 class InputButton:
     def __init__(self, text: str, data: str):
@@ -60,12 +58,14 @@ async def wait_msg_callback(
                 for task in pending:
                     task.cancel()
                 e = done.pop().result()
-                if isinstance(e, events.CallbackQuery.Event):
-                    if e.data.decode() == "cancel":
-                        await e.delete()
-                        await cancel_btn.delete()
-                        await ans.delete()
-                        raise asyncio.TimeoutError
+                if (
+                    isinstance(e, events.CallbackQuery.Event)
+                    and e.data.decode() == "cancel"
+                ):
+                    await e.delete()
+                    await cancel_btn.delete()
+                    await ans.delete()
+                    raise asyncio.TimeoutError
                 if e.sender_id == event.sender_id:
                     return str(e.message)
         finally:
@@ -85,7 +85,7 @@ async def wait_btn_callback(
     datas = [btn.data for btn in btns]
     # 一行size个按钮，从 self.btns 里取
     buttons = [
-        list(map(lambda b: Button.inline(b.text, b.data), btns[i : i + size]))
+        list(map(lambda b: Button.inline(b.text, b.data), btns[i : i + size]))  # type: ignore
         for i in range(0, len(btns), size)
     ]
 
@@ -126,8 +126,8 @@ class CommandInputBase(metaclass=ABCMeta):
         self.tips_text = tips_text
 
     @abstractmethod
-    async def input(self, *args: Any, **kwargs: Any) -> Any:
-        raise NotImplementedError
+    async def input(self) -> Any:
+        pass
 
 
 class CommandInfo:

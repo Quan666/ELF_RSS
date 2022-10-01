@@ -1,10 +1,10 @@
 import asyncio
 
-from nonebot import on_metaevent, require, get_driver
+from nonebot import get_driver, on_metaevent, require
 from nonebot.adapters.onebot.v11 import Bot, LifecycleMetaEvent
+from nonebot.drivers import Driver
 from nonebot.log import logger
 from nonebot.plugin import PluginMetadata
-from nonebot.drivers import Driver
 
 from . import command
 from . import my_trigger as tr
