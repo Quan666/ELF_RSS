@@ -56,7 +56,7 @@ async def deepl_translator(text: str, proxies: dict) -> str:
             lang = single_detection(text, api_key=config.single_detection_api_key)
         return "\nDeepl翻译：\n" + DeeplTranslator(
             api_key=config.deepl_translator_api_key,
-            source=None,
+            source=lang,
             target="zh",
             use_free_api=True,
             proxies=proxies,
