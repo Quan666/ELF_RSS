@@ -1,8 +1,6 @@
 import re
 import sqlite3
-from contextlib import suppress
 from difflib import SequenceMatcher
-from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List
 
 import arrow
@@ -19,7 +17,7 @@ from .cache_manage import (
     insert_into_cache_db,
     write_item,
 )
-from .check_update import check_update
+from .check_update import check_update, get_item_date
 from .download_torrent import down_torrent, pikpak_offline
 from .handle_html_tag import handle_html_tag
 from .handle_images import handle_img
@@ -325,12 +323,8 @@ async def handle_date(
     tmp: str,
     tmp_state: Dict[str, Any],
 ) -> str:
-    if date := item.get("published", item.get("updated")):
-        with suppress(Exception):
-            date = parsedate_to_datetime(date)
-        date = arrow.get(date).to("Asia/Shanghai")
-    else:
-        date = arrow.now()
+    date = get_item_date(item)
+    date = date.replace(tzinfo="local") if date > arrow.now() else date.to("local")
     return f"日期：{date.format('YYYY年MM月DD日 HH:mm:ss')}"
 
 

@@ -44,9 +44,7 @@ def rss_trigger(rss: Rss) -> None:
         my_trigger_cron(rss)
         return
     # 制作一个“time分钟/次”触发器
-    trigger = IntervalTrigger(
-        minutes=int(rss.time), jitter=10, timezone="Asia/Shanghai"
-    )
+    trigger = IntervalTrigger(minutes=int(rss.time), jitter=10)
     # 添加任务
     scheduler.add_job(
         func=check_update,  # 要添加任务的函数，不要带参数
@@ -81,7 +79,6 @@ def my_trigger_cron(rss: Rss) -> None:
             day=times_list[2],
             month=times_list[3],
             day_of_week=times_list[4],
-            timezone="Asia/Shanghai",
         )
     except Exception:
         logger.exception(f"创建定时器错误！cron:{times_list}")
