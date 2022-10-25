@@ -20,6 +20,9 @@ from .utils import (
     send_message_to_admin,
 )
 
+require("nonebot_plugin_apscheduler")
+from nonebot_plugin_apscheduler import scheduler  # noqa
+
 # 计划
 # 创建一个全局定时器用来检测种子下载情况
 # 群文件上传成功回调
@@ -160,7 +163,6 @@ async def check_down_status(
     qb = await get_qb_client()
     if not qb:
         return
-    scheduler = require("nonebot_plugin_apscheduler").scheduler
     # 防止中途删掉任务，无限执行
     try:
         info = qb.get_torrent(hash_str)
@@ -223,7 +225,6 @@ async def delete_msg(bot: Bot, msg_ids: List[Dict[str, Any]]) -> None:
 
 
 async def rss_trigger(bot: Bot, hash_str: str, group_ids: List[str], name: str) -> None:
-    scheduler = require("nonebot_plugin_apscheduler").scheduler
     # 制作一个频率为“ n 秒 / 次”的触发器
     trigger = IntervalTrigger(seconds=int(config.down_status_msg_date), jitter=10)
     job_defaults = {"max_instances": 1}

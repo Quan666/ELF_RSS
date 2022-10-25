@@ -10,6 +10,9 @@ from nonebot.log import logger
 from . import rss_parsing
 from .rss_class import Rss
 
+require("nonebot_plugin_apscheduler")
+from nonebot_plugin_apscheduler import scheduler  # noqa
+
 wait_for = 5 * 60
 
 
@@ -23,7 +26,6 @@ async def check_update(rss: Rss) -> None:
 
 
 def delete_job(rss: Rss) -> None:
-    scheduler = require("nonebot_plugin_apscheduler").scheduler
     if scheduler.get_job(rss.name):
         scheduler.remove_job(rss.name)
 
@@ -41,11 +43,8 @@ def rss_trigger(rss: Rss) -> None:
     if re.search(r"[_*/,-]", rss.time):
         my_trigger_cron(rss)
         return
-    scheduler = require("nonebot_plugin_apscheduler").scheduler
     # 制作一个“time分钟/次”触发器
-    trigger = IntervalTrigger(
-        minutes=int(rss.time), jitter=10, timezone="Asia/Shanghai"
-    )
+    trigger = IntervalTrigger(minutes=int(rss.time), jitter=10)
     # 添加任务
     scheduler.add_job(
         func=check_update,  # 要添加任务的函数，不要带参数
@@ -80,12 +79,10 @@ def my_trigger_cron(rss: Rss) -> None:
             day=times_list[2],
             month=times_list[3],
             day_of_week=times_list[4],
-            timezone="Asia/Shanghai",
         )
     except Exception:
         logger.exception(f"创建定时器错误！cron:{times_list}")
         return
-    scheduler = require("nonebot_plugin_apscheduler").scheduler
 
     # 添加任务
     scheduler.add_job(

@@ -2,7 +2,6 @@ import re
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
-from nonebot.log import logger
 from tinydb import Query, TinyDB
 from tinydb.operations import set as tinydb_set
 from yarl import URL
@@ -193,26 +192,16 @@ class Rss:
         rss_old = Rss.read_rss()
         return [rss for rss in rss_old if user in rss.user_id]
 
-    def set_cookies(self, cookies_str: str) -> bool:
-        try:
-            cookies = {}
-            for line in cookies_str.split(";"):
-                if "=" in line:
-                    key, value = line.strip().split("=", 1)
-                    cookies[key] = value
-            self.cookies = cookies
-            with TinyDB(
-                JSON_PATH,
-                encoding="utf-8",
-                sort_keys=True,
-                indent=4,
-                ensure_ascii=False,
-            ) as db:
-                db.update(tinydb_set("cookies", cookies), Query().name == self.name)  # type: ignore
-            return True
-        except Exception:
-            logger.exception(f"{self.name} 的 Cookies 设置时出错！")
-            return False
+    def set_cookies(self, cookies: str) -> None:
+        self.cookies = cookies
+        with TinyDB(
+            JSON_PATH,
+            encoding="utf-8",
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        ) as db:
+            db.update(tinydb_set("cookies", cookies), Query().name == self.name)  # type: ignore
 
     def upsert(self, old_name: Optional[str] = None) -> None:
         with TinyDB(
