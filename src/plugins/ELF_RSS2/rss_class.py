@@ -40,6 +40,7 @@ class Rss:
         self.pikpak_path_key: str = (
             ""  # PikPak 离线下载路径匹配正则表达式，用于自动归档文件 例如 r"(?:\[.*?\][\s\S])([\s\S]*)[\s\S]-"
         )
+        self.telegram_channel_id: List[int] = []  # 订阅频道
         if data:
             self.__dict__.update(data)
 

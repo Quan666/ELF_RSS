@@ -6,8 +6,8 @@ from .telegram_command import CommandInfo, buttons_layout
 
 
 class RssCommands:
-    change = CommandInfo(name="修改", command="change", description="修改订阅")
     subscribe = CommandInfo(name="订阅", command="subscribe", description="订阅")
+    change = CommandInfo(name="修改", command="change", description="修改订阅")
     query = CommandInfo(name="查询", command="query", description="查询订阅")
     unsubscribe = CommandInfo(name="取消订阅", command="unsubscribe", description="取消订阅")
     help = CommandInfo(name="帮助", command="help", description="帮助")

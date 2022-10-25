@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Union
 from nonebot.log import logger
 from telethon import events
 
-from ...config import config
+from .permission import handle_permission
 from ...rss_class import Rss
 from ...telegram import bot
 from .start import RssCommands
@@ -76,8 +76,8 @@ attribute_dict = {
         "description": "",
     },
     "down_torrent_keyword": {
-        "zh": "下载种子关键词",
-        "description": "",
+        "zh": "白名单关键词",
+        "description": "支持正则",
     },
     "black_keyword": {
         "zh": "黑名单关键词",
@@ -129,7 +129,7 @@ def get_change_command_fields(
                     command_input=CommandInputBtnsBool(
                         bot=bot,
                         event=event,
-                        tips_text=f"{field_info['zh']} 当前值为\n{value}",
+                        tips_text=f"{field_info['zh']}\n{field_info['description']}\n当前值为\n{value}",
                     ),
                 )
             )
@@ -142,7 +142,7 @@ def get_change_command_fields(
                     command_input=CommandInputListStr(
                         bot=bot,
                         event=event,
-                        tips_text=f"{field_info['zh']}",
+                        tips_text=f"{field_info['zh']}\n{field_info['description']}",
                         old_list=value,
                     ),
                 )
@@ -156,7 +156,7 @@ def get_change_command_fields(
                     command_input=CommandInputText(
                         bot=bot,
                         event=event,
-                        tips_text=f"{field_info['zh']} 当前值为:\n{value}",
+                        tips_text=f"{field_info['zh']}\n{field_info['description']}\n当前值为:\n{value}",
                     ),
                 )
             )
@@ -185,7 +185,7 @@ def change_rss_field_value(
     return False
 
 
-@bot.on(events.CallbackQuery(data=RssCommands.change.command, func=lambda e: e.sender_id in config.telegram_admin_ids))  # type: ignore
+@bot.on(events.CallbackQuery(data=RssCommands.change.command, func=lambda e: handle_permission(e)))  # type: ignore
 async def change(event: events.CallbackQuery.Event) -> None:
     await event.delete()
 
@@ -230,6 +230,7 @@ async def change(event: events.CallbackQuery.Event) -> None:
                     rss.upsert(rss_name)
                 else:
                     rss.upsert()
+
 
     except asyncio.TimeoutError:
         logger.warning("超时，已取消")
