@@ -1,7 +1,7 @@
 import asyncio
 
 from telethon import events
-
+from .permission import handle_permission
 from ...telegram import bot
 from .start import RssCommands
 from .telegram_command import InputButton, wait_btn_callback
@@ -11,7 +11,7 @@ QueryCommandFields = [
 ]
 
 
-@bot.on(events.CallbackQuery(data=RssCommands.query.command))  # type: ignore
+@bot.on(events.CallbackQuery(data=RssCommands.query.command, func=lambda e: handle_permission(e)))  # type: ignore
 async def change(event: events.CallbackQuery.Event) -> None:
     await event.delete()
 

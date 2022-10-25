@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Union
 from nonebot.log import logger
 from telethon import events
 
+from ...config import config
 from ...rss_class import Rss
 from ...telegram import bot
 from .start import RssCommands
@@ -184,7 +185,7 @@ def change_rss_field_value(
     return False
 
 
-@bot.on(events.CallbackQuery(data=RssCommands.change.command))  # type: ignore
+@bot.on(events.CallbackQuery(data=RssCommands.change.command, func=lambda e: e.sender_id in config.telegram_admin_ids))  # type: ignore
 async def change(event: events.CallbackQuery.Event) -> None:
     await event.delete()
 

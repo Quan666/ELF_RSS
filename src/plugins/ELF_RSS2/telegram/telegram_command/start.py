@@ -2,7 +2,7 @@ from telethon import Button, events
 
 from ...config import config
 from ...telegram import bot
-from .telegram_command import CommandInfo
+from .telegram_command import CommandInfo, buttons_layout
 
 
 class RssCommands:
@@ -13,16 +13,14 @@ class RssCommands:
     help = CommandInfo(name="帮助", command="help", description="帮助")
 
 
-@bot.on(events.NewMessage(pattern=config.telegram_bot_command))  # type: ignore
+@bot.on(events.NewMessage(pattern=config.telegram_bot_command, from_users=config.telegram_admin_ids))  # type: ignore
 async def start(event: events.NewMessage.Event) -> None:
     btns = []
     for command in RssCommands.__dict__.values():
         if isinstance(command, CommandInfo):
             btn = Button.inline(command.name, data=command.command)
             btns.append(btn)
-    # 一行显示 3 个按钮
-    btns = [btns[i : i + 3] for i in range(0, len(btns), 3)]
     await event.reply(
         "选择操作:",
-        buttons=btns,
+        buttons=buttons_layout(btns),
     )

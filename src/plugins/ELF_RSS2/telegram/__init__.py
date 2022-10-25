@@ -33,10 +33,10 @@ async def start_telegram_bot(loop: Any, boot_message: str) -> None:
     )
     if bot:
         from . import telegram_command
-    bot.start(bot_token=config.telegram_bot_token)
+    await bot.start(bot_token=config.telegram_bot_token)
     logger.success("Telegram Bot Started")
-    if config.telegram_admin_id:
+    if config.telegram_admin_ids:
         await bot.send_message(
-            config.telegram_admin_id,
+            config.telegram_admin_ids[0],
             boot_message,
         )

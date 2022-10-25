@@ -2,6 +2,9 @@ import asyncio
 from typing import Any, List, Optional, Union
 
 from telethon import Button, TelegramClient, events
+from telethon.tl.types import Message, KeyboardButtonCallback
+
+BUTTON_ROW_MAX_LEN = 40
 
 
 class InputButton:
@@ -17,7 +20,7 @@ async def wait_msg_callback(
     timeout: float = 60,
     placeholder: Optional[str] = None,
     remove_text: bool = False,
-) -> str:
+) -> Message:
     # 等待用户发送消息
     # 需要用户输入的信息
     async with bot.conversation(
@@ -67,10 +70,47 @@ async def wait_msg_callback(
                     await ans.delete()
                     raise asyncio.TimeoutError
                 if e.sender_id == event.sender_id:
-                    return str(e.message)
+                    return e
         finally:
+            await cancel_btn.delete()
             if remove_text:
                 await ans.delete()
+
+
+def buttons_layout(btns: List[InputButton], size: int = 3) -> List[List[Button]]:
+    """
+    按钮布局，根据文字长度自动调整每行按钮数量
+    一行最多 size 个按钮
+
+    :param btns: 按钮列表
+    :param size: 一行最多按钮数量
+    """
+
+    def _get_btn_len(btn: InputButton) -> int:
+        """非 ASCII 算两个字符"""
+        n = 0
+        for c in btn.text:
+            if ord(c) > 127:
+                n += 2
+            else:
+                n += 1
+        return n
+
+    buttons_len = [_get_btn_len(btn) for btn in btns]
+    result: List[List[Button]] = []
+    row: List[KeyboardButtonCallback] = []
+    row_len = 0
+    for i, btn in enumerate(btns):
+        if len(row) >= size or row_len + buttons_len[i] > BUTTON_ROW_MAX_LEN and row:
+            result.append(row)
+            row = []
+            row_len = 0
+        row.append(Button.inline(btn.text, btn.data))
+        row_len += buttons_len[i]
+    if row:
+        result.append(row)
+
+    return result
 
 
 async def wait_btn_callback(
@@ -82,12 +122,9 @@ async def wait_btn_callback(
     timeout: float = 60,
     size: int = 3,
 ) -> str:
-    datas = [btn.data for btn in btns]
-    # 一行size个按钮，从 self.btns 里取
-    buttons = [
-        list(map(lambda b: Button.inline(b.text, b.data), btns[i : i + size]))  # type: ignore
-        for i in range(0, len(btns), size)
-    ]
+    btns_data = [btn.data for btn in btns]
+    # 一行size个按钮
+    buttons = buttons_layout(btns, size)
 
     # 等待用户点击按钮
     async with bot.conversation(
@@ -103,7 +140,7 @@ async def wait_btn_callback(
                 )
                 # bytes 转字符串
                 data: str = res.data.decode()
-                if data in datas:
+                if data in btns_data:
                     return data
         finally:
             if remove_btn:
@@ -168,13 +205,14 @@ class CommandInputText(CommandInputBase):
         timeout: float = 60,
     ) -> Optional[str]:
         try:
-            return await wait_msg_callback(
+            e = await wait_msg_callback(
                 self.bot,
                 self.event,
                 self.tips_text,
                 timeout=timeout,
                 placeholder=placeholder,
             )
+            return str(e.message)
 
         except asyncio.TimeoutError:
             await self.event.answer("超时，已取消")
