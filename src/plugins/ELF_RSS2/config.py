@@ -31,6 +31,10 @@ class ELFConfig(BaseConfig):
 
     baidu_id: Optional[str] = None
     baidu_key: Optional[str] = None
+    deepl_translator_api_key: Optional[str] = None
+    single_detection_api_key: Optional[
+        str
+    ] = None  # 配合 deepl_translator 使用的语言检测接口，前往https://detectlanguage.com/documentation注册获取api_key
 
     qb_username: Optional[str] = None  # qbittorrent 用户名
     qb_password: Optional[str] = None  # qbittorrent 密码
