@@ -52,21 +52,18 @@ async def handle_rss_add(
         name, url = name_and_url.split(" ")
     except ValueError:
         await RSS_ADD.reject(prompt)
-        return
 
-    if _ := Rss.get_one_by_name(name):
-        await RSS_ADD.finish(f"已存在订阅名为 {name} 的订阅")
+    if rss := Rss.get_one_by_name(name):
+        if rss.url != url:
+            await RSS_ADD.finish(f"已存在订阅名为 {name} 的订阅")
+        else:
+            await add_feed(name, url, event, rss)
         return
 
     await add_feed(name, url, event)
 
 
-async def add_feed(
-    name: str,
-    url: str,
-    event: MessageEvent,
-) -> None:
-    rss = Rss()
+async def add_feed(name: str, url: str, event: MessageEvent, rss: Rss = Rss()) -> None:
     rss.name = name
     rss.url = url
     user = str(event.user_id) if isinstance(event, PrivateMessageEvent) else None
