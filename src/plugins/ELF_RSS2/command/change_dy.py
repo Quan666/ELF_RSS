@@ -318,7 +318,7 @@ def handle_rm_list(
             elif valid_rm_list := [i for i in rm_list if regex_validate(i)]:
                 setattr(rss, "content_to_remove", valid_rm_list)
 
-    change_list = [i.strip() for i in change_info.split(" ")]
+    change_list = [i.strip() for i in change_info.split(" ") if i != ""]
     # 去掉订阅名
     change_list.pop(0)
 
