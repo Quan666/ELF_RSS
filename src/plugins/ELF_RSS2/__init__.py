@@ -14,7 +14,8 @@ from .utils import send_message_to_admin
 require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler  # noqa
 
-VERSION = "2.6.12"
+VERSION = "2.6.13"
+
 __plugin_meta__ = PluginMetadata(
     name="ELF_RSS",
     description="QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub",
@@ -23,7 +24,7 @@ __plugin_meta__ = PluginMetadata(
 )
 
 
-async def check_first_connect(_: LifecycleMetaEvent) -> bool:
+def check_first_connect(_: LifecycleMetaEvent) -> bool:
     return True
 
 

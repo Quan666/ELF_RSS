@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ELF_RSS"
-version = "2.6.12"
+version = "2.6.13"
 description = "QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub"
 authors = ["Quan666 <i@Rori.eMail>"]
 license = "GPL-3.0-only"
@@ -14,31 +14,31 @@ keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 
 [tool.poetry.dependencies]
 python = "^3.8.3"
-aiohttp = { extras = ["speedups"], version = "^3.8.3" }
+aiohttp = {extras = ["speedups"], version = "^3.8.3"}
 arrow = "^1.2.3"
 bbcode = "^1.1.0"
 cachetools = "^5.2.0"
-emoji = "^2.1.0"
+emoji = "^2.2.0"
 feedparser = "^6.0.10"
-deep-translator = "^1.9.0"
+deep-translator = "^1.9.1"
 ImageHash = "^4.3.1"
 magneturi = "^1.3"
-nonebot-adapter-onebot = "^2.1.5"
+nonebot-adapter-onebot = "^2.2.0"
 nonebot-plugin-apscheduler = "^0.2.0"
 nonebot-plugin-guild-patch = "^0.2.1"
-nonebot2 = "^2.0.0-rc.1"
-pikpakapi = "^0.0.7"
-Pillow = "^9.2.0"
+nonebot2 = "^2.0.0-rc.2"
+pikpakapi = "^0.1.1"
+Pillow = "^9.3.0"
 pydantic = "^1.10.2"
 pyquery = "^1.4.3"
 python-qbittorrent = "^0.4.3"
 tenacity = "^8.1.0"
 tinydb = "^4.7.0"
 typing-extensions = "^4.4.0"
-yarl = "^1.8.1"
+yarl = "^1.8.2"
 
 [tool.poetry.dev-dependencies]
-nb-cli = "^0.6.7"
+nb-cli = "^0.6.8"
 
 [tool.mypy]
 python_version = "3.8"
