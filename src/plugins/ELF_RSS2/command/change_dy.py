@@ -309,7 +309,7 @@ def handle_rm_list(
     if rm_list_exist:
         rm_list_str = rm_list_exist[0].lstrip().replace("rm_list=", "")
         rm_list = [i.strip("'") for i in rm_list_str.split("','")]
-        change_info = change_info.replace(rm_list_exist[0], "")
+        change_info = change_info.replace(rm_list_exist[0], "").strip()
 
     if rm_list:
         for rss in rss_list:
