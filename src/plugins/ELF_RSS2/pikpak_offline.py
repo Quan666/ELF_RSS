@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Optional
 
 from nonebot.log import logger
-from pikpakapi.async_api import PikPakApiAsync
+from pikpakapi import PikPakApi
 from pikpakapi.PikpakException import PikpakAccessTokenExpireException, PikpakException
 
 from .config import config
 
-pikpak_client = PikPakApiAsync(
+pikpak_client = PikPakApi(
     username=config.pikpak_username,
     password=config.pikpak_password,
 )
