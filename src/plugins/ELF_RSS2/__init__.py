@@ -23,7 +23,7 @@ __plugin_meta__ = PluginMetadata(
 )
 
 
-async def check_first_connect(_: LifecycleMetaEvent) -> bool:
+def check_first_connect(_: LifecycleMetaEvent) -> bool:
     return True
 
 
