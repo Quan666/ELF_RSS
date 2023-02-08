@@ -15,7 +15,7 @@ from ..utils import get_summary
 
 
 # 处理图片
-@ParsingBase.append_handler(parsing_type="picture", rex="twitter")
+@ParsingBase.append_handler(parsing_type="picture", rex="/twitter/")
 async def handle_picture(
     rss: Rss,
     state: Dict[str, Any],
