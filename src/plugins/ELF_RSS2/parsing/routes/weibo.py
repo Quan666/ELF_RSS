@@ -11,7 +11,7 @@ from ..utils import get_summary
 
 
 # 处理正文 处理网页 tag
-@ParsingBase.append_handler(parsing_type="summary", rex="weibo", priority=10)
+@ParsingBase.append_handler(parsing_type="summary", rex="/weibo/", priority=10)
 async def handle_summary(
     rss: Rss,
     state: Dict[str, Any],
@@ -32,7 +32,7 @@ async def handle_summary(
 
 
 # 处理图片
-@ParsingBase.append_handler(parsing_type="picture", rex="weibo")
+@ParsingBase.append_handler(parsing_type="picture", rex="/weibo/")
 async def handle_picture(
     rss: Rss,
     state: Dict[str, Any],
@@ -41,7 +41,6 @@ async def handle_picture(
     tmp: str,
     tmp_state: Dict[str, Any],
 ) -> str:
-
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""

@@ -14,7 +14,7 @@ from .utils import send_message_to_admin
 require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler  # noqa
 
-VERSION = "2.6.13"
+VERSION = "2.6.14"
 
 __plugin_meta__ = PluginMetadata(
     name="ELF_RSS",
@@ -34,7 +34,6 @@ start_metaevent = on_metaevent(rule=check_first_connect, temp=True)
 # 启动时发送启动成功信息
 @start_metaevent.handle()
 async def start(bot: Bot) -> None:
-
     # 启动后检查 data 目录，不存在就创建
     if not DATA_PATH.is_dir():
         DATA_PATH.mkdir()

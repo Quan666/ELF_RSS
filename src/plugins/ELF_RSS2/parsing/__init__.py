@@ -239,7 +239,6 @@ async def handle_picture(
     tmp: str,
     tmp_state: Dict[str, Any],
 ) -> str:
-
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""
@@ -342,7 +341,6 @@ async def handle_message(
 
     # 发送消息并写入文件
     if await send_msg(rss=rss, msg=item_msg, item=item):
-
         if rss.duplicate_filter_mode:
             insert_into_cache_db(
                 conn=state["conn"], item=item, image_hash=item["image_hash"]

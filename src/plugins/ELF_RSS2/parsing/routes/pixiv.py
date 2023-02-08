@@ -71,7 +71,7 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]
 
 
 # 处理图片
-@ParsingBase.append_handler(parsing_type="picture", rex="pixiv")
+@ParsingBase.append_handler(parsing_type="picture", rex="/pixiv/")
 async def handle_picture(
     rss: Rss,
     state: Dict[str, Any],
@@ -80,7 +80,6 @@ async def handle_picture(
     tmp: str,
     tmp_state: Dict[str, Any],
 ) -> str:
-
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""
@@ -147,7 +146,7 @@ async def get_ugoira_video(ugoira_id: str) -> Any:
 
 
 # 处理来源
-@ParsingBase.append_handler(parsing_type="source", rex="pixiv")
+@ParsingBase.append_handler(parsing_type="source", rex="/pixiv/")
 async def handle_source(
     rss: Rss,
     state: Dict[str, Any],
@@ -163,7 +162,7 @@ async def handle_source(
 
 
 # 检查更新
-@ParsingBase.append_before_handler(rex="pixiv/ranking", priority=10)  # type: ignore
+@ParsingBase.append_before_handler(rex="/pixiv/ranking/", priority=10)  # type: ignore
 async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     db = state["tinydb"]
     change_data = check_update(db, state["new_data"])
@@ -172,7 +171,6 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]
 
 # 检查更新
 def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-
     # 发送失败 1 次
     to_send_list: List[Dict[str, Any]] = db.search(Query().to_send.exists())
 

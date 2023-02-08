@@ -15,7 +15,7 @@ from ..utils import get_summary
 
 
 # 处理图片
-@ParsingBase.append_handler(parsing_type="picture", rex="twitter")
+@ParsingBase.append_handler(parsing_type="picture", rex="/twitter/")
 async def handle_picture(
     rss: Rss,
     state: Dict[str, Any],
@@ -24,7 +24,6 @@ async def handle_picture(
     tmp: str,
     tmp_state: Dict[str, Any],
 ) -> str:
-
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""

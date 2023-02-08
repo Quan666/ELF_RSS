@@ -17,3 +17,7 @@ def get_summary(item: Dict[str, Any]) -> str:
         item["content"][0]["value"] if item.get("content") else item["summary"]
     )
     return f"<div>{summary}</div>" if re.search("^https?://", summary) else summary
+
+
+def get_author(item: Dict[str, Any]) -> str:
+    return item.get("author", "")
