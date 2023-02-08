@@ -134,7 +134,6 @@ def _handler_filter(_handler_list: List[ParsingItem], _url: str) -> List[Parsing
 
 # 解析实例
 class ParsingRss:
-
     # 初始化解析实例
     def __init__(self, rss: Rss):
         self.state: Dict[str, Any] = {}  # 用于存储实例处理中上下文数据

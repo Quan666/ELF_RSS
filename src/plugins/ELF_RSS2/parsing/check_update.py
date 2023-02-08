@@ -16,7 +16,6 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 
 # 检查更新
 def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-
     # 发送失败 1 次
     to_send_list: List[Dict[str, Any]] = db.search(Query().to_send.exists())
 
