@@ -32,13 +32,13 @@ Pillow = "^9.4.0"
 pydantic = "^1.10.4"
 pyquery = "^2.0.0"
 python-qbittorrent = "^0.4.3"
-tenacity = "^8.1.0"
+tenacity = "^8.2.1"
 tinydb = "^4.7.1"
 typing-extensions = "^4.4.0"
 yarl = "^1.8.2"
 
 [tool.poetry.dev-dependencies]
-nb-cli = "^1.0.3"
+nb-cli = "^1.0.4"
 
 [tool.mypy]
 python_version = "3.8"
