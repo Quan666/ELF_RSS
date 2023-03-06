@@ -91,6 +91,7 @@ attribute_dict = {
     "stop": "stop",
     "pikpak": "pikpak_offline",
     "ppk": "pikpak_path_key",
+    "forward": "send_forward_msg",
 }
 
 
@@ -130,6 +131,7 @@ def handle_change_list(
         "downopen",
         "stop",
         "pikpak",
+        "forward",
     }:
         value_to_change = bool(int(value_to_change))  # type:ignore
         if key_to_change == "stop" and not value_to_change and rss.error_count > 0:
@@ -153,10 +155,10 @@ prompt = """\
 对应参数:
     订阅名(-name): 禁止将多个订阅批量改名，名称相同会冲突
     订阅链接(-url)
-    QQ(-qq) 
+    QQ(-qq)
     群(-qun)
     更新频率(-time)
-    代理(-proxy) 
+    代理(-proxy)
     翻译(-tl)
     仅Title(ot)
     仅图片(-op)
@@ -172,6 +174,7 @@ prompt = """\
     停止更新(-stop): 停止更新订阅
     PikPak离线(-pikpak): 开启PikPak离线下载
     PikPak离线路径匹配(-ppk): 匹配离线下载的文件夹,设置该值后生效
+    发送合并消息(-forward): 当一次更新多条消息时，尝试发送合并消息
 注：
     1. 仅含有图片不同于仅图片，除了图片还会发送正文中的其他文本信息
     2. proxy/tl/ot/op/ohp/downopen/upgroup/stop/pikpak 值为 1/0

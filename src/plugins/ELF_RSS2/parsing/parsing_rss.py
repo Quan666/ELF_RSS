@@ -48,14 +48,12 @@ class ParsingBase:
     - **说明**: 解析器
     """
     handler: Dict[str, List[ParsingItem]] = {
-        "before": [],  # item的预处理
         "title": [],
         "summary": [],
         "picture": [],
         "source": [],
         "date": [],
         "torrent": [],
-        "after": [],  # item的最后处理，此处调用消息截取、发送
     }
 
     """
@@ -182,13 +180,13 @@ class ParsingRss:
         # 分条处理
         self.state.update(
             {
+                "header_message": f"【{rss_title}】更新了!",
                 "messages": [],
-                "item_count": 0,
+                "items": [],
             }
         )
         for item in self.state["change_data"]:
-            item_msg = f"【{self.state.get('rss_title')}】更新了!\n----------------------\n"
-
+            item_msg = ""
             for handler_list in self.handler.values():
                 # 用于保存上一次处理结果
                 tmp = ""
@@ -208,6 +206,7 @@ class ParsingRss:
                         break
                 item_msg += tmp
             self.state["messages"].append(item_msg)
+            self.state["items"].append(item)
 
         # 最后处理
         for handler in self.after_handler:
