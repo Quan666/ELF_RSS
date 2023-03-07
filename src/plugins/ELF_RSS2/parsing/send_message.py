@@ -223,9 +223,13 @@ async def handle_send_msgs(
             if item.get("to_send"):
                 item.pop("to_send")
 
+        state["success_count"] = len(state["messages"])
+
     else:
         for item in items:
             item["to_send"] = True
+
+        state["success_count"] = 0
 
     for item in items:
         write_item(db, item)

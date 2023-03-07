@@ -336,8 +336,10 @@ async def after_handler(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     message_count = len(state["messages"])
     db = state["tinydb"]
 
-    if message_count > 0:
+    if state["success_count"] > 0:
         logger.info(f"{rss.name} 新消息推送完毕，共计：{message_count}")
+    elif message_count > 0:
+        logger.error(f"{rss.name} 新消息推送失败，共计：{message_count}")
     else:
         logger.info(f"{rss.name} 没有新信息")
 
