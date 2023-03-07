@@ -14,7 +14,6 @@ from .cache_manage import (
     cache_db_manage,
     cache_json_manage,
     duplicate_exists,
-    insert_into_cache_db,
     write_item,
 )
 from .check_update import check_update, get_item_date
@@ -24,7 +23,7 @@ from .handle_images import handle_img
 from .handle_translation import handle_translation
 from .parsing_rss import ParsingBase
 from .routes import *
-from .send_message import send_msg
+from .send_message import handle_send_msgs
 from .utils import get_proxy, get_summary
 
 
@@ -327,49 +326,24 @@ async def handle_date(
     return f"日期：{date.format('YYYY年MM月DD日 HH:mm:ss')}"
 
 
-# 发送消息
-@ParsingBase.append_handler(parsing_type="after")
-async def handle_message(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
-    db = state["tinydb"]
-
-    # 发送消息并写入文件
-    if await send_msg(rss=rss, msg=item_msg, item=item):
-        if rss.duplicate_filter_mode:
-            insert_into_cache_db(
-                conn=state["conn"], item=item, image_hash=item["image_hash"]
-            )
-
-        if item.get("to_send"):
-            item.pop("to_send")
-
-        state["item_count"] += 1
-    else:
-        item["to_send"] = True
-
-    write_item(db, item)
-
-    return ""
-
-
 @ParsingBase.append_after_handler()
 async def after_handler(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
-    item_count: int = state["item_count"]
-    conn = state["conn"]
+    # 发送消息并写入文件
+    await handle_send_msgs(
+        rss=rss, messages=state["messages"], items=state["items"], state=state
+    )
+
+    message_count = len(state["messages"])
     db = state["tinydb"]
 
-    if item_count > 0:
-        logger.info(f"{rss.name} 新消息推送完毕，共计：{item_count}")
+    if state["success_count"] > 0:
+        logger.info(f"{rss.name} 新消息推送完毕，共计：{message_count}")
+    elif message_count > 0:
+        logger.error(f"{rss.name} 新消息推送失败，共计：{message_count}")
     else:
         logger.info(f"{rss.name} 没有新信息")
 
-    if conn is not None:
+    if conn := state["conn"]:
         conn.close()
 
     new_data_length = len(state["new_data"])

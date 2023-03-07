@@ -23,7 +23,7 @@ class Rss:
         self.only_pic: bool = False  # 仅图片
         self.only_has_pic: bool = False  # 仅含有图片
         self.download_pic: bool = False  # 是否要下载图片
-        self.cookies: Dict[str, str] = {}
+        self.cookies: str = ""
         self.down_torrent: bool = False  # 是否下载种子
         self.down_torrent_keyword: str = ""  # 过滤关键字，支持正则
         self.black_keyword: str = ""  # 黑名单关键词
@@ -39,6 +39,7 @@ class Rss:
         self.pikpak_path_key: str = (
             ""  # PikPak 离线下载路径匹配正则表达式，用于自动归档文件 例如 r"(?:\[.*?\][\s\S])([\s\S]*)[\s\S]-"
         )
+        self.send_forward_msg: bool = False  # 当一次更新多条消息时，是否尝试发送合并消息
         if data:
             self.__dict__.update(data)
 

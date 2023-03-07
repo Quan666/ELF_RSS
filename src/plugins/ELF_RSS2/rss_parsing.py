@@ -134,9 +134,10 @@ async def fetch_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
         if rss.last_modified:
             headers["If-Modified-Since"] = rss.last_modified
     async with aiohttp.ClientSession(
-        cookies=cookies,
+        cookies=cookies,  # type: ignore
         headers=HEADERS,
         raise_for_status=True,
+        timeout=aiohttp.ClientTimeout(10),
     ) as session:
         try:
             resp = await session.get(rss_url, proxy=proxy)

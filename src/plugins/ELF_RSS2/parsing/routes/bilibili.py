@@ -1,5 +1,4 @@
 import re
-
 from typing import Any, Dict
 
 from nonebot.log import logger
