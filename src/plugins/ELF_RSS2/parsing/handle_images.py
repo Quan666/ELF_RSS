@@ -276,8 +276,8 @@ def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
     """
     可以根据用户设置的规则来格式化文件名
     """
-    format_rule = config.img_format
-    down_path = config.img_down_path
+    format_rule = config.img_format or ""
+    down_path = config.img_down_path or ""
     rules = {  # 替换格式化字符串
         "{subs}": rss.name,
         "{name}": file_url.name

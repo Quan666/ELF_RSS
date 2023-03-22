@@ -22,7 +22,7 @@ from .handle_html_tag import handle_html_tag
 from .handle_images import handle_img
 from .handle_translation import handle_translation
 from .parsing_rss import ParsingBase
-from .routes import *
+from .routes import ALL_MODULES
 from .send_message import handle_send_msgs
 from .utils import get_proxy, get_summary
 
