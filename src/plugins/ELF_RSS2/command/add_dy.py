@@ -1,6 +1,6 @@
 import re
 
-from nonebot import on_command
+from nonebot import on_command, require
 from nonebot.adapters.onebot.v11 import (
     GroupMessageEvent,
     Message,
@@ -12,7 +12,10 @@ from nonebot.matcher import Matcher
 from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
+
+require("nonebot_plugin_guild_patch")
 from nonebot_plugin_guild_patch import GuildMessageEvent
+from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER
 
 from .. import my_trigger as tr
 from ..permission import GUILD_SUPERUSER
@@ -23,7 +26,12 @@ RSS_ADD = on_command(
     aliases={"添加订阅", "sub"},
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN | GROUP_OWNER | GUILD_SUPERUSER | SUPERUSER,
+    permission=GROUP_ADMIN
+    | GROUP_OWNER
+    | GUILD_ADMIN
+    | GUILD_OWNER
+    | GUILD_SUPERUSER
+    | SUPERUSER,
 )
 
 

@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 import aiohttp
-from nonebot import on_command
+from nonebot import on_command, require
 from nonebot.adapters.onebot.v11 import Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.matcher import Matcher
@@ -10,6 +10,9 @@ from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
 from nonebot.typing import T_State
 from yarl import URL
+
+require("nonebot_plugin_guild_patch")
+from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER
 
 from ..config import config
 from ..permission import GUILD_SUPERUSER
@@ -23,7 +26,12 @@ RSSHUB_ADD = on_command(
     "rsshub_add",
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN | GROUP_OWNER | GUILD_SUPERUSER | SUPERUSER,
+    permission=GROUP_ADMIN
+    | GROUP_OWNER
+    | GUILD_ADMIN
+    | GUILD_OWNER
+    | GUILD_SUPERUSER
+    | SUPERUSER,
 )
 
 
