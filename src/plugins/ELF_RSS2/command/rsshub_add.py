@@ -11,13 +11,13 @@ from nonebot.rule import to_me
 from nonebot.typing import T_State
 from yarl import URL
 
-require("nonebot_plugin_guild_patch")
-from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER
-
 from ..config import config
 from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
 from .add_dy import add_feed
+
+require("nonebot_plugin_guild_patch")
+from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER  # noqa
 
 rsshub_routes: Dict[str, Any] = {}
 

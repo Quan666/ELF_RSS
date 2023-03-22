@@ -13,13 +13,13 @@ from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
 
-require("nonebot_plugin_guild_patch")
-from nonebot_plugin_guild_patch import GuildMessageEvent
-from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER
-
 from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
 from .show_dy import handle_rss_list
+
+require("nonebot_plugin_guild_patch")
+from nonebot_plugin_guild_patch import GuildMessageEvent  # noqa
+from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER  # noqa
 
 RSS_SHOW_ALL = on_command(
     "show_all",
