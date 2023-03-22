@@ -1,22 +1,30 @@
 from typing import List
 
-from nonebot import on_command
+from nonebot import on_command, require
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
-from nonebot_plugin_guild_patch import GuildMessageEvent
 
 from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
+
+require("nonebot_plugin_guild_patch")
+from nonebot_plugin_guild_patch import GuildMessageEvent  # noqa
+from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER  # noqa
 
 RSS_SHOW = on_command(
     "show",
     aliases={"查看订阅"},
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN | GROUP_OWNER | GUILD_SUPERUSER | SUPERUSER,
+    permission=GROUP_ADMIN
+    | GROUP_OWNER
+    | GUILD_ADMIN
+    | GUILD_OWNER
+    | GUILD_SUPERUSER
+    | SUPERUSER,
 )
 
 

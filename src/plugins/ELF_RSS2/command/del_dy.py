@@ -1,22 +1,30 @@
-from nonebot import on_command
+from nonebot import on_command, require
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.matcher import Matcher
 from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
-from nonebot_plugin_guild_patch import GuildMessageEvent
 
 from .. import my_trigger as tr
 from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
+
+require("nonebot_plugin_guild_patch")
+from nonebot_plugin_guild_patch import GuildMessageEvent  # noqa
+from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER  # noqa
 
 RSS_DELETE = on_command(
     "deldy",
     aliases={"drop", "unsub", "删除订阅"},
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN | GROUP_OWNER | GUILD_SUPERUSER | SUPERUSER,
+    permission=GROUP_ADMIN
+    | GROUP_OWNER
+    | GUILD_ADMIN
+    | GUILD_OWNER
+    | GUILD_SUPERUSER
+    | SUPERUSER,
 )
 
 
