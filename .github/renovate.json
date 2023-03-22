@@ -6,9 +6,10 @@
   "dependencyDashboard": false,
   "rangeStrategy": "bump",
   "enabledManagers": [
+    "github-actions",
     "pip_requirements",
     "poetry",
-    "github-actions"
+    "pre-commit"
   ],
   "packageRules": [
     {
