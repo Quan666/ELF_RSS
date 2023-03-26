@@ -1,4 +1,5 @@
 import re
+from inspect import signature
 from typing import Any, Callable, Dict, List, Optional
 
 from tinydb import TinyDB
@@ -140,16 +141,18 @@ async def _run_handlers(
     tmp_state: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     for handler in handlers:
-        state.update(
-            await handler.func(
-                rss=rss,
-                state=state,
-                item=item,
-                item_msg=item_msg,
-                tmp=tmp,
-                tmp_state=tmp_state,
-            )
-        )
+        kwargs = {
+            "rss": rss,
+            "state": state,
+            "item": item,
+            "item_msg": item_msg,
+            "tmp": tmp,
+            "tmp_state": tmp_state,
+        }
+        handler_params = signature(handler.func).parameters
+        handler_kwargs = {k: v for k, v in kwargs.items() if k in handler_params}
+
+        state.update(await handler.func(**handler_kwargs))
         if handler.block or (tmp_state is not None and not tmp_state["continue"]):
             break
     return state
