@@ -1,6 +1,6 @@
 import re
 from inspect import signature
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from tinydb import TinyDB
 from tinydb.middlewares import CachingMiddleware
@@ -139,7 +139,7 @@ async def _run_handlers(
     item_msg: Optional[str] = None,
     tmp: Optional[str] = None,
     tmp_state: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], str]:
     for handler in handlers:
         kwargs = {
             "rss": rss,
@@ -152,10 +152,13 @@ async def _run_handlers(
         handler_params = signature(handler.func).parameters
         handler_kwargs = {k: v for k, v in kwargs.items() if k in handler_params}
 
-        state.update(await handler.func(**handler_kwargs))
+        if any((item, item_msg, tmp, tmp_state)):
+            tmp += await handler.func(**handler_kwargs)
+        else:
+            state.update(await handler.func(**handler_kwargs))
         if handler.block or (tmp_state is not None and not tmp_state["continue"]):
             break
-    return state
+    return state, tmp or ""
 
 
 # 解析实例
@@ -200,7 +203,7 @@ class ParsingRss:
                 "tinydb": db,  # 缓存 json
             }
         )
-        self.state = await _run_handlers(self.before_handler, self.rss, self.state)
+        self.state, _ = await _run_handlers(self.before_handler, self.rss, self.state)
 
         # 分条处理
         self.state.update(
@@ -218,7 +221,7 @@ class ParsingRss:
                 tmp_state = {"continue": True}  # 是否继续执行后续处理
 
                 # 某一个内容的处理如正文，传入原文与上一次处理结果，此次处理完后覆盖
-                self.state = await _run_handlers(
+                _, tmp = await _run_handlers(
                     handler_list,
                     self.rss,
                     self.state,
@@ -232,4 +235,4 @@ class ParsingRss:
             self.state["items"].append(item)
 
         # 最后处理
-        self.state = await _run_handlers(self.after_handler, self.rss, self.state)
+        self.state, _ = await _run_handlers(self.after_handler, self.rss, self.state)
