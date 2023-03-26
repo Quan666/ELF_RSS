@@ -160,7 +160,7 @@ async def fetch_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
     d = {}
     cached = False
 
-    if not config.rsshub_backup:
+    if not config.rsshub_backup and not config.debug:
         if rss.etag:
             headers["If-None-Match"] = rss.etag
         if rss.last_modified:
