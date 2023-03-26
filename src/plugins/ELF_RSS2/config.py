@@ -16,7 +16,7 @@ class ELFConfig(BaseConfig):
 
     rss_proxy: Optional[str] = None
     rsshub: AnyHttpUrl = "https://rsshub.app"  # type: ignore
-    rsshub_backup: Optional[List[AnyHttpUrl]] = None
+    rsshub_backup: List[AnyHttpUrl] = []
     db_cache_expire = 30
     limit = 200
     max_length: int = 1024  # 正文长度限制，防止消息太长刷屏，以及消息过长发送失败的情况

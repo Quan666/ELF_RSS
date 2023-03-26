@@ -39,6 +39,21 @@ async def down_torrent(
     return hash_list
 
 
+async def fetch_magnet_link(rss: Rss, url: str, proxy: Optional[str]) -> Optional[str]:
+    try:
+        async with aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=100)
+        ) as session:
+            resp = await session.get(url, proxy=proxy)
+            content = await resp.read()
+            return f"magnet:?xt=urn:btih:{get_torrent_b16_hash(content)}"
+    except Exception as e:
+        msg = f"{rss.name} 下载种子失败: {e}"
+        logger.error(msg)
+        await send_msg(msg=msg, user_ids=rss.user_id, group_ids=rss.group_id)
+        return None
+
+
 async def pikpak_offline(
     rss: Rss, item: Dict[str, Any], proxy: Optional[str]
 ) -> List[Dict[str, Any]]:
@@ -53,21 +68,9 @@ async def pikpak_offline(
             or tmp["href"].find(".torrent") > 0
         ):
             url = tmp["href"]
-            if not re.search(r"magnet:\?xt=urn:btih:", tmp["href"]):
-                async with aiohttp.ClientSession(
-                    timeout=aiohttp.ClientTimeout(total=100)
-                ) as session:
-                    try:
-                        resp = await session.get(tmp["href"], proxy=proxy)
-                        content = await resp.read()
-                        url = f"magnet:?xt=urn:btih:{get_torrent_b16_hash(content)}"
-                    except Exception as e:
-                        msg = f"{rss.name} 下载种子失败: {e}"
-                        logger.error(msg)
-                        await send_msg(
-                            msg=msg, user_ids=rss.user_id, group_ids=rss.group_id
-                        )
-                        continue
+            if not re.search(r"magnet:\?xt=urn:btih:", url):
+                if not (url := await fetch_magnet_link(rss, url, proxy)):
+                    continue
             try:
                 path = f"{config.pikpak_download_path}/{rss.name}"
                 summary = get_summary(item)

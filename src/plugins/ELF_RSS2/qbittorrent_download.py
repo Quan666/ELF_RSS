@@ -156,6 +156,50 @@ async def start_down(
     return info["hash"]
 
 
+async def update_down_status_message(
+    bot: Bot, hash_str: str, info: Dict[str, Any], name: str
+) -> List[Dict[str, Any]]:
+    return await send_msg(
+        bot,
+        f"{name}\n"
+        f"Hash：{hash_str}\n"
+        f"下载了 {round(info['total_downloaded'] / info['total_size'] * 100, 2)}%\n"
+        f"平均下载速度： {round(info['dl_speed_avg'] / 1024, 2)} KB/s",
+    )
+
+
+async def upload_files_to_groups(
+    bot: Bot,
+    group_ids: List[str],
+    info: Dict[str, Any],
+    files: List[Dict[str, Any]],
+    name: str,
+    hash_str: str,
+) -> None:
+    for group_id in group_ids:
+        for tmp in files:
+            path = Path(info.get("save_path", "")) / tmp["name"]
+            if config.qb_down_path:
+                if (_path := Path(config.qb_down_path)).is_dir():
+                    path = _path / tmp["name"]
+
+            await send_msg(bot, f"{name}\nHash：{hash_str}\n开始上传到群：{group_id}")
+
+            try:
+                await bot.call_api(
+                    "upload_group_file",
+                    group_id=group_id,
+                    file=str(path),
+                    name=tmp["name"],
+                )
+            except ActionFailed:
+                msg = f"{name}\nHash：{hash_str}\n上传到群：{group_id}失败！请手动上传！"
+                await send_msg(bot, msg, [group_id])
+                logger.exception(msg)
+            except (NetworkError, TimeoutError) as e:
+                logger.warning(e)
+
+
 # 检查下载状态
 async def check_down_status(
     bot: Bot, hash_str: str, group_ids: List[str], name: str
@@ -171,6 +215,7 @@ async def check_down_status(
         logger.exception(e)
         scheduler.remove_job(hash_str)
         return
+
     if info["total_downloaded"] - info["total_size"] >= 0.000000:
         all_time = arrow.now() - down_info[hash_str]["start_time"]
         await send_msg(
@@ -180,41 +225,14 @@ async def check_down_status(
             f"下载完成！耗时：{str(all_time).split('.', 2)[0]}",
         )
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOADING
-        for group_id in group_ids:
-            for tmp in files:
-                # 异常包起来防止超时报错导致后续不执行
-                try:
-                    path = Path(info.get("save_path", "")) / tmp["name"]
-                    if config.qb_down_path:
-                        if (_path := Path(config.qb_down_path)).is_dir():
-                            path = _path / tmp["name"]
-                    await send_msg(bot, f"{name}\nHash：{hash_str}\n开始上传到群：{group_id}")
-                    try:
-                        await bot.call_api(
-                            "upload_group_file",
-                            group_id=group_id,
-                            file=str(path),
-                            name=tmp["name"],
-                        )
-                    except ActionFailed:
-                        msg = f"{name}\nHash：{hash_str}\n上传到群：{group_id}失败！请手动上传！"
-                        await send_msg(bot, msg, [group_id])
-                        logger.exception(msg)
-                    except NetworkError as e:
-                        logger.warning(e)
-                except TimeoutError as e:
-                    logger.warning(e)
+
+        await upload_files_to_groups(bot, group_ids, info, files, name, hash_str)
+
         scheduler.remove_job(hash_str)
         down_info[hash_str]["status"] = DOWN_STATUS_UPLOAD_OK
     else:
         await delete_msg(bot, down_info[hash_str]["downing_tips_msg_id"])
-        msg_id = await send_msg(
-            bot,
-            f"{name}\n"
-            f"Hash：{hash_str}\n"
-            f"下载了 {round(info['total_downloaded'] / info['total_size'] * 100, 2)}%\n"
-            f"平均下载速度： {round(info['dl_speed_avg'] / 1024, 2)} KB/s",
-        )
+        msg_id = await update_down_status_message(bot, hash_str, info, name)
         down_info[hash_str]["downing_tips_msg_id"] = msg_id
 
 

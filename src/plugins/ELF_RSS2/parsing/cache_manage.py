@@ -72,6 +72,40 @@ def cache_json_manage(db: TinyDB, new_data_length: int) -> None:
     db.insert_multiple(retains)
 
 
+async def get_image_hash(rss: Rss, summary: str, item: Dict[str, Any]) -> Optional[str]:
+    try:
+        summary_doc = Pq(summary)
+    except Exception as e:
+        logger.warning(e)
+        # 没有正文内容直接跳过
+        return None
+
+    img_doc = summary_doc("img")
+    # 只处理仅有一张图片的情况
+    if len(img_doc) != 1:
+        return None
+
+    url = img_doc.attr("src")
+    # 通过图像的指纹来判断是否实际是同一张图片
+    content = await download_image(url, rss.img_proxy)
+
+    if not content:
+        return None
+
+    try:
+        im = Image.open(BytesIO(content))
+    except UnidentifiedImageError:
+        return None
+
+    item["image_content"] = content
+    # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤直接跳过
+    if im.format == "GIF":
+        item["gif_url"] = url
+        return None
+
+    return str(imagehash.dhash(im))
+
+
 # 去重判断
 async def duplicate_exists(
     rss: Rss, conn: Connection, item: Dict[str, Any], summary: str
@@ -83,46 +117,26 @@ async def duplicate_exists(
     cursor = conn.cursor()
     sql = "SELECT * FROM main WHERE 1=1"
     args = []
+
     for mode in rss.duplicate_filter_mode:
         if mode == "image":
-            try:
-                summary_doc = Pq(summary)
-            except Exception as e:
-                logger.warning(e)
-                # 没有正文内容直接跳过
-                continue
-            img_doc = summary_doc("img")
-            # 只处理仅有一张图片的情况
-            if len(img_doc) != 1:
-                continue
-            url = img_doc.attr("src")
-            # 通过图像的指纹来判断是否实际是同一张图片
-            content = await download_image(url, rss.img_proxy)
-            if not content:
-                continue
-            try:
-                im = Image.open(BytesIO(content))
-            except UnidentifiedImageError:
-                continue
-            item["image_content"] = content
-            # GIF 图片的 image_hash 实际上是第一帧的值，为了避免误伤直接跳过
-            if im.format == "GIF":
-                item["gif_url"] = url
-                continue
-            image_hash = str(imagehash.dhash(im))
-            logger.debug(f"image_hash: {image_hash}")
-            sql += " AND image_hash=?"
-            args.append(image_hash)
-        if mode == "link":
+            image_hash = await get_image_hash(rss, summary, item)
+            if image_hash:
+                sql += " AND image_hash=?"
+                args.append(image_hash)
+        elif mode == "link":
             sql += " AND link=?"
             args.append(link)
         elif mode == "title":
             sql += " AND title=?"
             args.append(title)
+
     if "or" in rss.duplicate_filter_mode:
         sql = sql.replace("AND", "OR").replace("OR", "AND", 1)
+
     cursor.execute(f"{sql};", args)
     result = cursor.fetchone()
+
     if result is not None:
         result_id = result[0]
         cursor.execute(
@@ -132,6 +146,7 @@ async def duplicate_exists(
         cursor.close()
         conn.commit()
         flag = True
+
     return flag, image_hash
 
 

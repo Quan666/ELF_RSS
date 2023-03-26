@@ -103,6 +103,20 @@ attribute_dict = {
 }
 
 
+def handle_name_change(rss: Rss, value_to_change: str) -> None:
+    tr.delete_job(rss)
+    rss.rename_file(str(DATA_PATH / f"{Rss.handle_name(value_to_change)}.json"))
+
+
+def handle_time_change(value_to_change: str) -> str:
+    if not re.search(r"[_*/,-]", value_to_change):
+        if int(float(value_to_change)) < 1:
+            return "1"
+        else:
+            return str(int(float(value_to_change)))
+    return value_to_change
+
+
 # 处理要修改的订阅参数
 def handle_change_list(
     rss: Rss,
@@ -112,8 +126,7 @@ def handle_change_list(
     guild_channel_id: Optional[str],
 ) -> None:
     if key_to_change == "name":
-        tr.delete_job(rss)
-        rss.rename_file(str(DATA_PATH / f"{Rss.handle_name(value_to_change)}.json"))
+        handle_name_change(rss, value_to_change)
     elif (
         key_to_change in {"qq", "qun", "channel"}
         and not group_id
@@ -123,11 +136,7 @@ def handle_change_list(
             value_to_change, getattr(rss, attribute_dict[key_to_change])
         )  # type:ignore
     elif key_to_change == "time":
-        if not re.search(r"[_*/,-]", value_to_change):
-            if int(float(value_to_change)) < 1:
-                value_to_change = "1"
-            else:
-                value_to_change = str(int(float(value_to_change)))
+        value_to_change = handle_time_change(value_to_change)
     elif key_to_change in {
         "proxy",
         "tl",
@@ -197,23 +206,12 @@ prompt = """\
 """
 
 
-@RSS_CHANGE.got("RSS_CHANGE", prompt=prompt)
-async def handle_rss_change(
-    event: MessageEvent, change_info: str = ArgPlainText("RSS_CHANGE")
-) -> None:
-    group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
-    guild_channel_id = (
-        f"{event.guild_id}@{event.channel_id}"
-        if isinstance(event, GuildMessageEvent)
-        else None
-    )
-    name_list = change_info.split(" ")[0].split(",")
-    rss_list: List[Rss] = []
-    for name in name_list:
-        if rss_tmp := Rss.get_one_by_name(name=name):
-            rss_list.append(rss_tmp)
-
-    # 出于公平考虑，限制订阅者只有当前群组或频道时才能修改订阅，否则只有超级管理员能修改
+async def filter_rss_by_permissions(
+    rss_list: List[Rss],
+    change_info: str,
+    group_id: Optional[int],
+    guild_channel_id: Optional[str],
+) -> List[Rss]:
     if group_id:
         if re.search(" (qq|qun|channel)=", change_info):
             await RSS_CHANGE.finish("❌ 禁止在群组中修改订阅账号！如要取消订阅请使用 deldy 命令！")
@@ -238,7 +236,32 @@ async def handle_rss_change(
 
     if not rss_list:
         await RSS_CHANGE.finish("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组或频道无权操作")
-    elif len(rss_list) > 1 and " name=" in change_info:
+
+    return rss_list
+
+
+@RSS_CHANGE.got("RSS_CHANGE", prompt=prompt)
+async def handle_rss_change(
+    event: MessageEvent, change_info: str = ArgPlainText("RSS_CHANGE")
+) -> None:
+    group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
+    guild_channel_id = (
+        f"{event.guild_id}@{event.channel_id}"
+        if isinstance(event, GuildMessageEvent)
+        else None
+    )
+    name_list = change_info.split(" ")[0].split(",")
+    rss_list: List[Rss] = []
+    for name in name_list:
+        if rss_tmp := Rss.get_one_by_name(name=name):
+            rss_list.append(rss_tmp)
+
+    # 出于公平考虑，限制订阅者只有当前群组或频道时才能修改订阅，否则只有超级管理员能修改
+    rss_list = await filter_rss_by_permissions(
+        rss_list, change_info, group_id, guild_channel_id
+    )
+
+    if len(rss_list) > 1 and " name=" in change_info:
         await RSS_CHANGE.finish("❌ 禁止将多个订阅批量改名！会因为名称相同起冲突！")
 
     # 参数特殊处理：正文待移除内容
@@ -259,6 +282,24 @@ async def handle_rss_change(
     await RSS_CHANGE.finish(result_msg)
 
 
+async def validate_rss_change(key_to_change: str, value_to_change: str) -> None:
+    # 对用户输入的去重模式参数进行校验
+    mode_property_set = {"", "-1", "link", "title", "image", "or"}
+    if key_to_change == "mode" and (
+        set(value_to_change.split(",")) - mode_property_set or value_to_change == "or"
+    ):
+        await RSS_CHANGE.finish(f"❌ 去重模式参数错误！\n{key_to_change}={value_to_change}")
+    elif key_to_change in {
+        "downkey",
+        "wkey",
+        "blackkey",
+        "bkey",
+    } and not regex_validate(value_to_change.lstrip("+-")):
+        await RSS_CHANGE.finish(f"❌ 正则表达式错误！\n{key_to_change}={value_to_change}")
+    elif key_to_change == "ppk" and not regex_validate(value_to_change):
+        await RSS_CHANGE.finish(f"❌ 正则表达式错误！\n{key_to_change}={value_to_change}")
+
+
 async def batch_change_rss(
     change_list: List[str],
     group_id: Optional[int],
@@ -267,28 +308,16 @@ async def batch_change_rss(
     rm_list_exist: Optional[Match[str]] = None,
 ) -> List[Rss]:
     changed_rss_list = []
+
     for rss in rss_list:
         new_rss = deepcopy(rss)
         rss_name = rss.name
+
         for change_dict in change_list:
             key_to_change, value_to_change = change_dict.split("=", 1)
+
             if key_to_change in attribute_dict.keys():
-                # 对用户输入的去重模式参数进行校验
-                mode_property_set = {"", "-1", "link", "title", "image", "or"}
-                if key_to_change == "mode" and (
-                    set(value_to_change.split(",")) - mode_property_set
-                    or value_to_change == "or"
-                ):
-                    await RSS_CHANGE.finish(f"❌ 去重模式参数错误！\n{change_dict}")
-                elif key_to_change in {
-                    "downkey",
-                    "wkey",
-                    "blackkey",
-                    "bkey",
-                } and not regex_validate(value_to_change.lstrip("+-")):
-                    await RSS_CHANGE.finish(f"❌ 正则表达式错误！\n{change_dict}")
-                elif key_to_change == "ppk" and not regex_validate(value_to_change):
-                    await RSS_CHANGE.finish(f"❌ 正则表达式错误！\n{change_dict}")
+                await validate_rss_change(key_to_change, value_to_change)
                 handle_change_list(
                     new_rss, key_to_change, value_to_change, group_id, guild_channel_id
                 )
@@ -298,6 +327,7 @@ async def batch_change_rss(
         if new_rss.__dict__ == rss.__dict__ and not rm_list_exist:
             continue
         changed_rss_list.append(new_rss)
+
         # 参数解析完毕，写入
         new_rss.upsert(rss_name)
 

@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from tinydb import TinyDB
 from tinydb.middlewares import CachingMiddleware
@@ -130,6 +130,31 @@ def _handler_filter(_handler_list: List[ParsingItem], _url: str) -> List[Parsing
     return _result
 
 
+async def _run_handlers(
+    handlers: List[ParsingItem],
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Optional[Dict[str, Any]] = None,
+    item_msg: Optional[str] = None,
+    tmp: Optional[str] = None,
+    tmp_state: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    for handler in handlers:
+        state.update(
+            await handler.func(
+                rss=rss,
+                state=state,
+                item=item,
+                item_msg=item_msg,
+                tmp=tmp,
+                tmp_state=tmp_state,
+            )
+        )
+        if handler.block or (tmp_state is not None and not tmp_state["continue"]):
+            break
+    return state
+
+
 # 解析实例
 class ParsingRss:
     # 初始化解析实例
@@ -172,10 +197,7 @@ class ParsingRss:
                 "tinydb": db,  # 缓存 json
             }
         )
-        for handler in self.before_handler:
-            self.state.update(await handler.func(rss=self.rss, state=self.state))
-            if handler.block:
-                break
+        self.state = await _run_handlers(self.before_handler, self.rss, self.state)
 
         # 分条处理
         self.state.update(
@@ -185,31 +207,26 @@ class ParsingRss:
                 "items": [],
             }
         )
+        # 用于保存上一次处理结果
+        tmp = ""
         for item in self.state["change_data"]:
             item_msg = ""
             for handler_list in self.handler.values():
-                # 用于保存上一次处理结果
-                tmp = ""
                 tmp_state = {"continue": True}  # 是否继续执行后续处理
 
                 # 某一个内容的处理如正文，传入原文与上一次处理结果，此次处理完后覆盖
-                for handler in handler_list:
-                    tmp = await handler.func(
-                        rss=self.rss,
-                        state=self.state,
-                        item=item,
-                        item_msg=item_msg,
-                        tmp=tmp,
-                        tmp_state=tmp_state,
-                    )
-                    if handler.block or not tmp_state["continue"]:
-                        break
+                self.state = await _run_handlers(
+                    handler_list,
+                    self.rss,
+                    self.state,
+                    item=item,
+                    item_msg=item_msg,
+                    tmp=tmp,
+                    tmp_state=tmp_state,
+                )
                 item_msg += tmp
             self.state["messages"].append(item_msg)
             self.state["items"].append(item)
 
         # 最后处理
-        for handler in self.after_handler:
-            self.state.update(await handler.func(rss=self.rss, state=self.state))
-            if handler.block:
-                break
+        self.state = await _run_handlers(self.after_handler, self.rss, self.state)

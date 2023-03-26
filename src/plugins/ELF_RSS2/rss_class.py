@@ -218,38 +218,43 @@ class Rss:
                 db.upsert(self.__dict__, Query().name == str(self.name))
 
     def __str__(self) -> str:
-        mode_name = {"link": "链接", "title": "标题", "image": "图片"}
-        mode_msg = ""
+        def _generate_feature_string(feature: str, value: Any) -> str:
+            return f"{feature}：{value}" if value else ""
+
         if self.duplicate_filter_mode:
             delimiter = " 或 " if "or" in self.duplicate_filter_mode else "、"
+            mode_name = {"link": "链接", "title": "标题", "image": "图片"}
             mode_msg = (
                 "已启用去重模式，"
                 f"{delimiter.join(mode_name[i] for i in self.duplicate_filter_mode if i != 'or')} 相同时去重"
             )
+        else:
+            mode_msg = ""
+
         ret_list = [
             f"名称：{self.name}",
             f"订阅地址：{self.url}",
-            f"订阅QQ：{self.user_id}" if self.user_id else "",
-            f"订阅群：{self.group_id}" if self.group_id else "",
-            f"订阅子频道：{self.guild_channel_id}" if self.guild_channel_id else "",
+            _generate_feature_string("订阅QQ", self.user_id),
+            _generate_feature_string("订阅群", self.group_id),
+            _generate_feature_string("订阅子频道", self.guild_channel_id),
             f"更新时间：{self.time}",
-            f"代理：{self.img_proxy}" if self.img_proxy else "",
-            f"翻译：{self.translation}" if self.translation else "",
-            f"仅标题：{self.only_title}" if self.only_title else "",
-            f"仅图片：{self.only_pic}" if self.only_pic else "",
-            f"下载图片：{self.download_pic}" if self.download_pic else "",
-            f"仅含有图片：{self.only_has_pic}" if self.only_has_pic else "",
-            f"白名单关键词：{self.down_torrent_keyword}" if self.down_torrent_keyword else "",
-            f"黑名单关键词：{self.black_keyword}" if self.black_keyword else "",
-            f"cookies：{self.cookies}" if self.cookies else "",
+            _generate_feature_string("代理", self.img_proxy),
+            _generate_feature_string("翻译", self.translation),
+            _generate_feature_string("仅标题", self.only_title),
+            _generate_feature_string("仅图片", self.only_pic),
+            _generate_feature_string("下载图片", self.download_pic),
+            _generate_feature_string("仅含有图片", self.only_has_pic),
+            _generate_feature_string("白名单关键词", self.down_torrent_keyword),
+            _generate_feature_string("黑名单关键词", self.black_keyword),
+            _generate_feature_string("cookies", self.cookies),
             "种子自动下载功能已启用" if self.down_torrent else "",
             "" if self.is_open_upload_group else f"是否上传到群：{self.is_open_upload_group}",
-            f"{mode_msg}" if self.duplicate_filter_mode else "",
-            f"图片数量限制：{self.max_image_number}" if self.max_image_number else "",
-            f"正文待移除内容：{self.content_to_remove}" if self.content_to_remove else "",
-            f"连续抓取失败的次数：{self.error_count}" if self.error_count else "",
-            f"停止更新：{self.stop}" if self.stop else "",
-            f"PikPak离线: {self.pikpak_offline}" if self.pikpak_offline else "",
-            f"PikPak离线路径匹配: {self.pikpak_path_key}" if self.pikpak_path_key else "",
+            mode_msg,
+            _generate_feature_string("图片数量限制", self.max_image_number),
+            _generate_feature_string("正文待移除内容", self.content_to_remove),
+            _generate_feature_string("连续抓取失败的次数", self.error_count),
+            _generate_feature_string("停止更新", self.stop),
+            _generate_feature_string("PikPak离线", self.pikpak_offline),
+            _generate_feature_string("PikPak离线路径匹配", self.pikpak_path_key),
         ]
         return "\n".join([i for i in ret_list if i != ""])
