@@ -21,7 +21,7 @@ from ..utils import get_summary
 
 
 # 如果启用了去重模式，对推送列表进行过滤
-@ParsingBase.append_before_handler(priority=12, rex="/pixiv/")
+@ParsingBase.append_before_handler(rex="/pixiv/", priority=12)
 async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     change_data = state["change_data"]
     conn = state["conn"]
@@ -72,14 +72,7 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]
 
 # 处理图片
 @ParsingBase.append_handler(parsing_type="picture", rex="/pixiv/")
-async def handle_picture(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_picture(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""
@@ -147,14 +140,7 @@ async def get_ugoira_video(ugoira_id: str) -> Any:
 
 # 处理来源
 @ParsingBase.append_handler(parsing_type="source", rex="/pixiv/")
-async def handle_source(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_source(item: Dict[str, Any]) -> str:
     source = item["link"]
     # 缩短 pixiv 链接
     str_link = re.sub("https://www.pixiv.net/artworks/", "https://pixiv.net/i/", source)
@@ -163,7 +149,7 @@ async def handle_source(
 
 # 检查更新
 @ParsingBase.append_before_handler(rex="/pixiv/ranking/", priority=10)  # type: ignore
-async def handle_check_update(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
+async def handle_check_update(state: Dict[str, Any]) -> Dict[str, Any]:
     db = state["tinydb"]
     change_data = check_update(db, state["new_data"])
     return {"change_data": change_data}
