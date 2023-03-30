@@ -12,17 +12,8 @@ from ..utils import get_summary
 
 
 # 处理正文 处理网页 tag
-@ParsingBase.append_handler(
-    parsing_type="summary", rex="(south|spring)-plus.net", priority=10
-)
-async def handle_summary(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+@ParsingBase.append_handler(parsing_type="summary", rex="(south|spring)-plus.net")
+async def handle_summary(item: Dict[str, Any], tmp: str) -> str:
     rss_str = handle_bbcode(html=Pq(get_summary(item)))
     tmp += handle_html_tag(html=Pq(rss_str))
     return tmp
@@ -30,14 +21,7 @@ async def handle_summary(
 
 # 处理图片
 @ParsingBase.append_handler(parsing_type="picture", rex="(south|spring)-plus.net")
-async def handle_picture(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_picture(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""
@@ -58,14 +42,7 @@ async def handle_picture(
 
 # 处理来源
 @ParsingBase.append_handler(parsing_type="source", rex="(south|spring)-plus.net")
-async def handle_source(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_source(item: Dict[str, Any]) -> str:
     source = item["link"]
     # issue 36 处理链接
     if re.search(r"^//", source):

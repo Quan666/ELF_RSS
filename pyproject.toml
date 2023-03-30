@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ELF_RSS"
-version = "2.6.16"
+version = "2.6.17"
 description = "QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub"
 authors = ["Quan666 <i@Rori.eMail>"]
 license = "GPL-3.0-only"
@@ -52,7 +52,7 @@ show_error_codes = true
 strict = true
 
 [tool.ruff]
-select = ["F", "E", "W", "I"]
+select = ["F", "E", "W", "I", "UP"]
 target-version = "py38"
 line-length = 120
 

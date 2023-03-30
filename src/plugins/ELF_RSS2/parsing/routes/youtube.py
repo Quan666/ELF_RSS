@@ -10,14 +10,7 @@ from ..handle_images import handle_img_combo
     parsing_type="picture",
     rex=r"https:\/\/www\.youtube\.com\/feeds\/videos\.xml\?channel_id=",
 )
-async def handle_picture(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_picture(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""

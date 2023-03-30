@@ -52,10 +52,7 @@ def handle_bbcode(html: Pq) -> str:
     return rss_str
 
 
-# HTML标签等处理
-def handle_html_tag(html: Pq) -> str:
-    rss_str = html_unescape(str(html))
-
+def handle_lists(html: Pq, rss_str: str) -> str:
     # 有序/无序列表 标签处理
     for ul in html("ul").items():
         for li in ul("li").items():
@@ -72,8 +69,11 @@ def handle_html_tag(html: Pq) -> str:
     rss_str = re.sub("</(ul|ol)>", "\n", rss_str)
     # 处理没有被 ul / ol 标签包围的 li 标签
     rss_str = rss_str.replace("<li>", "- ").replace("</li>", "")
+    return rss_str
 
-    # <a> 标签处理
+
+# <a> 标签处理
+def handle_links(html: Pq, rss_str: str) -> str:
     for a in html("a").items():
         a_str = re.search(
             r"<a [^>]+>.*?</a>", html_unescape(str(a)), flags=re.DOTALL
@@ -100,6 +100,15 @@ def handle_html_tag(html: Pq) -> str:
                 rss_str = rss_str.replace(a_str, f" {a.text()}: {a.attr('href')}\n")
         else:
             rss_str = rss_str.replace(a_str, f" {a.attr('href')}\n")
+    return rss_str
+
+
+# HTML标签等处理
+def handle_html_tag(html: Pq) -> str:
+    rss_str = html_unescape(str(html))
+
+    rss_str = handle_lists(html, rss_str)
+    rss_str = handle_links(html, rss_str)
 
     # 处理一些 HTML 标签
     html_tags = [

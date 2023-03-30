@@ -5,6 +5,8 @@ nonebot.init()
 app = nonebot.get_asgi()
 driver = nonebot.get_driver()
 driver.register_adapter(OneBotV11Adapter)
+nonebot.load_plugin("nonebot_plugin_apscheduler")
+nonebot.load_plugin("nonebot_plugin_guild_patch")
 nonebot.load_plugins("src/plugins")
 
 if __name__ == "__main__":

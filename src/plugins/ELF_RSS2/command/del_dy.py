@@ -1,3 +1,5 @@
+from typing import List, Optional, Tuple
+
 from nonebot import on_command, require
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
@@ -34,21 +36,12 @@ async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -
         matcher.set_arg("RSS_DELETE", args)
 
 
-@RSS_DELETE.got("RSS_DELETE", prompt="输入要删除的订阅名")
-async def handle_rss_delete(
-    event: MessageEvent, rss_name: str = ArgPlainText("RSS_DELETE")
-) -> None:
-    group_id = None
-    guild_channel_id = None
-
-    if isinstance(event, GroupMessageEvent):
-        group_id = event.group_id
-    elif isinstance(event, GuildMessageEvent):
-        guild_channel_id = f"{event.guild_id}@{event.channel_id}"
-
-    rss_name_list = rss_name.strip().split(" ")
+async def process_rss_deletion(
+    rss_name_list: List[str], group_id: Optional[int], guild_channel_id: Optional[str]
+) -> Tuple[List[str], List[str]]:
     delete_successes = []
     delete_failures = []
+
     for rss_name in rss_name_list:
         rss = Rss.get_one_by_name(name=rss_name)
         if rss is None:
@@ -77,6 +70,26 @@ async def handle_rss_delete(
             rss.delete_rss()
             tr.delete_job(rss)
             delete_successes.append(rss_name)
+
+    return delete_successes, delete_failures
+
+
+@RSS_DELETE.got("RSS_DELETE", prompt="输入要删除的订阅名")
+async def handle_rss_delete(
+    event: MessageEvent, rss_name: str = ArgPlainText("RSS_DELETE")
+) -> None:
+    group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
+    guild_channel_id = (
+        f"{event.guild_id}@{event.channel_id}"
+        if isinstance(event, GuildMessageEvent)
+        else None
+    )
+
+    rss_name_list = rss_name.strip().split(" ")
+
+    delete_successes, delete_failures = await process_rss_deletion(
+        rss_name_list, group_id, guild_channel_id
+    )
 
     result = []
     if delete_successes:

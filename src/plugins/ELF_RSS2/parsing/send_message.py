@@ -132,6 +132,44 @@ async def send_guild_channel_msg(
     )
 
 
+async def send_single_msg(
+    message: str,
+    target_id: Union[int, str],
+    item: Dict[str, Any],
+    header_message: str,
+    send_func: Callable[[Union[int, str], str], Coroutine[Any, Any, Dict[str, Any]]],
+) -> bool:
+    flag = False
+    try:
+        await send_func(
+            target_id, f"{header_message}\n----------------------\n{message}"
+        )
+        flag = True
+    except Exception as e:
+        error_msg = f"E: {repr(e)}\n消息发送失败！\n链接：[{item.get('link')}]"
+        logger.error(error_msg)
+        if item.get("to_send"):
+            flag = True
+            with suppress(Exception):
+                await send_func(target_id, error_msg)
+    return flag
+
+
+async def send_multiple_msgs(
+    messages: List[str],
+    target_id: Union[int, str],
+    items: List[Dict[str, Any]],
+    header_message: str,
+    send_func: Callable[[Union[int, str], str], Coroutine[Any, Any, Dict[str, Any]]],
+) -> bool:
+    flag = False
+    for message, item in zip(messages, items):
+        flag |= await send_single_msg(
+            message, target_id, item, header_message, send_func
+        )
+    return flag
+
+
 async def send_msgs_with_lock(
     bot: Bot,
     messages: List[str],
@@ -141,54 +179,32 @@ async def send_msgs_with_lock(
     header_message: str,
     send_func: Callable[[Union[int, str], str], Coroutine[Any, Any, Dict[str, Any]]],
 ) -> bool:
-    flag = False
     start_time = arrow.now()
     async with sending_lock[(target_id, target_type)]:
-        try:
-            if len(messages) == 1:
-                await send_func(
-                    target_id,
-                    f"{header_message}\n----------------------\n{messages[0]}",
-                )
-            elif target_type != "guild_channel":
+        if len(messages) == 1:
+            flag = await send_single_msg(
+                messages[0], target_id, items[0], header_message, send_func
+            )
+        elif target_type != "guild_channel":
+            forward_messages = handle_forward_message(bot, [header_message] + messages)
+            try:
                 await bot.send_forward_msg(
                     user_id=target_id if target_type == "private" else 0,
                     group_id=target_id if target_type == "group" else 0,
-                    messages=handle_forward_message(bot, [header_message] + messages),
+                    messages=forward_messages,
                 )
-            else:
-                for message, item in zip(messages, items):
-                    await send_msgs_with_lock(
-                        bot,
-                        [message],
-                        target_id,
-                        target_type,
-                        [item],
-                        header_message,
-                        send_func,
-                    )
-            await asyncio.sleep(max(1 - (arrow.now() - start_time).total_seconds(), 0))
-            flag = True
-        except Exception as e:
-            if len(messages) > 1 and target_type != "guild_channel":
-                for message, item in zip(messages, items):
-                    await send_msgs_with_lock(
-                        bot,
-                        [message],
-                        target_id,
-                        target_type,
-                        [item],
-                        header_message,
-                        send_func,
-                    )
-            else:
-                error_msg = f"E: {repr(e)}\n消息发送失败！\n链接：[{items[0].get('link')}]"
-                logger.error(error_msg)
-                if items[0].get("to_send"):
-                    flag = True
-                    with suppress(Exception):
-                        await send_func(target_id, error_msg)
-        return flag
+                flag = True
+            except Exception as e:
+                logger.warning(f"E: {repr(e)}\n合并消息发送失败！将尝试逐条发送！")
+                flag = await send_multiple_msgs(
+                    messages, target_id, items, header_message, send_func
+                )
+        else:
+            flag = await send_multiple_msgs(
+                messages, target_id, items, header_message, send_func
+            )
+        await asyncio.sleep(max(1 - (arrow.now() - start_time).total_seconds(), 0))
+    return flag
 
 
 def handle_forward_message(bot: Bot, messages: List[str]) -> List[Dict[str, Any]]:

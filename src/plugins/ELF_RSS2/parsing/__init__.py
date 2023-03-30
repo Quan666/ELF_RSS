@@ -1,6 +1,7 @@
 import re
 import sqlite3
 from difflib import SequenceMatcher
+from importlib import import_module
 from typing import Any, Dict, List
 
 import arrow
@@ -26,10 +27,13 @@ from .routes import ALL_MODULES
 from .send_message import handle_send_msgs
 from .utils import get_proxy, get_summary
 
+for module in ALL_MODULES:
+    import_module(f".routes.{module}", package=__name__)
+
 
 # 检查更新
-@ParsingBase.append_before_handler(priority=10)
-async def handle_check_update(rss: Rss, state: Dict[str, Any]):
+@ParsingBase.append_before_handler()
+async def handle_check_update(state: Dict[str, Any]):
     db = state.get("tinydb")
     change_data = check_update(db, state.get("new_data"))
     return {"change_data": change_data}
@@ -117,14 +121,7 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]):
 
 # 处理标题
 @ParsingBase.append_handler(parsing_type="title")
-async def handle_title(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_title(rss: Rss, item: Dict[str, Any]) -> str:
     # 判断是否开启了只推送图片
     if rss.only_pic:
         return ""
@@ -162,29 +159,15 @@ async def handle_title(
 
 # 处理正文 判断是否是仅推送标题 、是否仅推送图片
 @ParsingBase.append_handler(parsing_type="summary", priority=1)
-async def handle_summary(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_summary(rss: Rss, tmp_state: Dict[str, Any]) -> str:
     if rss.only_title or rss.only_pic:
         tmp_state["continue"] = False
     return ""
 
 
 # 处理正文 处理网页 tag
-@ParsingBase.append_handler(parsing_type="summary", priority=10)  # type: ignore
-async def handle_summary(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+@ParsingBase.append_handler(parsing_type="summary")  # type: ignore
+async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     try:
         tmp += handle_html_tag(html=Pq(get_summary(item)))
     except Exception as e:
@@ -194,14 +177,7 @@ async def handle_summary(
 
 # 处理正文 移除指定内容
 @ParsingBase.append_handler(parsing_type="summary", priority=11)  # type: ignore
-async def handle_summary(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_summary(rss: Rss, tmp: str) -> str:
     # 移除指定内容
     if rss.content_to_remove:
         for pattern in rss.content_to_remove:
@@ -215,14 +191,7 @@ async def handle_summary(
 
 # 处理正文 翻译
 @ParsingBase.append_handler(parsing_type="summary", priority=12)  # type: ignore
-async def handle_summary(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_summary(rss: Rss, tmp: str) -> str:
     if rss.translation:
         tmp += await handle_translation(tmp)
     return tmp
@@ -230,14 +199,7 @@ async def handle_summary(
 
 # 处理图片
 @ParsingBase.append_handler(parsing_type="picture")
-async def handle_picture(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_picture(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""
@@ -258,27 +220,13 @@ async def handle_picture(
 
 # 处理来源
 @ParsingBase.append_handler(parsing_type="source")
-async def handle_source(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_source(item: Dict[str, Any]) -> str:
     return f"链接：{item['link']}\n"
 
 
 # 处理种子
 @ParsingBase.append_handler(parsing_type="torrent")
-async def handle_torrent(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_torrent(rss: Rss, item: Dict[str, Any]) -> str:
     res: List[str] = []
     if not rss.is_open_upload_group:
         rss.group_id = []
@@ -313,14 +261,7 @@ async def handle_torrent(
 
 # 处理日期
 @ParsingBase.append_handler(parsing_type="date")
-async def handle_date(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
-    tmp: str,
-    tmp_state: Dict[str, Any],
-) -> str:
+async def handle_date(item: Dict[str, Any]) -> str:
     date = get_item_date(item)
     date = date.replace(tzinfo="local") if date > arrow.now() else date.to("local")
     return f"日期：{date.format('YYYY年MM月DD日 HH:mm:ss')}"
