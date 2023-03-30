@@ -12,9 +12,7 @@ from ..utils import get_summary
 
 
 # 处理正文 处理网页 tag
-@ParsingBase.append_handler(
-    parsing_type="summary", rex="(south|spring)-plus.net", priority=10
-)
+@ParsingBase.append_handler(parsing_type="summary", rex="(south|spring)-plus.net")
 async def handle_summary(item: Dict[str, Any], tmp: str) -> str:
     rss_str = handle_bbcode(html=Pq(get_summary(item)))
     tmp += handle_html_tag(html=Pq(rss_str))

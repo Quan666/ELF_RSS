@@ -153,7 +153,7 @@ async def _run_handlers(
         handler_kwargs = {k: v for k, v in kwargs.items() if k in handler_params}
 
         if any((item, item_msg, tmp, tmp_state)):
-            tmp += await handler.func(**handler_kwargs)
+            tmp = await handler.func(**handler_kwargs)
         else:
             state.update(await handler.func(**handler_kwargs))
         if handler.block or (tmp_state is not None and not tmp_state["continue"]):
@@ -175,7 +175,7 @@ class ParsingRss:
         self.handler: Dict[str, List[ParsingItem]] = {}
         for k, v in ParsingBase.handler.items():
             self.handler[k] = _handler_filter(v, self.rss.get_url())
-        self.after_handler = _handler_filter(
+        self.after_handler: List[ParsingItem] = _handler_filter(
             ParsingBase.after_handler, self.rss.get_url()
         )
 
@@ -213,11 +213,11 @@ class ParsingRss:
                 "items": [],
             }
         )
-        # 用于保存上一次处理结果
-        tmp = ""
         for item in self.state["change_data"]:
             item_msg = ""
             for handler_list in self.handler.values():
+                # 用于保存上一次处理结果
+                tmp = ""
                 tmp_state = {"continue": True}  # 是否继续执行后续处理
 
                 # 某一个内容的处理如正文，传入原文与上一次处理结果，此次处理完后覆盖

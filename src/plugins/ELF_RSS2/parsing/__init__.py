@@ -1,6 +1,7 @@
 import re
 import sqlite3
 from difflib import SequenceMatcher
+from importlib import import_module
 from typing import Any, Dict, List
 
 import arrow
@@ -26,9 +27,12 @@ from .routes import ALL_MODULES
 from .send_message import handle_send_msgs
 from .utils import get_proxy, get_summary
 
+for module in ALL_MODULES:
+    import_module(f".routes.{module}", package=__name__)
+
 
 # 检查更新
-@ParsingBase.append_before_handler(priority=10)
+@ParsingBase.append_before_handler()
 async def handle_check_update(state: Dict[str, Any]):
     db = state.get("tinydb")
     change_data = check_update(db, state.get("new_data"))
@@ -162,7 +166,7 @@ async def handle_summary(rss: Rss, tmp_state: Dict[str, Any]) -> str:
 
 
 # 处理正文 处理网页 tag
-@ParsingBase.append_handler(parsing_type="summary", priority=10)  # type: ignore
+@ParsingBase.append_handler(parsing_type="summary")  # type: ignore
 async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     try:
         tmp += handle_html_tag(html=Pq(get_summary(item)))

@@ -8,7 +8,7 @@ from ..check_update import get_item_date
 
 
 # 检查更新
-@ParsingBase.append_before_handler(rex="/nga/", priority=10)
+@ParsingBase.append_before_handler(rex="/nga/")
 async def handle_check_update(state: Dict[str, Any]) -> Dict[str, Any]:
     new_data = state["new_data"]
     db = state["tinydb"]

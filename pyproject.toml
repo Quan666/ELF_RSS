@@ -52,7 +52,7 @@ show_error_codes = true
 strict = true
 
 [tool.ruff]
-select = ["F", "E", "W", "I"]
+select = ["F", "E", "W", "I", "UP"]
 target-version = "py38"
 line-length = 120
 
