@@ -20,7 +20,7 @@ class ELFConfig(BaseConfig):
     db_cache_expire: int = 30
     limit: int = 200
     max_length: int = 1024  # 正文长度限制，防止消息太长刷屏，以及消息过长发送失败的情况
-    enable_boot_message: bool = True
+    enable_boot_message: bool = True  # 是否启用启动时的提示消息推送
 
     zip_size: int = 2 * 1024
     gif_zip_size: int = 6 * 1024
