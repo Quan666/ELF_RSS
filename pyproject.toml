@@ -28,7 +28,7 @@ nonebot-plugin-apscheduler = "^0.2.0"
 nonebot-plugin-guild-patch = "^0.2.3"
 nonebot2 = {extras = ["fastapi"], version = "^2.0.0-rc.4"}
 pikpakapi = "^0.1.1"
-Pillow = "^9.4.0"
+Pillow = "^9.5.0"
 pydantic = "^1.10.7"
 pyquery = "^2.0.0"
 python-qbittorrent = "^0.4.3"
