@@ -32,7 +32,14 @@ async def send_msg(
         flag = any(
             await asyncio.gather(
                 *[
-                    send_private_msg(bot, messages, int(user_id), items, header_message)
+                    send_private_msg(
+                        bot,
+                        messages,
+                        int(user_id),
+                        items,
+                        header_message,
+                        rss.send_forward_msg,
+                    )
                     for user_id in rss.user_id
                 ]
             )
@@ -43,7 +50,12 @@ async def send_msg(
                 await asyncio.gather(
                     *[
                         send_group_msg(
-                            bot, messages, int(group_id), items, header_message
+                            bot,
+                            messages,
+                            int(group_id),
+                            items,
+                            header_message,
+                            rss.send_forward_msg,
                         )
                         for group_id in rss.group_id
                     ]
@@ -75,6 +87,7 @@ async def send_private_msg(
     user_id: int,
     items: List[Dict[str, Any]],
     header_message: str,
+    send_forward_msg: bool,
 ) -> bool:
     return await send_msgs_with_lock(
         bot=bot,
@@ -86,6 +99,7 @@ async def send_private_msg(
         send_func=lambda user_id, message: bot.send_private_msg(
             user_id=user_id, message=message  # type: ignore
         ),
+        send_forward_msg=send_forward_msg,
     )
 
 
@@ -96,6 +110,7 @@ async def send_group_msg(
     group_id: int,
     items: List[Dict[str, Any]],
     header_message: str,
+    send_forward_msg: bool,
 ) -> bool:
     return await send_msgs_with_lock(
         bot=bot,
@@ -107,6 +122,7 @@ async def send_group_msg(
         send_func=lambda group_id, message: bot.send_group_msg(
             group_id=group_id, message=message  # type: ignore
         ),
+        send_forward_msg=send_forward_msg,
     )
 
 
@@ -178,6 +194,7 @@ async def send_msgs_with_lock(
     items: List[Dict[str, Any]],
     header_message: str,
     send_func: Callable[[Union[int, str], str], Coroutine[Any, Any, Dict[str, Any]]],
+    send_forward_msg: bool = False,
 ) -> bool:
     start_time = arrow.now()
     async with sending_lock[(target_id, target_type)]:
@@ -185,7 +202,7 @@ async def send_msgs_with_lock(
             flag = await send_single_msg(
                 messages[0], target_id, items[0], header_message, send_func
             )
-        elif target_type != "guild_channel":
+        elif send_forward_msg and target_type != "guild_channel":
             forward_messages = handle_forward_message(bot, [header_message] + messages)
             try:
                 await bot.send_forward_msg(
