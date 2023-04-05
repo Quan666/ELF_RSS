@@ -267,18 +267,42 @@ async def handle_date(item: Dict[str, Any]) -> str:
     return f"日期：{date.format('YYYY年MM月DD日 HH:mm:ss')}"
 
 
+# 发送消息
+@ParsingBase.append_handler(parsing_type="after")
+async def handle_message(
+    rss: Rss,
+    state: Dict[str, Any],
+    item: Dict[str, Any],
+    item_msg: str,
+) -> str:
+    if rss.send_forward_msg:
+        return ""
+
+    # 发送消息并写入文件
+    await handle_send_msgs(rss=rss, messages=[item_msg], items=[item], state=state)
+    return ""
+
+
 @ParsingBase.append_after_handler()
 async def after_handler(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
-    # 发送消息并写入文件
-    await handle_send_msgs(
-        rss=rss, messages=state["messages"], items=state["items"], state=state
-    )
+    if rss.send_forward_msg:
+        # 发送消息并写入文件
+        await handle_send_msgs(
+            rss=rss, messages=state["messages"], items=state["items"], state=state
+        )
 
-    message_count = len(state["messages"])
     db = state["tinydb"]
+    new_data_length = len(state["new_data"])
+    cache_json_manage(db, new_data_length)
 
-    if state["success_count"] > 0:
-        logger.info(f"{rss.name} 新消息推送完毕，共计：{message_count}")
+    message_count = len(state["change_data"])
+    success_count = message_count - state["error_count"]
+
+    if message_count > 10 and len(state["messages"]) == 10:
+        return {}
+
+    if success_count > 0:
+        logger.info(f"{rss.name} 新消息推送完毕，共计：{success_count}/{message_count}")
     elif message_count > 0:
         logger.error(f"{rss.name} 新消息推送失败，共计：{message_count}")
     else:
@@ -287,8 +311,6 @@ async def after_handler(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     if conn := state["conn"]:
         conn.close()
 
-    new_data_length = len(state["new_data"])
-    cache_json_manage(db, new_data_length)
     db.close()
 
     return {}

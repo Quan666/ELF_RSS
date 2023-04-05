@@ -206,27 +206,25 @@ async def handle_img_combo(url: str, img_proxy: bool, rss: Optional[Rss] = None)
         返回当前图片的CQ码,以base64格式编码发送
         如获取图片失败将会提示图片走丢了
     """
-    content = await download_image(url, img_proxy)
-    if content:
+    if content := await download_image(url, img_proxy):
         if rss is not None and rss.download_pic:
             _url = URL(url)
             logger.debug(f"正在保存图片: {url}")
             try:
                 save_image(content=content, file_url=_url, rss=rss)
             except Exception as e:
-                logger.warning(e)
-                logger.warning("在保存图片到本地时出现错误")
-        resize_content = await zip_pic(url, content)
+                logger.warning(f"在保存图片到本地时出现错误\nE:{repr(e)}")
+        if resize_content := await zip_pic(url, content):
+            if img_base64 := get_pic_base64(resize_content):
+                return f"[CQ:image,file=base64://{img_base64}]"
+    return f"\n图片走丢啦 链接：[{url}]\n"
+
+
+async def handle_img_combo_with_content(url: str, content: bytes) -> str:
+    if resize_content := await zip_pic(url, content):
         if img_base64 := get_pic_base64(resize_content):
             return f"[CQ:image,file=base64://{img_base64}]"
-    return f"\n图片走丢啦: {url}\n"
-
-
-async def handle_img_combo_with_content(gif_url: str, content: bytes) -> str:
-    resize_content = await zip_pic(gif_url, content)
-    if img_base64 := get_pic_base64(resize_content):
-        return f"[CQ:image,file=base64://{img_base64}]"
-    return "\n图片走丢啦\n"
+    return f"\n图片走丢啦 链接：[{url}]\n" if url else "\n图片走丢啦\n"
 
 
 # 处理图片、视频

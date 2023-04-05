@@ -3,7 +3,7 @@ import functools
 import math
 import re
 from contextlib import suppress
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from cachetools import TTLCache
 from cachetools.keys import hashkey
@@ -194,3 +194,10 @@ async def filter_valid_guild_channel_id_list(
             continue
         valid_guild_channel_id_list.append(guild_channel_id)
     return valid_guild_channel_id_list
+
+
+def partition_list(
+    input_list: List[Any], partition_size: int
+) -> Generator[List[Any], None, None]:
+    for i in range(0, len(input_list), partition_size):
+        yield input_list[i : i + partition_size]

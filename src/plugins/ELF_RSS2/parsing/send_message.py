@@ -5,7 +5,8 @@ from typing import Any, Callable, Coroutine, DefaultDict, Dict, List, Tuple, Uni
 
 import arrow
 from nonebot import get_bot
-from nonebot.adapters.onebot.v11 import Bot
+from nonebot.adapters.onebot.v11 import Bot, Message, MessageSegment
+from nonebot.adapters.onebot.v11.exception import NetworkError
 from nonebot.log import logger
 
 from ..config import config
@@ -180,8 +181,9 @@ async def send_multiple_msgs(
 ) -> bool:
     flag = False
     for message, item in zip(messages, items):
-        flag |= await send_single_msg(
-            message, target_id, item, header_message, send_func
+        flag = (
+            await send_single_msg(message, target_id, item, header_message, send_func)
+            or flag
         )
     return flag
 
@@ -203,19 +205,9 @@ async def send_msgs_with_lock(
                 messages[0], target_id, items[0], header_message, send_func
             )
         elif send_forward_msg and target_type != "guild_channel":
-            forward_messages = handle_forward_message(bot, [header_message] + messages)
-            try:
-                await bot.send_forward_msg(
-                    user_id=target_id if target_type == "private" else 0,
-                    group_id=target_id if target_type == "group" else 0,
-                    messages=forward_messages,
-                )
-                flag = True
-            except Exception as e:
-                logger.warning(f"E: {repr(e)}\n合并消息发送失败！将尝试逐条发送！")
-                flag = await send_multiple_msgs(
-                    messages, target_id, items, header_message, send_func
-                )
+            flag = await try_sending_forward_msg(
+                bot, messages, target_id, target_type, items, header_message, send_func
+            )
         else:
             flag = await send_multiple_msgs(
                 messages, target_id, items, header_message, send_func
@@ -224,18 +216,49 @@ async def send_msgs_with_lock(
     return flag
 
 
-def handle_forward_message(bot: Bot, messages: List[str]) -> List[Dict[str, Any]]:
-    return [
-        {
-            "type": "node",
-            "data": {
-                "name": list(config.nickname)[0] if config.nickname else "\u200b",
-                "uin": bot.self_id,
-                "content": message,
-            },
-        }
-        for message in messages
-    ]
+async def try_sending_forward_msg(
+    bot: Bot,
+    messages: List[str],
+    target_id: Union[int, str],
+    target_type: str,
+    items: List[Dict[str, Any]],
+    header_message: str,
+    send_func: Callable[[Union[int, str], str], Coroutine[Any, Any, Dict[str, Any]]],
+) -> bool:
+    forward_messages = handle_forward_message(bot, [header_message] + messages)
+    try:
+        if target_type == "private":
+            await bot.send_private_forward_msg(
+                user_id=target_id, messages=forward_messages
+            )
+        elif target_type == "group":
+            await bot.send_group_forward_msg(
+                group_id=target_id, messages=forward_messages
+            )
+        flag = True
+    except NetworkError:
+        # 如果图片体积过大或数量过多，很可能触发这个错误，但实际上发送成功，不过高概率吞图，只警告不处理
+        logger.warning("图片过大或数量过多，可能发送失败！")
+        flag = True
+    except Exception as e:
+        logger.warning(f"E: {repr(e)}\n合并消息发送失败！将尝试逐条发送！")
+        flag = await send_multiple_msgs(
+            messages, target_id, items, header_message, send_func
+        )
+    return flag
+
+
+def handle_forward_message(bot: Bot, messages: List[str]) -> Message:
+    return Message(
+        [
+            MessageSegment.node_custom(
+                user_id=int(bot.self_id),
+                nickname=list(config.nickname)[0] if config.nickname else "\u200b",
+                content=message,
+            )
+            for message in messages
+        ]
+    )
 
 
 # 发送消息并写入文件
@@ -256,13 +279,11 @@ async def handle_send_msgs(
             if item.get("to_send"):
                 item.pop("to_send")
 
-        state["success_count"] = len(state["messages"])
-
     else:
         for item in items:
             item["to_send"] = True
 
-        state["success_count"] = 0
+        state["error_count"] += len(messages)
 
     for item in items:
         write_item(db, item)

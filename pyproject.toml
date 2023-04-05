@@ -16,6 +16,7 @@ keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 python = "^3.8.3"
 aiohttp = {extras = ["speedups"], version = "^3.8.4"}
 arrow = "^1.2.3"
+async-timeout = "^4.0.2"
 bbcode = "^1.1.0"
 cachetools = "^5.3.0"
 emoji = "^2.2.0"
