@@ -38,7 +38,7 @@ typing-extensions = "^4.5.0"
 yarl = "^1.8.2"
 
 [tool.poetry.dev-dependencies]
-nb-cli = "^1.0.5"
+nb-cli = "^1.1.1"
 
 [tool.mypy]
 python_version = "3.8"
