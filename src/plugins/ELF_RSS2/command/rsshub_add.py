@@ -37,12 +37,16 @@ RSSHUB_ADD = on_command(
 
 @RSSHUB_ADD.handle()
 async def handle_first_receive(matcher: Matcher, args: Message = CommandArg()) -> None:
-    if args.extract_plain_text():
+    if args.extract_plain_text().strip():
         matcher.set_arg("route", args)
 
 
 @RSSHUB_ADD.got("name", prompt="请输入要订阅的订阅名")
 async def handle_feed_name(name: str = ArgPlainText("name")) -> None:
+    if not name.strip():
+        await RSSHUB_ADD.reject("订阅名不能为空，请重新输入")
+        return
+
     if _ := Rss.get_one_by_name(name=name):
         await RSSHUB_ADD.reject(f"已存在名为 {name} 的订阅，请重新输入")
 
@@ -51,6 +55,10 @@ async def handle_feed_name(name: str = ArgPlainText("name")) -> None:
 async def handle_rsshub_routes(
     state: T_State, route: str = ArgPlainText("route")
 ) -> None:
+    if not route.strip():
+        await RSSHUB_ADD.reject("路由名不能为空，请重新输入")
+        return
+
     rsshub_url = URL(config.rsshub)
     # 对本机部署的 RSSHub 不使用代理
     local_host = [
@@ -71,7 +79,7 @@ async def handle_rsshub_routes(
             rsshub_routes = await resp.json()
 
     if route not in rsshub_routes["data"]:
-        await RSSHUB_ADD.reject("没有这个路由，请重新输入")
+        await RSSHUB_ADD.reject(f"未找到名为 {route} 的 RSSHub 路由，请重新输入")
     else:
         route_list = state["route_list"] = rsshub_routes["data"][route]["routes"]
         if len(route_list) > 1:
