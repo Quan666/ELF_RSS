@@ -57,8 +57,11 @@ async def handle_rss_add(
     event: MessageEvent, name_and_url: str = ArgPlainText("RSS_ADD")
 ) -> None:
     try:
-        name, url = name_and_url.split(" ")
+        name, url = name_and_url.strip().split(" ")
     except ValueError:
+        await RSS_ADD.reject(prompt)
+        return
+    if not name or not url:
         await RSS_ADD.reject(prompt)
         return
 

@@ -6,8 +6,6 @@ from nonebot import get_bot
 from nonebot.adapters.onebot.v11 import Bot
 from nonebot.log import logger
 from tinydb import TinyDB
-from tinydb.middlewares import CachingMiddleware
-from tinydb.storages import JSONStorage
 from yarl import URL
 
 from . import my_trigger as tr
@@ -58,7 +56,6 @@ async def save_first_time_fetch(rss: Rss, new_rss: Dict[str, Any]) -> None:
 
     with TinyDB(
         _file,
-        storage=CachingMiddleware(JSONStorage),  # type: ignore
         encoding="utf-8",
         sort_keys=True,
         indent=4,

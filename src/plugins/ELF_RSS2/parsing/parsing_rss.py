@@ -3,11 +3,10 @@ from inspect import signature
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from tinydb import TinyDB
-from tinydb.middlewares import CachingMiddleware
-from tinydb.storages import JSONStorage
 
 from ..config import DATA_PATH
 from ..rss_class import Rss
+from ..utils import partition_list
 
 
 # 订阅器启动的时候将解析器注册到rss实例类？，避免每次推送时再匹配
@@ -55,6 +54,7 @@ class ParsingBase:
         "source": [],
         "date": [],
         "torrent": [],
+        "after": [],  # item的最后处理，此处调用消息截取、发送
     }
 
     """
@@ -188,7 +188,6 @@ class ParsingRss:
         _file = DATA_PATH / f"{Rss.handle_name(rss_name)}.json"
         db = TinyDB(
             _file,
-            storage=CachingMiddleware(JSONStorage),  # type: ignore
             encoding="utf-8",
             sort_keys=True,
             indent=4,
@@ -201,6 +200,7 @@ class ParsingRss:
                 "change_data": [],  # 更新的消息列表
                 "conn": None,  # 数据库连接
                 "tinydb": db,  # 缓存 json
+                "error_count": 0,  # 消息发送失败计数
             }
         )
         self.state, _ = await _run_handlers(self.before_handler, self.rss, self.state)
@@ -213,26 +213,30 @@ class ParsingRss:
                 "items": [],
             }
         )
-        for item in self.state["change_data"]:
-            item_msg = ""
-            for handler_list in self.handler.values():
-                # 用于保存上一次处理结果
-                tmp = ""
-                tmp_state = {"continue": True}  # 是否继续执行后续处理
+        if change_data := self.state["change_data"]:
+            for parted_item_list in partition_list(change_data, 10):
+                for item in parted_item_list:
+                    item_msg = ""
+                    for handler_list in self.handler.values():
+                        # 用于保存上一次处理结果
+                        tmp = ""
+                        tmp_state = {"continue": True}  # 是否继续执行后续处理
 
-                # 某一个内容的处理如正文，传入原文与上一次处理结果，此次处理完后覆盖
-                _, tmp = await _run_handlers(
-                    handler_list,
-                    self.rss,
-                    self.state,
-                    item=item,
-                    item_msg=item_msg,
-                    tmp=tmp,
-                    tmp_state=tmp_state,
-                )
-                item_msg += tmp
-            self.state["messages"].append(item_msg)
-            self.state["items"].append(item)
+                        # 某一个内容的处理如正文，传入原文与上一次处理结果，此次处理完后覆盖
+                        _, tmp = await _run_handlers(
+                            handler_list,
+                            self.rss,
+                            self.state,
+                            item=item,
+                            item_msg=item_msg,
+                            tmp=tmp,
+                            tmp_state=tmp_state,
+                        )
+                        item_msg += tmp
+                    self.state["messages"].append(item_msg)
+                    self.state["items"].append(item)
 
-        # 最后处理
-        self.state, _ = await _run_handlers(self.after_handler, self.rss, self.state)
+                _, _ = await _run_handlers(self.after_handler, self.rss, self.state)
+                self.state["messages"] = self.state["items"] = []
+        else:
+            _, _ = await _run_handlers(self.after_handler, self.rss, self.state)

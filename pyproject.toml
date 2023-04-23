@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ELF_RSS"
-version = "2.6.17"
+version = "2.6.18"
 description = "QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub"
 authors = ["Quan666 <i@Rori.eMail>"]
 license = "GPL-3.0-only"
@@ -16,6 +16,7 @@ keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 python = "^3.8.3"
 aiohttp = {extras = ["speedups"], version = "^3.8.4"}
 arrow = "^1.2.3"
+async-timeout = "^4.0.2"
 bbcode = "^1.1.0"
 cachetools = "^5.3.0"
 emoji = "^2.2.0"
@@ -34,7 +35,6 @@ pyquery = "^2.0.0"
 python-qbittorrent = "^0.4.3"
 tenacity = "^8.2.2"
 tinydb = "^4.7.1"
-typing-extensions = "^4.5.0"
 yarl = "^1.9.1"
 
 [tool.poetry.dev-dependencies]

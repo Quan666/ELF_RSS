@@ -4,6 +4,7 @@ import re
 from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+from async_timeout import timeout
 from nonebot import require
 from nonebot.log import logger
 
@@ -13,14 +14,14 @@ from .rss_class import Rss
 require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler  # noqa
 
-wait_for = 5 * 60
-
 
 # 检测某个rss更新
 async def check_update(rss: Rss) -> None:
     logger.info(f"{rss.name} 检查更新")
     try:
-        await asyncio.wait_for(rss_parsing.start(rss), timeout=wait_for)
+        wait_for = 5 * 60 if re.search(r"[_*/,-]", rss.time) else int(rss.time) * 60
+        async with timeout(wait_for):
+            await rss_parsing.start(rss)
     except asyncio.TimeoutError:
         logger.error(f"{rss.name} 检查更新超时，结束此次任务!")
 
