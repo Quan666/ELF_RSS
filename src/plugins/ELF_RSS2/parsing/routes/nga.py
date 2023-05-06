@@ -12,10 +12,6 @@ from ..check_update import get_item_date
 async def handle_check_update(state: Dict[str, Any]) -> Dict[str, Any]:
     new_data = state["new_data"]
     db = state["tinydb"]
-
-    for i in new_data:
-        i["link"] = re.sub(r"&rand=\d+", "", i["link"])
-
     change_data = check_update(db, new_data)
     return {"change_data": change_data}
 
@@ -28,8 +24,8 @@ def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not new and not to_send_list:
         return []
 
-    old_link_list = [i["link"] for i in db.all()]
-    to_send_list.extend([i for i in new if i["link"] not in old_link_list])
+    old_guid_list = [i["guid"] for i in db.all()]
+    to_send_list.extend([i for i in new if i["guid"] not in old_guid_list])
 
     # 对结果按照发布时间排序
     to_send_list.sort(key=get_item_date)
