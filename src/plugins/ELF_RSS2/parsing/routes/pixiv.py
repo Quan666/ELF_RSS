@@ -1,17 +1,15 @@
 import re
 import sqlite3
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import aiohttp
 from nonebot.log import logger
 from pyquery import PyQuery as Pq
 from tenacity import RetryError, TryAgain, retry, stop_after_attempt, stop_after_delay
-from tinydb import Query, TinyDB
 
 from ...config import DATA_PATH
 from ...rss_class import Rss
 from .. import ParsingBase, cache_db_manage, duplicate_exists, write_item
-from ..check_update import get_item_date
 from ..handle_images import (
     get_preview_gif_from_video,
     handle_img_combo,
@@ -145,28 +143,3 @@ async def handle_source(item: Dict[str, Any]) -> str:
     # 缩短 pixiv 链接
     str_link = re.sub("https://www.pixiv.net/artworks/", "https://pixiv.net/i/", source)
     return f"链接：{str_link}\n"
-
-
-# 检查更新
-@ParsingBase.append_before_handler(rex="/pixiv/ranking/")  # type: ignore
-async def handle_check_update(state: Dict[str, Any]) -> Dict[str, Any]:
-    db = state["tinydb"]
-    change_data = check_update(db, state["new_data"])
-    return {"change_data": change_data}
-
-
-# 检查更新
-def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    # 发送失败 1 次
-    to_send_list: List[Dict[str, Any]] = db.search(Query().to_send.exists())
-
-    if not new and not to_send_list:
-        return []
-
-    old_link_list = [i["link"] for i in db.all()]
-    to_send_list.extend([i for i in new if i["link"] not in old_link_list])
-
-    # 对结果按照发布时间排序
-    to_send_list.sort(key=get_item_date)
-
-    return to_send_list
