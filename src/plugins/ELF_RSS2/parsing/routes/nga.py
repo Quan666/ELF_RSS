@@ -28,7 +28,7 @@ def check_update(db: TinyDB, new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not new and not to_send_list:
         return []
 
-    old_link_list = [i["id"] for i in db.all()]
+    old_link_list = [i["link"] for i in db.all()]
     to_send_list.extend([i for i in new if i["link"] not in old_link_list])
 
     # 对结果按照发布时间排序
