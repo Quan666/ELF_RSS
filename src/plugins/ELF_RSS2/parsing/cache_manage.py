@@ -31,7 +31,7 @@ def cache_filter(data: Dict[str, Any]) -> Dict[str, Any]:
             "summary",
             "to_send",
         ]
-    return {k: data[k] for k in keys if k in data}
+    return {k: v for k in keys if (v := data.get(k))}
 
 
 # 对去重数据库进行管理

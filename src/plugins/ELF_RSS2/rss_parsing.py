@@ -51,8 +51,9 @@ async def filter_and_validate_rss(rss: Rss, bot: Bot) -> Rss:
 
 async def save_first_time_fetch(rss: Rss, new_rss: Dict[str, Any]) -> None:
     _file = DATA_PATH / f"{Rss.handle_name(rss.name)}.json"
-    entries = new_rss["entries"]
-    result = [cache_filter({**entry, "hash": dict_hash(entry)}) for entry in entries]
+    result = [cache_filter(entry) for entry in new_rss["entries"]]
+    for r in result:
+        r["hash"] = dict_hash(r)
 
     with TinyDB(
         _file,
