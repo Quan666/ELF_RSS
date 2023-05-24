@@ -1,6 +1,6 @@
 import asyncio
 
-from nonebot import on_metaevent, require
+from nonebot import on_metaevent
 from nonebot.adapters.onebot.v11 import Bot, LifecycleMetaEvent
 from nonebot.log import logger
 from nonebot.plugin import PluginMetadata
@@ -10,9 +10,6 @@ from . import my_trigger as tr
 from .config import DATA_PATH, config
 from .rss_class import Rss
 from .utils import send_message_to_admin
-
-require("nonebot_plugin_apscheduler")
-from nonebot_plugin_apscheduler import scheduler  # noqa
 
 VERSION = "2.6.19"
 

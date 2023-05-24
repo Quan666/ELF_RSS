@@ -5,14 +5,11 @@ from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from async_timeout import timeout
-from nonebot import require
 from nonebot.log import logger
 
 from . import rss_parsing
 from .rss_class import Rss
-
-require("nonebot_plugin_apscheduler")
-from nonebot_plugin_apscheduler import scheduler  # noqa
+from .utils import scheduler
 
 
 # 检测某个rss更新

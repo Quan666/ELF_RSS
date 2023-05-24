@@ -3,7 +3,7 @@ from contextlib import suppress
 from copy import deepcopy
 from typing import Any, List, Match, Optional
 
-from nonebot import on_command, require
+from nonebot import on_command
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.log import logger
@@ -12,15 +12,11 @@ from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
 
-require("nonebot_plugin_guild_patch")  # noqa
-from nonebot_plugin_guild_patch import GuildMessageEvent  # noqa
-from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER  # noqa
-
 from .. import my_trigger as tr
 from ..config import DATA_PATH
 from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
-from ..utils import regex_validate
+from ..utils import GUILD_ADMIN, GUILD_OWNER, GuildMessageEvent, regex_validate
 
 RSS_CHANGE = on_command(
     "change",

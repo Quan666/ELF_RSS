@@ -1,18 +1,15 @@
 from typing import List, Optional
 
-from nonebot import on_command, require
+from nonebot import on_command
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
 
-require("nonebot_plugin_guild_patch")  # noqa
-from nonebot_plugin_guild_patch import GuildMessageEvent  # noqa
-from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER  # noqa
-
 from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
+from ..utils import GUILD_ADMIN, GUILD_OWNER, GuildMessageEvent
 
 RSS_SHOW = on_command(
     "show",
