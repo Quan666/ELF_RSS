@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 import aiohttp
-from nonebot import on_command, require
+from nonebot import on_command
 from nonebot.adapters.onebot.v11 import Message, MessageEvent
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.matcher import Matcher
@@ -11,12 +11,10 @@ from nonebot.rule import to_me
 from nonebot.typing import T_State
 from yarl import URL
 
-require("nonebot_plugin_guild_patch")  # noqa
-from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER  # noqa
-
 from ..config import config
 from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
+from ..utils import GUILD_ADMIN, GUILD_OWNER
 from .add_dy import add_feed
 
 rsshub_routes: Dict[str, Any] = {}

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 import arrow
 from apscheduler.triggers.interval import IntervalTrigger
-from nonebot import get_bot, require
+from nonebot import get_bot
 from nonebot.adapters.onebot.v11 import ActionFailed, Bot, NetworkError
 from nonebot.log import logger
 from qbittorrent import Client
@@ -17,11 +17,9 @@ from .utils import (
     convert_size,
     get_bot_group_list,
     get_torrent_b16_hash,
+    scheduler,
     send_message_to_admin,
 )
-
-require("nonebot_plugin_apscheduler")
-from nonebot_plugin_apscheduler import scheduler  # noqa
 
 # 计划
 # 创建一个全局定时器用来检测种子下载情况

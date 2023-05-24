@@ -7,9 +7,16 @@ from typing import Any, Dict, Generator, List, Mapping, Optional
 
 from cachetools import TTLCache
 from cachetools.keys import hashkey
-from nonebot import get_bot
+from nonebot import get_bot, require
 from nonebot.adapters.onebot.v11 import Bot
 from nonebot.log import logger
+
+require("nonebot_plugin_apscheduler")  # noqa
+from nonebot_plugin_apscheduler import scheduler  # noqa
+
+require("nonebot_plugin_guild_patch")  # noqa
+from nonebot_plugin_guild_patch import GuildMessageEvent  # noqa
+from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER  # noqa
 
 from .config import config
 
