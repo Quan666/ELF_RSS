@@ -4,13 +4,13 @@ from contextlib import suppress
 from typing import Any, Callable, Coroutine, DefaultDict, Dict, List, Tuple, Union
 
 import arrow
-from nonebot import get_bot
 from nonebot.adapters.onebot.v11 import Bot, Message, MessageSegment
 from nonebot.adapters.onebot.v11.exception import NetworkError
 from nonebot.log import logger
 
 from ..config import config
 from ..rss_class import Rss
+from ..utils import get_bot
 from .cache_manage import insert_into_cache_db, write_item
 
 sending_lock: DefaultDict[Tuple[Union[int, str], str], asyncio.Lock] = defaultdict(
@@ -22,9 +22,8 @@ sending_lock: DefaultDict[Tuple[Union[int, str], str], asyncio.Lock] = defaultdi
 async def send_msg(
     rss: Rss, messages: List[str], items: List[Dict[str, Any]], header_message: str
 ) -> bool:
-    try:
-        bot: Bot = get_bot()  # type: ignore
-    except ValueError:
+    bot: Bot = await get_bot()  # type: ignore
+    if bot is None:
         return False
     if not messages:
         return False

@@ -2,7 +2,6 @@ import re
 from typing import Any, Dict, List, Optional
 
 import aiohttp
-from nonebot import get_bot
 from nonebot.adapters.onebot.v11 import Bot
 from nonebot.log import logger
 
@@ -11,7 +10,7 @@ from ..parsing.utils import get_summary
 from ..pikpak_offline import pikpak_offline_download
 from ..qbittorrent_download import start_down
 from ..rss_class import Rss
-from ..utils import convert_size, get_torrent_b16_hash, send_msg
+from ..utils import convert_size, get_bot, get_torrent_b16_hash, send_msg
 
 
 async def down_torrent(
@@ -20,7 +19,9 @@ async def down_torrent(
     """
     创建下载种子任务
     """
-    bot: Bot = get_bot()  # type: ignore
+    bot: Bot = await get_bot()  # type: ignore
+    if bot is None:
+        raise ValueError("There are not bots to get.")
     hash_list = []
     for tmp in item["links"]:
         if (

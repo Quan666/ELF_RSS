@@ -49,6 +49,9 @@ class ELFConfig(BaseConfig):
     # pikpak 离线保存的目录, 默认是根目录，示例: ELF_RSS/Downloads ,目录不存在会自动创建, 不能/结尾
     pikpak_download_path: str = ""
 
+    telegram_admin_ids: List[int] = []  # Telegram 管理员 ID 列表，用于接收离线通知和管理机器人
+    telegram_bot_token: Optional[str] = None  # Telegram 机器人的 token
+
 
 config = ELFConfig(**get_driver().config.dict())
 logger.debug(f"RSS Config loaded: {config!r}")
