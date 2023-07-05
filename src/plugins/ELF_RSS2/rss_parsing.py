@@ -2,7 +2,6 @@ from typing import Any, Dict, Optional, Tuple
 
 import aiohttp
 import feedparser
-from nonebot import get_bot
 from nonebot.adapters.onebot.v11 import Bot
 from nonebot.log import logger
 from tinydb import TinyDB
@@ -19,6 +18,7 @@ from .utils import (
     filter_valid_group_id_list,
     filter_valid_guild_channel_id_list,
     filter_valid_user_id_list,
+    get_bot,
     get_http_caching_headers,
     send_message_to_admin,
 )
@@ -69,7 +69,9 @@ async def save_first_time_fetch(rss: Rss, new_rss: Dict[str, Any]) -> None:
 
 # 抓取 feed，读取缓存，检查更新，对更新进行处理
 async def start(rss: Rss) -> None:
-    bot: Bot = get_bot()  # type: ignore
+    bot: Bot = await get_bot()  # type: ignore
+    if bot is None:
+        return
 
     # 先检查订阅者是否合法
     rss = await filter_and_validate_rss(rss, bot)

@@ -42,5 +42,5 @@ async def handle_first_receive(
             url=target[0],
             group_ids=[str(event.group_id)],
             name="手动上传",
-            proxy=get_proxy(True),
+            proxy=get_proxy(),
         )

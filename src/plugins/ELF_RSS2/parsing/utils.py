@@ -5,7 +5,7 @@ from ..config import config
 
 
 # 代理
-def get_proxy(open_proxy: bool) -> Optional[str]:
+def get_proxy(open_proxy: bool = True) -> Optional[str]:
     if not open_proxy or not config.rss_proxy:
         return None
     return f"http://{config.rss_proxy}"

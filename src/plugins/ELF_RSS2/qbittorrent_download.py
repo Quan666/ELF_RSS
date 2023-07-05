@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 import arrow
 from apscheduler.triggers.interval import IntervalTrigger
-from nonebot import get_bot
 from nonebot.adapters.onebot.v11 import ActionFailed, Bot, NetworkError
 from nonebot.log import logger
 from qbittorrent import Client
@@ -15,6 +14,7 @@ from qbittorrent import Client
 from .config import config
 from .utils import (
     convert_size,
+    get_bot,
     get_bot_group_list,
     get_torrent_b16_hash,
     scheduler,
@@ -68,7 +68,6 @@ async def get_qb_client() -> Optional[Client]:
         else:
             qb.login()
     except Exception:
-        bot: Bot = get_bot()  # type: ignore
         msg = (
             "❌ 无法连接到 qbittorrent ，请检查：\n"
             "1. 是否启动程序\n"
@@ -76,15 +75,14 @@ async def get_qb_client() -> Optional[Client]:
             "3. 连接地址、端口是否正确"
         )
         logger.exception(msg)
-        await send_message_to_admin(msg, bot)
+        await send_message_to_admin(msg)
         return None
     try:
         qb.get_default_save_path()
     except Exception:
-        bot: Bot = get_bot()  # type: ignore
         msg = "❌ 无法连登录到 qbittorrent ，请检查相关配置是否正确"
         logger.exception(msg)
-        await send_message_to_admin(msg, bot)
+        await send_message_to_admin(msg)
         return None
     return qb
 
@@ -253,5 +251,7 @@ async def rss_trigger(bot: Bot, hash_str: str, group_ids: List[str], name: str) 
         misfire_grace_time=60,  # 允许的误差时间，建议不要省略
         job_defaults=job_defaults,
     )
-    bot: Bot = get_bot()  # type: ignore
+    bot: Bot = await get_bot()  # type: ignore
+    if bot is None:
+        return
     await send_msg(bot, f"👏 {name}\nHash：{hash_str}\n下载任务添加成功！", group_ids)
