@@ -30,7 +30,7 @@ nonebot-plugin-guild-patch = "^0.2.3"
 nonebot2 = {extras = ["fastapi"], version = "^2.0.0"}
 pikpakapi = "^0.1.1"
 Pillow = "^10.0.0"
-pydantic = "^1.10.10"
+pydantic = "^1.10.11"
 pyquery = "^2.0.0"
 python-qbittorrent = "^0.4.3"
 tenacity = "^8.2.2"
