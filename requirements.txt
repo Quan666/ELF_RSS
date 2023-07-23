@@ -1,4 +1,4 @@
-aiohttp[speedups]~=3.8.4
+aiohttp[speedups]~=3.8.5
 arrow~=1.2.3
 async-timeout~=4.0.2
 bbcode~=1.1.0
@@ -12,8 +12,8 @@ nb-cli~=1.2.2
 nonebot-adapter-onebot~=2.2.3
 nonebot-plugin-apscheduler~=0.3.0
 nonebot-plugin-guild-patch~=0.2.3
-nonebot2[fastapi]~=2.0.0rc3
-pikpakapi~=0.1.1
+nonebot2[fastapi]~=2.0.1
+pikpakapi~=0.1.2
 Pillow~=10.0.0
 pydantic~=1.10.11
 pyquery~=2.0.0
