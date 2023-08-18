@@ -243,7 +243,7 @@ async def get_bot() -> Optional[Bot]:
         bot = _get_bot()  # type: ignore
         bot_offline = False
     except ValueError:
-        if not bot_offline and config.telegram_admin_id and config.telegram_bot_token:
+        if not bot_offline and config.telegram_admin_ids and config.telegram_bot_token:
             await send_message_to_telegram_admin("QQ Bot 已离线！")
             logger.warning("Bot 已离线！")
             bot_offline = True
