@@ -8,17 +8,9 @@ from typing import Any, Dict, Generator, List, Mapping, Optional
 from aiohttp import ClientSession
 from cachetools import TTLCache
 from cachetools.keys import hashkey
-from nonebot import get_bot as _get_bot
-from nonebot import require
+from nonebot import get_bot as nonebot_get_bot
 from nonebot.adapters.onebot.v11 import Bot
 from nonebot.log import logger
-
-require("nonebot_plugin_apscheduler")  # noqa
-from nonebot_plugin_apscheduler import scheduler  # noqa
-
-require("nonebot_plugin_guild_patch")  # noqa
-from nonebot_plugin_guild_patch import GuildMessageEvent  # noqa
-from nonebot_plugin_guild_patch.permission import GUILD_ADMIN, GUILD_OWNER  # noqa
 
 from .config import config
 from .parsing.utils import get_proxy
@@ -120,10 +112,16 @@ def get_torrent_b16_hash(content: bytes) -> str:
 
 async def send_message_to_admin(message: str, bot: Optional[Bot] = None) -> None:
     if bot is None:
-        bot: Bot = await get_bot()  # type: ignore
+        bot = await get_bot()
     if bot is None:
         return
-    await bot.send_private_msg(user_id=int(list(config.superusers)[0]), message=message)
+    try:
+        await bot.send_private_msg(
+            user_id=int(list(config.superusers)[0]), message=message
+        )
+    except Exception as e:
+        logger.error(f"管理员消息推送失败：{e}")
+        logger.error(f"消息内容：{message}")
 
 
 async def send_msg(
@@ -240,7 +238,7 @@ async def get_bot() -> Optional[Bot]:
     global bot_offline
     bot: Optional[Bot] = None
     try:
-        bot = _get_bot()  # type: ignore
+        bot = nonebot_get_bot()  # type: ignore
         bot_offline = False
     except ValueError:
         if not bot_offline and config.telegram_admin_ids and config.telegram_bot_token:

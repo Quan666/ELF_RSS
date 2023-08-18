@@ -11,12 +11,13 @@ from nonebot.matcher import Matcher
 from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
+from nonebot_plugin_guild_patch import GUILD_ADMIN, GUILD_OWNER, GuildMessageEvent
 
 from .. import my_trigger as tr
 from ..config import DATA_PATH
 from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
-from ..utils import GUILD_ADMIN, GUILD_OWNER, GuildMessageEvent, regex_validate
+from ..utils import regex_validate
 
 RSS_CHANGE = on_command(
     "change",

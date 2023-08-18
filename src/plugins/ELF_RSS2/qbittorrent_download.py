@@ -9,6 +9,7 @@ import arrow
 from apscheduler.triggers.interval import IntervalTrigger
 from nonebot.adapters.onebot.v11 import ActionFailed, Bot, NetworkError
 from nonebot.log import logger
+from nonebot_plugin_apscheduler import scheduler
 from qbittorrent import Client
 
 from .config import config
@@ -17,7 +18,6 @@ from .utils import (
     get_bot,
     get_bot_group_list,
     get_torrent_b16_hash,
-    scheduler,
     send_message_to_admin,
 )
 
