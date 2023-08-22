@@ -6,10 +6,10 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from async_timeout import timeout
 from nonebot.log import logger
+from nonebot_plugin_apscheduler import scheduler
 
 from . import rss_parsing
 from .rss_class import Rss
-from .utils import scheduler
 
 
 # 检测某个rss更新

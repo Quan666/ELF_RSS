@@ -1,13 +1,17 @@
 import asyncio
 
-from nonebot import on_metaevent
+from nonebot import on_metaevent, require
 from nonebot.adapters.onebot.v11 import Bot, LifecycleMetaEvent
 from nonebot.log import logger
 from nonebot.plugin import PluginMetadata
 
+require("nonebot_plugin_apscheduler")
+require("nonebot_plugin_guild_patch")
+
 from . import command
 from . import my_trigger as tr
-from .config import DATA_PATH, config
+from .config import DATA_PATH, ELFConfig
+from .config import config as plugin_config
 from .rss_class import Rss
 from .utils import send_message_to_admin
 
@@ -16,7 +20,11 @@ VERSION = "2.6.20"
 __plugin_meta__ = PluginMetadata(
     name="ELF_RSS",
     description="QQ机器人 RSS订阅 插件，订阅源建议选择 RSSHub",
-    usage="https://github.com/Quan666/ELF_RSS",
+    usage="https://github.com/Quan666/ELF_RSS/blob/2.0/docs/2.0%20%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B.md",
+    type="application",
+    homepage="https://github.com/Quan666/ELF_RSS",
+    config=ELFConfig,
+    supported_adapters={"~onebot.v11"},
     extra={"author": "Quan666 <i@Rori.eMail>", "version": VERSION},
 )
 
@@ -41,10 +49,10 @@ async def start(bot: Bot) -> None:
 
     rss_list = Rss.read_rss()  # 读取list
     if not rss_list:
-        if config.enable_boot_message:
+        if plugin_config.enable_boot_message:
             await send_message_to_admin(f"第一次启动，你还没有订阅，记得添加哟！\n{boot_message}", bot)
         logger.info("第一次启动，你还没有订阅，记得添加哟！")
-    if config.enable_boot_message:
+    if plugin_config.enable_boot_message:
         await send_message_to_admin(f"ELF_RSS 订阅器启动成功！\n{boot_message}", bot)
     logger.info("ELF_RSS 订阅器启动成功！")
     # 创建检查更新任务
