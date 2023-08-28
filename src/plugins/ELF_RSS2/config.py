@@ -14,8 +14,10 @@ class ELFConfig(BaseConfig):
     class Config:
         extra = "allow"
 
+    # 代理地址
     rss_proxy: Optional[str] = None
     rsshub: AnyHttpUrl = "https://rsshub.app"  # type: ignore
+    # 备用 rsshub 地址
     rsshub_backup: List[AnyHttpUrl] = []
     db_cache_expire: int = 30
     limit: int = 200
@@ -31,6 +33,7 @@ class ELFConfig(BaseConfig):
     blockquote: bool = True
     black_word: Optional[List[str]] = None
 
+    # 百度翻译的 appid 和 key
     baidu_id: Optional[str] = None
     baidu_key: Optional[str] = None
     deepl_translator_api_key: Optional[str] = None
@@ -39,10 +42,10 @@ class ELFConfig(BaseConfig):
 
     qb_username: Optional[str] = None  # qbittorrent 用户名
     qb_password: Optional[str] = None  # qbittorrent 密码
-    qb_web_url: Optional[str] = None
+    qb_web_url: Optional[str] = None  # qbittorrent 的 web 地址
     qb_down_path: Optional[str] = None  # qb 的文件下载地址，这个地址必须是 go-cqhttp 能访问到的
-    down_status_msg_group: Optional[List[int]] = None
-    down_status_msg_date: int = 10
+    down_status_msg_group: Optional[List[int]] = None  # 下载进度消息提示群组
+    down_status_msg_date: int = 10  # 下载进度检查及提示间隔时间，单位秒
 
     pikpak_username: Optional[str] = None  # pikpak 用户名
     pikpak_password: Optional[str] = None  # pikpak 密码

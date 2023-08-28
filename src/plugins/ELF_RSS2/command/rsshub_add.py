@@ -57,7 +57,7 @@ async def handle_rsshub_routes(
         await RSSHUB_ADD.reject("路由名不能为空，请重新输入")
         return
 
-    rsshub_url = URL(config.rsshub)
+    rsshub_url = URL(str(config.rsshub))
     # 对本机部署的 RSSHub 不使用代理
     local_host = [
         "localhost",
