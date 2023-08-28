@@ -44,7 +44,7 @@ class Rss:
             self.__dict__.update(data)
 
     # 返回订阅链接
-    def get_url(self, rsshub: str = config.rsshub) -> str:
+    def get_url(self, rsshub: str = str(config.rsshub)) -> str:
         if URL(self.url).scheme in ["http", "https"]:
             return self.url
         # 先判断地址是否 / 开头

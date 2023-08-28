@@ -136,7 +136,7 @@ async def fetch_rss_backup(
 ) -> Dict[str, Any]:
     d = {}
     for rsshub_url in config.rsshub_backup:
-        rss_url = rss.get_url(rsshub=rsshub_url)
+        rss_url = rss.get_url(rsshub=str(rsshub_url))
         try:
             resp = await session.get(rss_url, proxy=proxy)
             d = feedparser.parse(await resp.text())
