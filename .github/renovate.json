@@ -38,6 +38,12 @@
         "dependencies",
         "breaking"
       ]
+    },
+    {
+      "description": "disable python updates for poetry manager",
+      "matchPackageNames": ["python"],
+      "matchManagers": ["poetry"],
+      "enabled": false
     }
   ]
 }
