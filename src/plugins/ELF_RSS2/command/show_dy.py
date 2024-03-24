@@ -27,7 +27,8 @@ RSS_SHOW = on_command(
 
 def handle_rss_list(rss_list: List[Rss]) -> str:
     rss_info_list = [
-        f"（已停止）{i.name}：{i.url}" if i.stop else f"{i.name}：{i.url}" for i in rss_list
+        f"（已停止）{i.name}：{i.url}" if i.stop else f"{i.name}：{i.url}"
+        for i in rss_list
     ]
     return "\n\n".join(rss_info_list)
 

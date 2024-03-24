@@ -91,7 +91,9 @@ async def handle_rss_delete(
     result = []
     if delete_successes:
         if guild_channel_id:
-            result.append(f'👏 当前子频道成功取消订阅： {"、".join(delete_successes)} ！')
+            result.append(
+                f'👏 当前子频道成功取消订阅： {"、".join(delete_successes)} ！'
+            )
         elif group_id:
             result.append(f'👏 当前群组成功取消订阅： {"、".join(delete_successes)} ！')
         else:

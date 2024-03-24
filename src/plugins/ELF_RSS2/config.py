@@ -23,7 +23,9 @@ class ELFConfig(BaseConfig):
     limit: int = 200
     max_length: int = 1024  # 正文长度限制，防止消息太长刷屏，以及消息过长发送失败的情况
     enable_boot_message: bool = True  # 是否启用启动时的提示消息推送
-    debug: bool = False  # 是否开启 debug 模式，开启后会打印更多的日志信息，同时检查更新时不会使用缓存,便于调试
+    debug: bool = (
+        False  # 是否开启 debug 模式，开启后会打印更多的日志信息，同时检查更新时不会使用缓存,便于调试
+    )
 
     zip_size: int = 2 * 1024
     gif_zip_size: int = 6 * 1024
@@ -43,7 +45,9 @@ class ELFConfig(BaseConfig):
     qb_username: Optional[str] = None  # qbittorrent 用户名
     qb_password: Optional[str] = None  # qbittorrent 密码
     qb_web_url: Optional[str] = None  # qbittorrent 的 web 地址
-    qb_down_path: Optional[str] = None  # qb 的文件下载地址，这个地址必须是 go-cqhttp 能访问到的
+    qb_down_path: Optional[str] = (
+        None  # qb 的文件下载地址，这个地址必须是 go-cqhttp 能访问到的
+    )
     down_status_msg_group: Optional[List[int]] = None  # 下载进度消息提示群组
     down_status_msg_date: int = 10  # 下载进度检查及提示间隔时间，单位秒
 
@@ -52,7 +56,9 @@ class ELFConfig(BaseConfig):
     # pikpak 离线保存的目录, 默认是根目录，示例: ELF_RSS/Downloads ,目录不存在会自动创建, 不能/结尾
     pikpak_download_path: str = ""
 
-    telegram_admin_ids: List[int] = []  # Telegram 管理员 ID 列表，用于接收离线通知和管理机器人
+    telegram_admin_ids: List[int] = (
+        []
+    )  # Telegram 管理员 ID 列表，用于接收离线通知和管理机器人
     telegram_bot_token: Optional[str] = None  # Telegram 机器人的 token
 
 
