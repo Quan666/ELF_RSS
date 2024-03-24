@@ -6,10 +6,12 @@ from pikpakapi.PikpakException import PikpakException
 
 from .config import config
 
-pikpak_client = PikPakApi(
-    username=config.pikpak_username,
-    password=config.pikpak_password,
-)
+pikpak_client: Optional[PikPakApi] = None
+if config.pikpak_username and config.pikpak_password:
+    pikpak_client = PikPakApi(
+        username=config.pikpak_username,
+        password=config.pikpak_password,
+    )
 
 
 async def refresh_access_token() -> None:
