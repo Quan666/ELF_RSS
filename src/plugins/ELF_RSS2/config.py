@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from nonebot import get_driver
-from nonebot.config import BaseConfig
+from nonebot.config import Config
 from nonebot.log import logger
 from pydantic import AnyHttpUrl
 
@@ -10,7 +10,7 @@ DATA_PATH = Path.cwd() / "data"
 JSON_PATH = DATA_PATH / "rss.json"
 
 
-class ELFConfig(BaseConfig):
+class ELFConfig(Config):
     class Config:
         extra = "allow"
 
