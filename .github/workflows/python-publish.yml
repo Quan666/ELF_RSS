@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
       - name: Set up Python
-        uses: actions/setup-python@v4.7.1
+        uses: actions/setup-python@v4.8.0
         with:
           python-version: '3.8'
       - name: Install dependencies
@@ -20,7 +20,7 @@ jobs:
       - name: Build package
         run: python -m build
       - name: Publish package
-        uses: pypa/gh-action-pypi-publish@v1.8.10
+        uses: pypa/gh-action-pypi-publish@v1.8.14
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
