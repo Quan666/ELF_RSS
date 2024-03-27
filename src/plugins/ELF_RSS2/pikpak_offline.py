@@ -2,14 +2,16 @@ from typing import Any, Dict, List, Optional
 
 from nonebot.log import logger
 from pikpakapi import PikPakApi
-from pikpakapi.PikpakException import PikpakAccessTokenExpireException, PikpakException
+from pikpakapi.PikpakException import PikpakException
 
 from .config import config
 
-pikpak_client = PikPakApi(
-    username=config.pikpak_username,
-    password=config.pikpak_password,
-)
+pikpak_client: Optional[PikPakApi] = None
+if config.pikpak_username and config.pikpak_password:
+    pikpak_client = PikPakApi(
+        username=config.pikpak_username,
+        password=config.pikpak_password,
+    )
 
 
 async def refresh_access_token() -> None:
@@ -19,7 +21,7 @@ async def refresh_access_token() -> None:
     """
     try:
         await pikpak_client.refresh_access_token()
-    except (PikpakException, PikpakAccessTokenExpireException) as e:
+    except PikpakException as e:
         logger.warning(f"refresh_access_token {e}")
         await pikpak_client.login()
 
@@ -102,7 +104,7 @@ async def pikpak_offline_download(
             if path_ids and len(path_ids) > 0:
                 parent_id = path_ids[-1].get("id")
         return await pikpak_client.offline_download(url, parent_id=parent_id, name=name)  # type: ignore
-    except (PikpakAccessTokenExpireException, PikpakException) as e:
+    except PikpakException as e:
         logger.warning(e)
         await refresh_access_token()
         return await pikpak_offline_download(

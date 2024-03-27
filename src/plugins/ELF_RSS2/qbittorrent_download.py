@@ -189,7 +189,9 @@ async def upload_files_to_groups(
                     name=tmp["name"],
                 )
             except ActionFailed:
-                msg = f"{name}\nHash：{hash_str}\n上传到群：{group_id}失败！请手动上传！"
+                msg = (
+                    f"{name}\nHash：{hash_str}\n上传到群：{group_id}失败！请手动上传！"
+                )
                 await send_msg(bot, msg, [group_id])
                 logger.exception(msg)
             except (NetworkError, TimeoutError) as e:
@@ -246,7 +248,12 @@ async def rss_trigger(bot: Bot, hash_str: str, group_ids: List[str], name: str) 
     scheduler.add_job(
         func=check_down_status,  # 要添加任务的函数，不要带参数
         trigger=trigger,  # 触发器
-        args=(bot, hash_str, group_ids, name),  # 函数的参数列表，注意：只有一个值时，不能省略末尾的逗号
+        args=(
+            bot,
+            hash_str,
+            group_ids,
+            name,
+        ),  # 函数的参数列表，注意：只有一个值时，不能省略末尾的逗号
         id=hash_str,
         misfire_grace_time=60,  # 允许的误差时间，建议不要省略
         job_defaults=job_defaults,

@@ -278,9 +278,9 @@ def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
     down_path = config.img_down_path or ""
     rules = {  # 替换格式化字符串
         "{subs}": rss.name,
-        "{name}": file_url.name
-        if "{ext}" not in format_rule
-        else Path(file_url.name).stem,
+        "{name}": (
+            file_url.name if "{ext}" not in format_rule else Path(file_url.name).stem
+        ),
         "{ext}": file_url.suffix if "{ext}" in format_rule else "",
     }
     for k, v in rules.items():

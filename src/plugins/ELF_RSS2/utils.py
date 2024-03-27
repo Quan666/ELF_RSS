@@ -167,7 +167,9 @@ async def filter_valid_user_id_list(bot: Bot, user_id_list: List[str]) -> List[s
     if invalid_user_id_list := [
         user_id for user_id in user_id_list if user_id not in valid_user_id_list
     ]:
-        logger.warning(f"QQ号[{','.join(invalid_user_id_list)}]不是Bot[{bot.self_id}]的好友")
+        logger.warning(
+            f"QQ号[{','.join(invalid_user_id_list)}]不是Bot[{bot.self_id}]的好友"
+        )
     return valid_user_id_list
 
 
@@ -180,7 +182,9 @@ async def filter_valid_group_id_list(bot: Bot, group_id_list: List[str]) -> List
     if invalid_group_id_list := [
         group_id for group_id in group_id_list if group_id not in valid_group_id_list
     ]:
-        logger.warning(f"Bot[{bot.self_id}]未加入群组[{','.join(invalid_group_id_list)}]")
+        logger.warning(
+            f"Bot[{bot.self_id}]未加入群组[{','.join(invalid_group_id_list)}]"
+        )
     return valid_group_id_list
 
 

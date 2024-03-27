@@ -39,7 +39,9 @@ class Rss:
         self.pikpak_path_key: str = (
             ""  # PikPak 离线下载路径匹配正则表达式，用于自动归档文件 例如 r"(?:\[.*?\][\s\S])([\s\S]*)[\s\S]-"
         )
-        self.send_forward_msg: bool = False  # 当一次更新多条消息时，是否尝试发送合并消息
+        self.send_forward_msg: bool = (
+            False  # 当一次更新多条消息时，是否尝试发送合并消息
+        )
         if data:
             self.__dict__.update(data)
 
@@ -248,7 +250,11 @@ class Rss:
             _generate_feature_string("黑名单关键词", self.black_keyword),
             _generate_feature_string("cookies", self.cookies),
             "种子自动下载功能已启用" if self.down_torrent else "",
-            "" if self.is_open_upload_group else f"是否上传到群：{self.is_open_upload_group}",
+            (
+                ""
+                if self.is_open_upload_group
+                else f"是否上传到群：{self.is_open_upload_group}"
+            ),
             mode_msg,
             _generate_feature_string("图片数量限制", self.max_image_number),
             _generate_feature_string("正文待移除内容", self.content_to_remove),

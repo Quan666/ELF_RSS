@@ -211,7 +211,9 @@ async def filter_rss_by_permissions(
 ) -> List[Rss]:
     if group_id:
         if re.search(" (qq|qun|channel)=", change_info):
-            await RSS_CHANGE.finish("❌ 禁止在群组中修改订阅账号！如要取消订阅请使用 deldy 命令！")
+            await RSS_CHANGE.finish(
+                "❌ 禁止在群组中修改订阅账号！如要取消订阅请使用 deldy 命令！"
+            )
         rss_list = [
             rss
             for rss in rss_list
@@ -222,7 +224,9 @@ async def filter_rss_by_permissions(
 
     if guild_channel_id:
         if re.search(" (qq|qun|channel)=", change_info):
-            await RSS_CHANGE.finish("❌ 禁止在子频道中修改订阅账号！如要取消订阅请使用 deldy 命令！")
+            await RSS_CHANGE.finish(
+                "❌ 禁止在子频道中修改订阅账号！如要取消订阅请使用 deldy 命令！"
+            )
         rss_list = [
             rss
             for rss in rss_list
@@ -232,7 +236,9 @@ async def filter_rss_by_permissions(
         ]
 
     if not rss_list:
-        await RSS_CHANGE.finish("❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组或频道无权操作")
+        await RSS_CHANGE.finish(
+            "❌ 请检查是否存在以下问题：\n1.要修改的订阅名不存在对应的记录\n2.当前群组或频道无权操作"
+        )
 
     return rss_list
 
@@ -285,16 +291,22 @@ async def validate_rss_change(key_to_change: str, value_to_change: str) -> None:
     if key_to_change == "mode" and (
         set(value_to_change.split(",")) - mode_property_set or value_to_change == "or"
     ):
-        await RSS_CHANGE.finish(f"❌ 去重模式参数错误！\n{key_to_change}={value_to_change}")
+        await RSS_CHANGE.finish(
+            f"❌ 去重模式参数错误！\n{key_to_change}={value_to_change}"
+        )
     elif key_to_change in {
         "downkey",
         "wkey",
         "blackkey",
         "bkey",
     } and not regex_validate(value_to_change.lstrip("+-")):
-        await RSS_CHANGE.finish(f"❌ 正则表达式错误！\n{key_to_change}={value_to_change}")
+        await RSS_CHANGE.finish(
+            f"❌ 正则表达式错误！\n{key_to_change}={value_to_change}"
+        )
     elif key_to_change == "ppk" and not regex_validate(value_to_change):
-        await RSS_CHANGE.finish(f"❌ 正则表达式错误！\n{key_to_change}={value_to_change}")
+        await RSS_CHANGE.finish(
+            f"❌ 正则表达式错误！\n{key_to_change}={value_to_change}"
+        )
 
 
 async def batch_change_rss(

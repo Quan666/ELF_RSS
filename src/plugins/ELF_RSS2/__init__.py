@@ -15,7 +15,7 @@ from .config import config as plugin_config
 from .rss_class import Rss
 from .utils import send_message_to_admin
 
-VERSION = "2.6.21"
+VERSION = "2.6.22"
 
 __plugin_meta__ = PluginMetadata(
     name="ELF_RSS",
@@ -34,7 +34,9 @@ def check_first_connect(_: LifecycleMetaEvent) -> bool:
 
 
 start_metaevent = on_metaevent(rule=check_first_connect, temp=True)
-FIRST_BOOT_MESSAGE = "首次启动，目前没有订阅，请添加！\n另外，请检查配置文件的内容（详见部署教程）！"
+FIRST_BOOT_MESSAGE = (
+    "首次启动，目前没有订阅，请添加！\n另外，请检查配置文件的内容（详见部署教程）！"
+)
 BOOT_SUCCESS_MESSAGE = "ELF_RSS 订阅器启动成功！"
 
 
