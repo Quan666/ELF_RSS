@@ -29,8 +29,8 @@ nonebot-plugin-apscheduler = "^0.4.0"
 nonebot-plugin-guild-patch = "^0.2.3"
 nonebot2 = {extras = ["fastapi"], version = "^2.2.1"}
 pikpakapi = "^0.1.6"
-Pillow = "^10.2.0"
-pydantic = ">=1.10.14,<3.0.0,!=2.5.0,!=2.5.1"
+Pillow = "^10.3.0"
+pydantic = ">=1.10.15,<3.0.0,!=2.5.0,!=2.5.1"
 pyquery = "^2.0.0"
 python-qbittorrent = "^0.4.3"
 tenacity = "^8.2.3"
@@ -38,7 +38,7 @@ tinydb = "^4.8.0"
 yarl = "^1.9.4"
 
 [tool.poetry.dev-dependencies]
-nb-cli = "^1.4.0"
+nb-cli = "^1.4.1"
 
 [tool.mypy]
 python_version = "3.8"
