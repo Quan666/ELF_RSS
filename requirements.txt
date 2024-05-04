@@ -12,7 +12,7 @@ nb-cli~=1.4.1
 nonebot-adapter-onebot~=2.4.3
 nonebot-plugin-apscheduler~=0.4.0
 nonebot-plugin-guild-patch~=0.2.3
-nonebot2[fastapi]~=2.2.1
+nonebot2[fastapi]~=2.3.0
 pikpakapi~=0.1.6
 Pillow~=10.3.0
 pydantic>=1.10.15,<3.0.0,!=2.5.0,!=2.5.1
