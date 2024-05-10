@@ -7,10 +7,8 @@ from nonebot.matcher import Matcher
 from nonebot.params import ArgPlainText, CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
-from nonebot_plugin_guild_patch import GUILD_ADMIN, GUILD_OWNER, GuildMessageEvent
 
 from .. import my_trigger as tr
-from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
 
 RSS_DELETE = on_command(
@@ -18,12 +16,7 @@ RSS_DELETE = on_command(
     aliases={"drop", "unsub", "删除订阅"},
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN
-    | GROUP_OWNER
-    | GUILD_ADMIN
-    | GUILD_OWNER
-    | GUILD_SUPERUSER
-    | SUPERUSER,
+    permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,
 )
 
 
@@ -76,11 +69,7 @@ async def handle_rss_delete(
     event: MessageEvent, rss_name: str = ArgPlainText("RSS_DELETE")
 ) -> None:
     group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
-    guild_channel_id = (
-        f"{event.guild_id}@{event.channel_id}"
-        if isinstance(event, GuildMessageEvent)
-        else None
-    )
+    guild_channel_id = None
 
     rss_name_list = rss_name.strip().split(" ")
 

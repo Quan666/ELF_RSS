@@ -6,7 +6,6 @@ from nonebot.log import logger
 from nonebot.plugin import PluginMetadata
 
 require("nonebot_plugin_apscheduler")
-require("nonebot_plugin_guild_patch")
 
 from . import command
 from . import my_trigger as tr
@@ -15,7 +14,7 @@ from .config import config as plugin_config
 from .rss_class import Rss
 from .utils import send_message_to_admin
 
-VERSION = "2.6.22"
+VERSION = "2.6.23"
 
 __plugin_meta__ = PluginMetadata(
     name="ELF_RSS",
