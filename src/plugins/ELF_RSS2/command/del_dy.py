@@ -16,9 +16,7 @@ RSS_DELETE = on_command(
     aliases={"drop", "unsub", "删除订阅"},
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN
-    | GROUP_OWNER
-    | SUPERUSER,
+    permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,
 )
 
 

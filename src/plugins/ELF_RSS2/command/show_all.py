@@ -22,9 +22,7 @@ RSS_SHOW_ALL = on_command(
     aliases={"showall", "select_all", "selectall", "所有订阅"},
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN
-    | GROUP_OWNER
-    | SUPERUSER,
+    permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,
 )
 
 

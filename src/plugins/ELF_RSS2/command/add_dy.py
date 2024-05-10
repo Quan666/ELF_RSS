@@ -21,9 +21,7 @@ RSS_ADD = on_command(
     aliases={"添加订阅", "sub"},
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN
-    | GROUP_OWNER
-    | SUPERUSER,
+    permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,
 )
 
 

@@ -22,9 +22,7 @@ RSSHUB_ADD = on_command(
     "rsshub_add",
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN
-    | GROUP_OWNER
-    | SUPERUSER,
+    permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,
 )
 
 

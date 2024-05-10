@@ -22,9 +22,7 @@ RSS_CHANGE = on_command(
     aliases={"修改订阅", "modify"},
     rule=to_me(),
     priority=5,
-    permission=GROUP_ADMIN
-    | GROUP_OWNER
-    | SUPERUSER,
+    permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER,
 )
 
 
