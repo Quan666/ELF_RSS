@@ -13,9 +13,7 @@ from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
-from nonebot_plugin_guild_patch import GUILD_ADMIN, GUILD_OWNER, GuildMessageEvent
 
-from ..permission import GUILD_SUPERUSER
 from ..rss_class import Rss
 from .show_dy import handle_rss_list
 
@@ -26,9 +24,6 @@ RSS_SHOW_ALL = on_command(
     priority=5,
     permission=GROUP_ADMIN
     | GROUP_OWNER
-    | GUILD_ADMIN
-    | GUILD_OWNER
-    | GUILD_SUPERUSER
     | SUPERUSER,
 )
 
@@ -75,11 +70,7 @@ async def handle_rss_show_all(
     search_keyword = args.extract_plain_text().strip()
 
     group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
-    guild_channel_id = (
-        f"{event.guild_id}@{event.channel_id}"
-        if isinstance(event, GuildMessageEvent)
-        else None
-    )
+    guild_channel_id = None
 
     if not (rss_list := get_rss_list(group_id, guild_channel_id)):
         await RSS_SHOW_ALL.finish("❌ 当前没有任何订阅！")

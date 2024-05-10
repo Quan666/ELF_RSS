@@ -6,7 +6,6 @@ from nonebot.log import logger
 from nonebot.plugin import PluginMetadata
 
 require("nonebot_plugin_apscheduler")
-require("nonebot_plugin_guild_patch")
 
 from . import command
 from . import my_trigger as tr
