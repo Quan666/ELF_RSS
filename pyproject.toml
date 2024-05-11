@@ -32,7 +32,7 @@ Pillow = "^10.3.0"
 pydantic = ">=1.10.15,<3.0.0,!=2.5.0,!=2.5.1"
 pyquery = "^2.0.0"
 python-qbittorrent = "^0.4.3"
-tenacity = "^8.2.3"
+tenacity = "^8.3.0"
 tinydb = "^4.8.0"
 yarl = "^1.9.4"
 
