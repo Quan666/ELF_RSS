@@ -15,8 +15,8 @@ nonebot2[fastapi]~=2.3.3
 pikpakapi~=0.1.10
 Pillow~=10.4.0
 pydantic>=1.10.18,<3.0.0,!=2.5.0,!=2.5.1
-pyquery~=2.0.0
+pyquery~=2.0.1
 python-qbittorrent~=0.4.3
 tenacity~=8.5.0
 tinydb~=4.8.0
-yarl~=1.9.4
+yarl~=1.9.5
