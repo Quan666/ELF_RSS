@@ -34,7 +34,7 @@ pyquery = "^2.0.1"
 python-qbittorrent = "^0.4.3"
 tenacity = "^8.5.0"
 tinydb = "^4.8.0"
-yarl = "^1.9.7"
+yarl = "^1.10.0"
 
 [tool.poetry.dev-dependencies]
 nb-cli = "^1.4.1"
