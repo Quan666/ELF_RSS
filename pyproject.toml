@@ -37,7 +37,7 @@ tinydb = "^4.8.0"
 yarl = "^1.10.0"
 
 [tool.poetry.dev-dependencies]
-nb-cli = "^1.4.1"
+nb-cli = "^1.4.2"
 
 [tool.mypy]
 python_version = "3.8"
