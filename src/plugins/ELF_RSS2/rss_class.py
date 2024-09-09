@@ -49,11 +49,8 @@ class Rss:
     def get_url(self, rsshub: str = str(config.rsshub)) -> str:
         if URL(self.url).scheme in ["http", "https"]:
             return self.url
-        # 先判断地址是否 / 开头
-        if self.url.startswith("/"):
-            return rsshub + self.url
-
-        return f"{rsshub}/{self.url}"
+        # 去除 rsshub地址末尾的斜杠 和 订阅地址开头的斜杠
+        return f"{rsshub.rstrip("/")}/{self.url.lstrip("/")}"
 
     # 读取记录
     @staticmethod
