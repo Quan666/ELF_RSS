@@ -19,4 +19,4 @@ pyquery~=2.0.1
 python-qbittorrent~=0.4.3
 tenacity~=8.5.0
 tinydb~=4.8.0
-yarl~=1.10.0
+yarl~=1.11.1
