@@ -14,7 +14,7 @@ from .config import config as plugin_config
 from .rss_class import Rss
 from .utils import send_message_to_admin
 
-VERSION = "2.6.24"
+VERSION = "2.6.25"
 
 __plugin_meta__ = PluginMetadata(
     name="ELF_RSS",
