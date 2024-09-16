@@ -50,7 +50,7 @@ class Rss:
         if URL(self.url).scheme in ["http", "https"]:
             return self.url
         # 去除 rsshub地址末尾的斜杠 和 订阅地址开头的斜杠
-        return f"{rsshub.rstrip("/")}/{self.url.lstrip("/")}"
+        return f"{rsshub.rstrip('/')}/{self.url.lstrip('/')}"
 
     # 读取记录
     @staticmethod
