@@ -32,8 +32,8 @@ prompt = """\
 
 获取方式：
     PC端 Chrome 浏览器按 F12
-    找到Console选项卡，输入:
-        document.cookie
+    找到 network 选项卡, 
+    找到对应请求点开, 复制请求中完整的 cookie
     输出的字符串就是了\
 """
 
