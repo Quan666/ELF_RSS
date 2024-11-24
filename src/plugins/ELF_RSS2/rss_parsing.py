@@ -155,6 +155,8 @@ async def fetch_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
     proxy = get_proxy(rss.img_proxy) if URL(rss_url).host not in local_host else None
     cookies = rss.cookies or None
     headers = HEADERS.copy()
+    if cookies:
+        headers["cookie"] = cookies
     d = {}
     cached = False
 
@@ -165,7 +167,6 @@ async def fetch_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
             headers["If-Modified-Since"] = rss.last_modified
 
     async with aiohttp.ClientSession(
-        cookies=cookies,  # type: ignore
         headers=headers,
         raise_for_status=True,
         timeout=aiohttp.ClientTimeout(10),
