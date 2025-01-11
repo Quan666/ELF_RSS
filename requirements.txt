@@ -14,7 +14,7 @@ nonebot-plugin-apscheduler~=0.5.0
 nonebot2[fastapi]~=2.4.1
 pikpakapi~=0.1.10
 Pillow~=10.4.0
-pydantic>=1.10.19,<3.0.0,!=2.5.0,!=2.5.1
+pydantic>=1.10.20,<3.0.0,!=2.5.0,!=2.5.1
 pyquery~=2.0.1
 python-qbittorrent~=0.4.3
 tenacity~=8.5.0
