@@ -12,7 +12,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4.9.1
         with:
-          python-version: '3.13.5'
+          python-version: '3.13.6'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
