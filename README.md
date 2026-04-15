@@ -35,7 +35,7 @@
 
 ## 文档目录
 
-> 注意：推荐 Python 3.8.3+ 版本 Windows版安装包下载地址：[https://www.python.org/ftp/python/3.8.3/python-3.8.3-amd64.exe](https://www.python.org/ftp/python/3.8.3/python-3.8.3-amd64.exe)
+> 注意：推荐 Python 3.10+ 版本
 >
 > * [部署教程](docs/部署教程.md)
 > * [使用教程](docs/2.0%20使用教程.md)

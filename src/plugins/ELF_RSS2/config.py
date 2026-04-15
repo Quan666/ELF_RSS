@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List, Optional
 
-from nonebot import get_driver
+from nonebot import get_plugin_config
 from nonebot.config import Config
 from nonebot.log import logger
 from pydantic import AnyHttpUrl
@@ -62,5 +62,5 @@ class ELFConfig(Config):
     telegram_bot_token: Optional[str] = None  # Telegram 机器人的 token
 
 
-config = ELFConfig(**get_driver().config.dict())
+config = get_plugin_config(ELFConfig)
 logger.debug(f"RSS Config loaded: {config!r}")
