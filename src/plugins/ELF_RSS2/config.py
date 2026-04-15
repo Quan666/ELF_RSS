@@ -4,21 +4,30 @@ from typing import List, Optional
 from nonebot import get_plugin_config
 from nonebot.config import Config
 from nonebot.log import logger
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, Field
+
+try:
+    from pydantic import ConfigDict
+except ImportError:  # pydantic v1 compatibility
+    ConfigDict = None
 
 DATA_PATH = Path.cwd() / "data"
 JSON_PATH = DATA_PATH / "rss.json"
 
 
 class ELFConfig(Config):
-    class Config:
-        extra = "allow"
+    if ConfigDict is not None:
+        model_config = ConfigDict(extra="allow")
+    else:
+
+        class Config:
+            extra = "allow"
 
     # 代理地址
     rss_proxy: Optional[str] = None
     rsshub: AnyHttpUrl = "https://rsshub.app"  # type: ignore
     # 备用 rsshub 地址
-    rsshub_backup: List[AnyHttpUrl] = []
+    rsshub_backup: List[AnyHttpUrl] = Field(default_factory=list)
     db_cache_expire: int = 30
     limit: int = 200
     max_length: int = 1024  # 正文长度限制，防止消息太长刷屏，以及消息过长发送失败的情况
@@ -56,8 +65,8 @@ class ELFConfig(Config):
     # pikpak 离线保存的目录, 默认是根目录，示例: ELF_RSS/Downloads ,目录不存在会自动创建, 不能/结尾
     pikpak_download_path: str = ""
 
-    telegram_admin_ids: List[int] = (
-        []
+    telegram_admin_ids: List[int] = Field(
+        default_factory=list
     )  # Telegram 管理员 ID 列表，用于接收离线通知和管理机器人
     telegram_bot_token: Optional[str] = None  # Telegram 机器人的 token
 
