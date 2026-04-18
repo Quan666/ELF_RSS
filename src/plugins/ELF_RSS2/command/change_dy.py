@@ -124,7 +124,7 @@ def handle_change_list(
     ) or key_to_change == "mode":
         value_to_change = handle_property(
             value_to_change, getattr(rss, attribute_dict[key_to_change])
-        )  # type:ignore
+        )  # type: ignore
     elif key_to_change == "time":
         value_to_change = handle_time_change(value_to_change)
     elif key_to_change in {
@@ -140,18 +140,18 @@ def handle_change_list(
         "pikpak",
         "forward",
     }:
-        value_to_change = bool(int(value_to_change))  # type:ignore
+        value_to_change = bool(int(value_to_change))  # type: ignore
         if key_to_change == "stop" and not value_to_change and rss.error_count > 0:
             rss.error_count = 0
     elif key_to_change in {"downkey", "wkey", "blackkey", "bkey"}:
         value_to_change = handle_regex_property(
             value_to_change, getattr(rss, attribute_dict[key_to_change])
-        )  # type:ignore
+        )  # type: ignore
     elif key_to_change == "ppk" and not value_to_change:
-        value_to_change = None  # type:ignore
+        value_to_change = None  # type: ignore
     elif key_to_change == "img_num":
-        value_to_change = int(value_to_change)  # type:ignore
-    setattr(rss, attribute_dict.get(key_to_change), value_to_change)  # type:ignore
+        value_to_change = int(value_to_change)  # type: ignore
+    setattr(rss, attribute_dict.get(key_to_change), value_to_change)  # type: ignore
 
 
 prompt = """\

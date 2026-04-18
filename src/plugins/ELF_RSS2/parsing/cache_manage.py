@@ -38,8 +38,7 @@ def cache_filter(data: Dict[str, Any]) -> Dict[str, Any]:
 def cache_db_manage(conn: Connection) -> None:
     cursor = conn.cursor()
     # 用来去重的 sqlite3 数据表如果不存在就创建一个
-    cursor.execute(
-        """
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS main (
         "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         "link" TEXT,
@@ -47,8 +46,7 @@ def cache_db_manage(conn: Connection) -> None:
         "image_hash" TEXT,
         "datetime" TEXT DEFAULT (DATETIME('Now', 'LocalTime'))
     );
-    """
-    )
+    """)
     cursor.close()
     conn.commit()
     cursor = conn.cursor()
