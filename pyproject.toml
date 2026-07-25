@@ -14,7 +14,7 @@ keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 
 [tool.poetry.dependencies]
 python = ">=3.14.6,<4.0"
-aiohttp = {extras = ["speedups"], version = "^3.14.1"}
+aiohttp = {extras = ["speedups"], version = "^3.14.3"}
 arrow = "^1.4.0"
 async-timeout = "^4.0.3"
 bbcode = "^1.1.0"
@@ -34,7 +34,7 @@ pyquery = "^2.0.1"
 python-qbittorrent = "^0.4.3"
 tenacity = "^8.5.0"
 tinydb = "^4.8.2"
-yarl = "^1.24.2"
+yarl = "^1.24.5"
 
 [tool.poetry.group.dev.dependencies]
 nb-cli = "^1.7.4"
