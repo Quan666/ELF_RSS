@@ -13,7 +13,7 @@ repository = "https://github.com/Quan666/ELF_RSS"
 keywords = ["nonebot", "nonebot2", "rss" ,"elf" ,"rsshub"]
 
 [tool.poetry.dependencies]
-python = ">=3.14.6,<4.0"
+python = ">=3.14.7,<4.0"
 aiohttp = {extras = ["speedups"], version = "^3.14.3"}
 arrow = "^1.4.0"
 async-timeout = "^4.0.3"
@@ -33,7 +33,7 @@ pydantic = ">=1.10.26,<3.0.0,!=2.5.0,!=2.5.1"
 pyquery = "^2.1.0"
 python-qbittorrent = "^0.4.3"
 tenacity = "^8.5.0"
-tinydb = "^4.8.2"
+tinydb = "^4.9.0"
 yarl = "^1.24.5"
 
 [tool.poetry.group.dev.dependencies]
