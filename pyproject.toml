@@ -18,7 +18,7 @@ aiohttp = {extras = ["speedups"], version = "^3.14.3"}
 arrow = "^1.4.0"
 async-timeout = "^4.0.3"
 bbcode = "^1.1.0"
-cachetools = "^5.5.2"
+cachetools = "^7.1.8"
 emoji = "^2.15.0"
 feedparser = "^6.0.14"
 deep-translator = "^1.11.4"
