@@ -60,5 +60,5 @@ line-length = 120
 "*.py" = ["E402", "F811"]
 
 [build-system]
-requires = ["poetry-core>=1.9.1"]
+requires = ["poetry-core>=2.4.1"]
 build-backend = "poetry.core.masonry.api"
