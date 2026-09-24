@@ -211,10 +211,14 @@ class ParsingRss:
                 "header_message": f"【{rss_title}】更新了!",
                 "messages": [],
                 "items": [],
+                "is_last_batch": True,  # 无更新时也需要执行收尾
             }
         )
         if change_data := self.state["change_data"]:
+            processed_count = 0
             for parted_item_list in partition_list(change_data, 10):
+                processed_count += len(parted_item_list)
+                self.state["is_last_batch"] = processed_count == len(change_data)
                 for item in parted_item_list:
                     item_msg = ""
                     for handler_list in self.handler.values():
@@ -237,6 +241,7 @@ class ParsingRss:
                     self.state["items"].append(item)
 
                 _, _ = await _run_handlers(self.after_handler, self.rss, self.state)
-                self.state["messages"] = self.state["items"] = []
+                self.state["messages"] = []
+                self.state["items"] = []
         else:
             _, _ = await _run_handlers(self.after_handler, self.rss, self.state)

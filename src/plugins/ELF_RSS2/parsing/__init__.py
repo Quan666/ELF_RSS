@@ -298,7 +298,7 @@ async def after_handler(rss: Rss, state: Dict[str, Any]) -> Dict[str, Any]:
     message_count = len(state["change_data"])
     success_count = message_count - state["error_count"]
 
-    if message_count > 10 and len(state["messages"]) == 10:
+    if not state["is_last_batch"]:
         return {}
 
     if success_count > 0:
